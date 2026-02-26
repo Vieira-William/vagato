@@ -84,7 +84,7 @@ class VagaBase(BaseModel):
     titulo: str = Field(..., max_length=200)
     empresa: Optional[str] = Field(None, max_length=100)
     tipo_vaga: Optional[str] = Field(None, max_length=50)
-    fonte: FonteEnum
+    fonte: Optional[FonteEnum] = None  # Pode ser nulo para vagas antigas
     link_vaga: Optional[str] = None
     localizacao: Optional[str] = Field(None, max_length=100)
     modalidade: Optional[ModalidadeEnum] = ModalidadeEnum.nao_especificado

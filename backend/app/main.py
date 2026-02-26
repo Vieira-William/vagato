@@ -59,6 +59,28 @@ def _migrar_colunas():
 
 _migrar_colunas()
 
+
+# ── Migração: Corrige valores NULL em campos que não devem ser NULL ──
+def _corrigir_valores_null():
+    """Atualiza valores NULL em campos críticos para evitar erros de serialização."""
+    try:
+        with engine.begin() as conn:
+            # Se fonte for NULL, define como 'nao_especificado' ou 'indeed' como fallback
+            # Mantém registros que têm altre colunas para tentar inferir a fonte
+            conn.execute(text("""
+                UPDATE "vagas"
+                SET fonte = 'nao_especificado'
+                WHERE fonte IS NULL
+            """))
+            print("[Migração] ✅ Corrigidos valores NULL em 'fonte'")
+    except Exception as e:
+        # Silenciosamente ignora se já foi executado
+        if "UPDATE" not in str(e):
+            print(f"[Migração] ℹ️  Valores de fonte já corrigidos: {e}")
+
+_corrigir_valores_null()
+
+
 app = FastAPI(
     title="Vagas UX Platform API",
     description="API para gerenciamento de vagas de UX/Product Design",
