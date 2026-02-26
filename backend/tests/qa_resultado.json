@@ -1,0 +1,240 @@
+{
+  "timestamp": "2026-02-20T03:36:57.094962",
+  "resumo": {
+    "total_testes": 12,
+    "passaram": 8,
+    "falharam": 4,
+    "warnings": 5,
+    "taxa_sucesso": "66.7%"
+  },
+  "metricas": {
+    "arquivo_origem": "/Users/williammarangon/Projects/vagas-ux-platform/backend/data/brutos/posts_2026-02-20_033652.json",
+    "total_posts_brutos": 30,
+    "total_vagas": 20,
+    "taxa_conversao": "66.7%"
+  },
+  "resultados": [
+    {
+      "nome": "Filtro: Taxa de conversão",
+      "passou": true,
+      "severidade": "info",
+      "mensagem": "Taxa de 66.7% está em range aceitável (20/30)",
+      "detalhes": null
+    },
+    {
+      "nome": "Filtro: Todas têm termo UX",
+      "passou": true,
+      "severidade": "info",
+      "mensagem": "Todas as vagas contêm termos de UX/Produto",
+      "detalhes": null
+    },
+    {
+      "nome": "Filtro: Possíveis falsos negativos",
+      "passou": false,
+      "severidade": "warning",
+      "mensagem": "8 posts parecem vagas mas não foram extraídos",
+      "detalhes": {
+        "exemplos": [
+          {
+            "id": 6,
+            "texto_preview": "pedro henrique  3rd+\npedro henrique  • 3º e +\ndesenvolvedor front-end | sveltekit | nextjs | typescript\n7 h • \nseguir\nquem desenvolve um produto sabe: o trabalho nunca termina no \"deploy\".\n\nrecentemen",
+            "links": [
+              "https://lnkd.in/dmskrZgb",
+              "https://lnkd.in/e_N9jhbi",
+              "https://lnkd.in/dDFG6DXe"
+            ]
+          },
+          {
+            "id": 7,
+            "texto_preview": "andressa souza verified profile 2nd\nandressa souza \n • 2º\ntech recruiter sênior | talent acquisition | sap recruiter | headhunter | analista de rh na qintess\n7 h • \nseguir\n🚀 vaga | desenvolvedor(a) ja",
+            "links": [
+              "https://lnkd.in/dmskrZgb"
+            ]
+          },
+          {
+            "id": 11,
+            "texto_preview": "ana carolina sant'anna premium profile 2nd\nana carolina sant'anna \n • 2º\nemployer branding leader | candidate & employee experience (cx/ex) | talent marketing & evp | hr tech | customer success latam ",
+            "links": [
+              "https://lnkd.in/d8mf729k",
+              "https://lnkd.in/eGzwQhiS",
+              "https://lnkd.in/ediAjWT8"
+            ]
+          },
+          {
+            "id": 12,
+            "texto_preview": "andressa souza verified profile 2nd\nandressa souza \n • 2º\ntech recruiter sênior | talent acquisition | sap recruiter | headhunter | analista de rh na qintess\n8 h • \nseguir\n🚀 vaga: analista de negócios",
+            "links": [
+              "https://lnkd.in/d8mf729k",
+              "https://lnkd.in/eGzwQhiS",
+              "https://lnkd.in/ediAjWT8"
+            ]
+          },
+          {
+            "id": 15,
+            "texto_preview": "gislaine marques alves verified profile 2nd\ngislaine marques alves \n • 2º\nrecrutamento e seleção | comunicação interna | endomarketing | engajamento rh estratégico | cultura organizacional | desenvolv",
+            "links": [
+              "https://lnkd.in/d8mf729k",
+              "https://lnkd.in/eZe7g8sa",
+              "https://lnkd.in/dmskrZgb"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "nome": "Links: Acessibilidade",
+      "passou": true,
+      "severidade": "info",
+      "mensagem": "4/4 links acessíveis (100.0%)",
+      "detalhes": {
+        "total_testados": 4,
+        "acessiveis": 4,
+        "erros": [],
+        "redirects": [
+          {
+            "titulo": "BOOTCAMP EXCLUSIVO EM TECNOLOGIA GRATUITO!",
+            "original": "https://lnkd.in/d9Et26Fp",
+            "final": "https://nerdin.com.br/vagas?CodigoNivel=4,3,7,6"
+          },
+          {
+            "titulo": "Designer",
+            "original": "https://lnkd.in/d9Et26Fp",
+            "final": "https://nerdin.com.br/vagas?CodigoNivel=4,3,7,6"
+          }
+        ]
+      }
+    },
+    {
+      "nome": "Links: Correspondência título-link",
+      "passou": true,
+      "severidade": "info",
+      "mensagem": "Correspondência: 2 OK, 0 erro, 0 incerto de 2",
+      "detalhes": {
+        "verificacoes": [
+          {
+            "titulo": "bootcamp exclusivo em tecnologia gratuito!",
+            "link_original": "https://lnkd.in/d9Et26Fp",
+            "link_final": "https://nerdin.com.br/vagas?CodigoNivel=4,3,7,6",
+            "corresponde": true,
+            "motivo": "plataforma de vagas"
+          },
+          {
+            "titulo": "vale a pena",
+            "link_original": "https://lnkd.in/dmskrZgb",
+            "link_final": "https://nerdin.com.br/vagas?CodigoNivel=4,3,7,6",
+            "corresponde": true,
+            "motivo": "plataforma de vagas"
+          }
+        ]
+      }
+    },
+    {
+      "nome": "Títulos: Duplicados",
+      "passou": false,
+      "severidade": "warning",
+      "mensagem": "3 títulos duplicados (55.0%)",
+      "detalhes": {
+        "duplicados": {
+          "Ux Designer Remoto": 2,
+          "Designer": 7,
+          "Ux Designer": 2
+        }
+      }
+    },
+    {
+      "nome": "Títulos: Muito curtos",
+      "passou": false,
+      "severidade": "warning",
+      "mensagem": "8 títulos com menos de 10 caracteres",
+      "detalhes": {
+        "exemplos": [
+          "Designer",
+          "Designer",
+          "Dele Est",
+          "Designer",
+          "Designer"
+        ]
+      }
+    },
+    {
+      "nome": "Títulos: Genéricos (fallback)",
+      "passou": true,
+      "severidade": "info",
+      "mensagem": "1 títulos genéricos (5.0%)",
+      "detalhes": null
+    },
+    {
+      "nome": "Empresas: Taxa preenchimento",
+      "passou": false,
+      "severidade": "warning",
+      "mensagem": "5/20 vagas com empresa (25.0%)",
+      "detalhes": null
+    },
+    {
+      "nome": "Contato: Distribuição",
+      "passou": true,
+      "severidade": "info",
+      "mensagem": "Formas de contato: {'link': 20}",
+      "detalhes": {
+        "distribuicao": {
+          "link": 20
+        }
+      }
+    },
+    {
+      "nome": "Cobertura: empresa",
+      "passou": true,
+      "severidade": "warning",
+      "mensagem": "25.0% preenchido",
+      "detalhes": null
+    },
+    {
+      "nome": "Cobertura: Resumo",
+      "passou": true,
+      "severidade": "info",
+      "mensagem": "Análise de cobertura completa",
+      "detalhes": {
+        "titulo": {
+          "preenchidos": 20,
+          "total": 20,
+          "taxa": "100.0%"
+        },
+        "empresa": {
+          "preenchidos": 5,
+          "total": 20,
+          "taxa": "25.0%"
+        },
+        "tipo_vaga": {
+          "preenchidos": 20,
+          "total": 20,
+          "taxa": "100.0%"
+        },
+        "link_vaga": {
+          "preenchidos": 20,
+          "total": 20,
+          "taxa": "100.0%"
+        },
+        "modalidade": {
+          "preenchidos": 20,
+          "total": 20,
+          "taxa": "100.0%"
+        },
+        "forma_contato": {
+          "preenchidos": 20,
+          "total": 20,
+          "taxa": "100.0%"
+        },
+        "perfil_autor": {
+          "preenchidos": 16,
+          "total": 20,
+          "taxa": "80.0%"
+        },
+        "nome_autor": {
+          "preenchidos": 14,
+          "total": 20,
+          "taxa": "70.0%"
+        }
+      }
+    }
+  ]
+}

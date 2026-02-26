@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
+from datetime import date
 
 from ..database import get_db
 from .. import crud, schemas
+from ..scrapers.analisar_brutos import _limpar_empresa
 
 router = APIRouter(prefix="/vagas", tags=["vagas"])
 
@@ -17,6 +19,9 @@ def listar_vagas(
     modalidade: Optional[str] = None,
     tipo_vaga: Optional[str] = None,
     requisito_ingles: Optional[str] = None,
+    data_inicio: Optional[date] = None,
+    data_fim: Optional[date] = None,
+    busca: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     """Lista todas as vagas com filtros opcionais."""
@@ -29,6 +34,9 @@ def listar_vagas(
         modalidade=modalidade,
         tipo_vaga=tipo_vaga,
         requisito_ingles=requisito_ingles,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        busca=busca,
     )
     return {"total": total, "vagas": vagas}
 
@@ -44,7 +52,10 @@ def obter_vaga(vaga_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=schemas.VagaResponse, status_code=201)
 def criar_vaga(vaga: schemas.VagaCreate, db: Session = Depends(get_db)):
-    """Cria uma nova vaga."""
+    """Cria uma nova vaga. Aplica limpeza de empresa antes de inserir."""
+    # Limpa empresa para normalizar dados (remove newlines, timestamps, sufixos corporativos)
+    if vaga.empresa:
+        vaga.empresa = _limpar_empresa(vaga.empresa)
     if crud.check_duplicate(db, vaga.titulo, vaga.empresa, vaga.link_vaga):
         raise HTTPException(status_code=400, detail="Vaga duplicada já existe")
     return crud.create_vaga(db, vaga)
@@ -52,9 +63,12 @@ def criar_vaga(vaga: schemas.VagaCreate, db: Session = Depends(get_db)):
 
 @router.post("/batch", response_model=list[schemas.VagaResponse], status_code=201)
 def criar_vagas_batch(vagas: list[schemas.VagaCreate], db: Session = Depends(get_db)):
-    """Cria múltiplas vagas de uma vez (para importação)."""
+    """Cria múltiplas vagas de uma vez (para importação). Aplica limpeza de empresa."""
     vagas_novas = []
     for vaga in vagas:
+        # Limpa empresa antes de verificar duplicata
+        if vaga.empresa:
+            vaga.empresa = _limpar_empresa(vaga.empresa)
         if not crud.check_duplicate(db, vaga.titulo, vaga.empresa, vaga.link_vaga):
             vagas_novas.append(vaga)
 
@@ -91,3 +105,134 @@ def atualizar_status(
     if not vaga:
         raise HTTPException(status_code=404, detail="Vaga não encontrada")
     return vaga
+
+
+@router.post("/{vaga_id}/favoritar", response_model=schemas.VagaResponse)
+def toggle_favorito(
+    vaga_id: int,
+    db: Session = Depends(get_db),
+):
+    """Toggle o estado de favorito de uma vaga."""
+    vaga = crud.get_vaga(db, vaga_id)
+    if not vaga:
+        raise HTTPException(status_code=404, detail="Vaga não encontrada")
+
+    # Toggle is_favorito
+    vaga.is_favorito = not vaga.is_favorito
+    db.commit()
+    db.refresh(vaga)
+    return vaga
+
+
+@router.post("/recalcular-scores")
+def recalcular_scores(db: Session = Depends(get_db)):
+    """Recalcula scores de compatibilidade para todas as vagas."""
+    from ..services.job_matcher import JobMatcher
+    from ..services.default_profile import WILLIAM_PROFILE
+    from ..models import Vaga
+
+    matcher = JobMatcher(WILLIAM_PROFILE)
+    vagas = db.query(Vaga).all()
+
+    atualizadas = 0
+    for vaga in vagas:
+        vaga_dict = {
+            "skills_obrigatorias": vaga.skills_obrigatorias or [],
+            "skills_desejaveis": vaga.skills_desejaveis or [],
+            "nivel": vaga.nivel,
+            "modalidade": vaga.modalidade,
+            "tipo_contrato": vaga.tipo_contrato,
+            "salario_min": vaga.salario_min,
+            "salario_max": vaga.salario_max,
+            "requisito_ingles": vaga.requisito_ingles,
+            "localizacao": vaga.localizacao,
+        }
+
+        resultado = matcher.calcular_score(vaga_dict)
+        vaga.score_compatibilidade = resultado["score_total"]
+        vaga.score_breakdown = resultado["breakdown"]
+        vaga.is_destaque = resultado["is_destaque"]
+        atualizadas += 1
+
+    db.commit()
+    return {"message": f"{atualizadas} vagas atualizadas", "total": atualizadas}
+
+
+@router.post("/deduplicar")
+def deduplicar_vagas(db: Session = Depends(get_db)):
+    """Remove vagas duplicadas, mantendo a mais recente de cada titulo."""
+    from sqlalchemy import func
+    from ..models import Vaga
+
+    # Buscar todos os titulos duplicados
+    titulos_duplicados = db.query(
+        func.lower(func.trim(Vaga.titulo)).label('titulo_norm')
+    ).group_by(
+        func.lower(func.trim(Vaga.titulo))
+    ).having(
+        func.count(Vaga.id) > 1
+    ).all()
+
+    titulos_duplicados = [t[0] for t in titulos_duplicados]
+
+    if not titulos_duplicados:
+        return {"deletadas": 0, "mantidas": db.query(Vaga).count(), "mensagem": "Nenhuma duplicata encontrada"}
+
+    # Para cada titulo duplicado, manter apenas o mais recente (maior ID)
+    ids_para_deletar = []
+
+    for titulo_norm in titulos_duplicados:
+        vagas_duplicadas = db.query(Vaga).filter(
+            func.lower(func.trim(Vaga.titulo)) == titulo_norm
+        ).order_by(Vaga.id.desc()).all()
+
+        # Manter o primeiro (mais recente), deletar o resto
+        for vaga in vagas_duplicadas[1:]:
+            ids_para_deletar.append(vaga.id)
+
+    # Deletar as duplicadas
+    if ids_para_deletar:
+        db.query(Vaga).filter(Vaga.id.in_(ids_para_deletar)).delete(synchronize_session=False)
+        db.commit()
+
+    total_restantes = db.query(Vaga).count()
+
+    return {
+        "deletadas": len(ids_para_deletar),
+        "mantidas": total_restantes,
+        "titulos_afetados": len(titulos_duplicados)
+    }
+
+@router.post("/{vaga_id}/gerar-pitch")
+def gerar_pitch(vaga_id: int, db: Session = Depends(get_db)):
+    """Gera uma cold message contextualizada com a IA para a vaga."""
+    from ..services.ai_extractor import AIExtractor
+    from ..services.default_profile import WILLIAM_PROFILE
+
+    vaga = crud.get_vaga(db, vaga_id)
+    if not vaga:
+        raise HTTPException(status_code=404, detail="Vaga não encontrada")
+
+    extractor = AIExtractor()
+    if not extractor.is_enabled():
+        raise HTTPException(status_code=503, detail="Extrator local IA desabilitado. Cheque sua API KEY.")
+
+    vaga_dict = {
+        "titulo": vaga.titulo,
+        "empresa": vaga.empresa,
+        "missao_vaga": vaga.missao_vaga,
+        "responsabilidades": vaga.responsabilidades or [],
+        "requisitos_obrigatorios": vaga.requisitos_obrigatorios or [],
+    }
+
+    perfil = {
+        "cargo": "Product Designer",  # Defaulting main role
+        "nivel": WILLIAM_PROFILE.get("nivel_minimo", "senior"),
+        "skills": WILLIAM_PROFILE.get("skills", []),
+    }
+
+    pitch = extractor.gerar_cold_message(vaga_dict, perfil)
+    if not pitch:
+        raise HTTPException(status_code=500, detail="A IA falhou em gerar o pitch.")
+
+    return {"pitch": pitch}

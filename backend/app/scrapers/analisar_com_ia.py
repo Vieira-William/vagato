@@ -65,13 +65,37 @@ def analisar_posts_com_ia(posts_raw, api_key=None):
                 messages=[{"role": "user", "content": prompt}]
             )
 
-            # Parse da resposta
-            resposta_texto = response.content[0].text
-            vagas_batch = json.loads(resposta_texto)
+            # Parse da resposta (tenta extrair JSON mesmo se tiver texto extra)
+            resposta_texto = response.content[0].text.strip()
+
+            # Tenta encontrar o array JSON na resposta
+            if resposta_texto.startswith("["):
+                json_str = resposta_texto
+            else:
+                # Procura por [ ... ] na resposta
+                start = resposta_texto.find("[")
+                end = resposta_texto.rfind("]") + 1
+                if start != -1 and end > start:
+                    json_str = resposta_texto[start:end]
+                else:
+                    print(f"  Batch {i//BATCH_SIZE + 1}: Resposta sem JSON válido")
+                    continue
+
+            vagas_batch = json.loads(json_str)
 
             # Filtra apenas vagas UX válidas
             for vaga in vagas_batch:
                 if vaga.get("eh_vaga_ux") and vaga.get("aplicar") != "indefinido":
+                    # Mapeia forma de contato para valores válidos do enum
+                    forma_contato = vaga.get("aplicar", "mensagem")
+                    if forma_contato == "contato":
+                        forma_contato = "mensagem"
+
+                    # Mapeia modalidade para valores válidos
+                    modalidade = vaga.get("modalidade", "nao_especificado")
+                    if modalidade not in ["remoto", "hibrido", "presencial"]:
+                        modalidade = "nao_especificado"
+
                     todas_vagas.append({
                         "titulo": vaga.get("titulo", "Vaga UX"),
                         "empresa": vaga.get("empresa"),
@@ -79,9 +103,9 @@ def analisar_posts_com_ia(posts_raw, api_key=None):
                         "fonte": "linkedin_posts",
                         "link_vaga": vaga.get("url"),
                         "localizacao": None,
-                        "modalidade": vaga.get("modalidade", "nao_especificado"),
+                        "modalidade": modalidade,
                         "requisito_ingles": "nao_especificado",
-                        "forma_contato": vaga.get("aplicar"),
+                        "forma_contato": forma_contato,
                         "email_contato": vaga.get("email"),
                         "perfil_autor": vaga.get("perfil"),
                         "nome_autor": None,

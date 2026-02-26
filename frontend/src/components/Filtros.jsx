@@ -1,4 +1,6 @@
-export default function Filtros({ filtros, setFiltros }) {
+import { Filter, X } from 'lucide-react';
+
+export default function Filtros({ filtros, setFiltros, hideFonte = false }) {
   const handleChange = (campo, valor) => {
     setFiltros((prev) => ({
       ...prev,
@@ -10,41 +12,51 @@ export default function Filtros({ filtros, setFiltros }) {
     setFiltros({});
   };
 
+  const hasFilters = Object.keys(filtros).length > 0;
+
   return (
-    <div className="bg-white rounded-lg shadow p-4">
+    <div className="card">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-semibold text-gray-900">Filtros</h2>
-        <button
-          onClick={limparFiltros}
-          className="text-xs text-blue-600 hover:text-blue-800"
-        >
-          Limpar
-        </button>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-[var(--text-muted)]" />
+          <h2 className="font-semibold text-[var(--text-primary)]">Filtros</h2>
+        </div>
+        {hasFilters && (
+          <button
+            onClick={limparFiltros}
+            className="text-xs text-accent-primary hover:text-accent-primary/80 flex items-center gap-1"
+          >
+            <X className="w-3 h-3" />
+            Limpar
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
-        {/* Fonte */}
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Fonte</label>
-          <select
-            value={filtros.fonte || ''}
-            onChange={(e) => handleChange('fonte', e.target.value)}
-            className="w-full text-sm border rounded px-3 py-2"
-          >
-            <option value="">Todas</option>
-            <option value="indeed">Indeed</option>
-            <option value="linkedin_jobs">LinkedIn Vagas</option>
-            <option value="linkedin_posts">LinkedIn Posts</option>
-          </select>
-        </div>
+        {/* Fonte - esconde quando aba está selecionada */}
+        {!hideFonte && (
+          <div>
+            <label className="block text-sm text-[var(--text-secondary)] mb-1.5">Fonte</label>
+            <select
+              value={filtros.fonte || ''}
+              onChange={(e) => handleChange('fonte', e.target.value)}
+              className="select text-sm"
+            >
+              <option value="">Todas</option>
+              <option value="indeed">Indeed</option>
+              <option value="linkedin_jobs">LinkedIn Vagas</option>
+              <option value="linkedin_posts">LinkedIn Posts</option>
+            </select>
+          </div>
+        )}
 
         {/* Status */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Status</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1.5">Status</label>
           <select
             value={filtros.status || ''}
             onChange={(e) => handleChange('status', e.target.value)}
-            className="w-full text-sm border rounded px-3 py-2"
+            className="select text-sm"
           >
             <option value="">Todos</option>
             <option value="pendente">Pendente</option>
@@ -55,11 +67,11 @@ export default function Filtros({ filtros, setFiltros }) {
 
         {/* Modalidade */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Modalidade</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1.5">Modalidade</label>
           <select
             value={filtros.modalidade || ''}
             onChange={(e) => handleChange('modalidade', e.target.value)}
-            className="w-full text-sm border rounded px-3 py-2"
+            className="select text-sm"
           >
             <option value="">Todas</option>
             <option value="remoto">Remoto</option>
@@ -70,11 +82,11 @@ export default function Filtros({ filtros, setFiltros }) {
 
         {/* Inglês */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Inglês</label>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1.5">Inglês</label>
           <select
             value={filtros.requisito_ingles || ''}
             onChange={(e) => handleChange('requisito_ingles', e.target.value)}
-            className="w-full text-sm border rounded px-3 py-2"
+            className="select text-sm"
           >
             <option value="">Todos</option>
             <option value="nenhum">Nenhum</option>

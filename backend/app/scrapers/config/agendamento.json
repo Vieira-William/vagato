@@ -1,0 +1,11 @@
+{
+  "habilitado": true,
+  "horarios": [
+    {
+      "hora": 16,
+      "minuto": 30,
+      "ativo": true
+    }
+  ],
+  "auditar_apos_coleta": true
+}

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
+import { Briefcase, CheckCircle, XCircle, Loader2, RefreshCw, AlertTriangle, Coffee } from 'lucide-react';
 
 const CHECKS = [
   { id: 'api', label: 'Conectando ao servidor', endpoint: '/health' },
@@ -7,27 +8,55 @@ const CHECKS = [
   { id: 'stats', label: 'Carregando estatísticas', endpoint: '/stats/' },
 ];
 
-export default function LoadingScreen({ onComplete, onError }) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [status, setStatus] = useState(CHECKS.map(() => 'pending')); // pending, loading, success, error
-  const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [autoRetrying, setAutoRetrying] = useState(false);
+// Configurações de wake up automático
+const MAX_WAKE_ATTEMPTS = 12; // 12 tentativas = ~60 segundos (geralmente suficiente para Render)
+const WAKE_DELAY = 5000; // 5 segundos entre tentativas
+const WAKE_MESSAGES = [
+  'Acordando o servidor...',
+  'Backend está iniciando...',
+  'Aguarde, servidor dormindo...',
+  'Servidores gratuitos demoram um pouco...',
+  'Quase lá, servidor aquecendo...',
+  'Estabelecendo conexão...',
+];
 
-  const MAX_AUTO_RETRIES = 3;
-  const RETRY_DELAY = 5000; // 5 segundos entre tentativas
+export default function LoadingScreen({ onComplete, onError }) {
+  const [status, setStatus] = useState(CHECKS.map(() => 'pending'));
+  const [error, setError] = useState(null);
+  const [wakeAttempt, setWakeAttempt] = useState(0);
+  const [isWaking, setIsWaking] = useState(false);
+  const [wakeMessage, setWakeMessage] = useState('');
+
+  const wakeAttemptRef = useRef(0);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     runHealthChecks();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
+  // Atualiza mensagem de wake up periodicamente
+  useEffect(() => {
+    if (isWaking) {
+      const messageIndex = Math.floor(wakeAttempt / 2) % WAKE_MESSAGES.length;
+      setWakeMessage(WAKE_MESSAGES[messageIndex]);
+    }
+  }, [wakeAttempt, isWaking]);
+
   const runHealthChecks = async () => {
+    if (!isMountedRef.current) return;
+
     const newStatus = CHECKS.map(() => 'pending');
     setStatus(newStatus);
     setError(null);
 
     for (let i = 0; i < CHECKS.length; i++) {
-      setCurrentStep(i);
+      if (!isMountedRef.current) return;
+
       newStatus[i] = 'loading';
       setStatus([...newStatus]);
 
@@ -35,20 +64,39 @@ export default function LoadingScreen({ onComplete, onError }) {
         await api.get(CHECKS[i].endpoint);
         newStatus[i] = 'success';
         setStatus([...newStatus]);
+
+        // Reset wake attempts on success
+        wakeAttemptRef.current = 0;
+        setWakeAttempt(0);
+        setIsWaking(false);
+
         await new Promise(r => setTimeout(r, 300));
       } catch (err) {
         newStatus[i] = 'error';
         setStatus([...newStatus]);
 
-        // Auto-retry para erros de rede (backend pode estar acordando)
-        if (err.code === 'ERR_NETWORK' && retryCount < MAX_AUTO_RETRIES) {
-          setAutoRetrying(true);
-          setRetryCount(prev => prev + 1);
-          await new Promise(r => setTimeout(r, RETRY_DELAY));
-          setAutoRetrying(false);
-          return runHealthChecks(); // Tenta novamente
+        const isNetworkError = err.code === 'ERR_NETWORK';
+        const isServerSleeping = err.response?.status === 502 || err.response?.status === 503;
+        const shouldAutoRetry = isNetworkError || isServerSleeping;
+
+        // Auto wake-up: tenta acordar o servidor automaticamente
+        if (shouldAutoRetry && wakeAttemptRef.current < MAX_WAKE_ATTEMPTS) {
+          wakeAttemptRef.current += 1;
+          setWakeAttempt(wakeAttemptRef.current);
+          setIsWaking(true);
+
+          await new Promise(r => setTimeout(r, WAKE_DELAY));
+
+          if (isMountedRef.current) {
+            return runHealthChecks();
+          }
+          return;
         }
 
+        // Falhou após todas as tentativas
+        if (!isMountedRef.current) return;
+
+        setIsWaking(false);
         const errorInfo = {
           step: CHECKS[i].id,
           label: CHECKS[i].label,
@@ -56,6 +104,7 @@ export default function LoadingScreen({ onComplete, onError }) {
           message: err.response?.data?.detail || err.message,
           status: err.response?.status,
           suggestion: getSuggestion(CHECKS[i].id, err),
+          wasWaking: shouldAutoRetry,
         };
 
         setError(errorInfo);
@@ -65,100 +114,121 @@ export default function LoadingScreen({ onComplete, onError }) {
     }
 
     // Todos os checks passaram
-    setRetryCount(0);
+    if (!isMountedRef.current) return;
+
+    wakeAttemptRef.current = 0;
+    setWakeAttempt(0);
+    setIsWaking(false);
     await new Promise(r => setTimeout(r, 500));
     onComplete?.();
   };
 
   const getSuggestion = (checkId, err) => {
     if (err.code === 'ERR_NETWORK') {
-      return 'CORS_OR_NETWORK: Verificar se backend está rodando e CORS configurado para origem do frontend';
+      return 'Não foi possível conectar ao servidor após várias tentativas. Verifique sua conexão ou tente novamente.';
     }
 
     switch (checkId) {
       case 'api':
         if (err.response?.status === 502 || err.response?.status === 503) {
-          return 'BACKEND_SLEEPING: Serviço pode estar dormindo no Render. Aguarde 30-50s e recarregue.';
+          return 'O servidor não conseguiu iniciar. Tente novamente em alguns minutos.';
         }
-        return 'API_UNREACHABLE: Verificar URL da API e se o serviço está ativo no Render';
+        return 'Servidor não está respondendo.';
       case 'database':
         if (err.response?.status === 500) {
-          return 'DATABASE_ERROR: Verificar DATABASE_URL no Render e se Neon está ativo';
+          return 'Erro ao conectar com o banco de dados.';
         }
-        return 'DATABASE_QUERY_FAILED: Verificar conexão com PostgreSQL';
+        return 'Falha ao consultar banco de dados.';
       case 'stats':
-        return 'STATS_ENDPOINT_ERROR: Verificar rota /api/stats/ no backend';
+        return 'Erro ao carregar estatísticas.';
       default:
-        return 'UNKNOWN_ERROR: ' + err.message;
+        return err.message;
     }
   };
 
   const retry = () => {
+    wakeAttemptRef.current = 0;
+    setWakeAttempt(0);
     setError(null);
+    setIsWaking(false);
     setStatus(CHECKS.map(() => 'pending'));
-    setCurrentStep(0);
     runHealthChecks();
   };
 
   const getStatusIcon = (s) => {
     switch (s) {
       case 'pending':
-        return <div className="w-5 h-5 rounded-full border-2 border-gray-300" />;
+        return <div className="w-5 h-5 rounded-full border-2 border-[var(--border)]" />;
       case 'loading':
-        return (
-          <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
-        );
+        return <Loader2 className="w-5 h-5 text-accent-primary animate-spin" />;
       case 'success':
-        return (
-          <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        );
+        return <CheckCircle className="w-5 h-5 text-accent-success" />;
       case 'error':
-        return (
-          <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-        );
+        return <XCircle className="w-5 h-5 text-accent-danger" />;
+      default:
+        return null;
     }
   };
 
+  const progressPercent = (wakeAttempt / MAX_WAKE_ATTEMPTS) * 100;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo/Título */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 mb-4 shadow-lg shadow-indigo-200">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent-primary mb-4 shadow-lg shadow-accent-primary/20">
+            <Briefcase className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Vagas UX Platform</h1>
-          <p className="text-gray-500 mt-1">Iniciando aplicação...</p>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Vagas UX Platform</h1>
+          <p className="text-[var(--text-secondary)] mt-1">
+            {isWaking ? wakeMessage : 'Iniciando aplicação...'}
+          </p>
         </div>
 
         {/* Card de Status */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-6">
+        <div className="card">
+          {/* Wake up indicator */}
+          {isWaking && (
+            <div className="mb-4 p-3 bg-accent-warning/10 border border-accent-warning/20 rounded-xl">
+              <div className="flex items-center gap-3">
+                <Coffee className="w-5 h-5 text-accent-warning animate-pulse" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-accent-warning">
+                    Servidor dormindo
+                  </p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                    Tentativa {wakeAttempt} de {MAX_WAKE_ATTEMPTS} • ~{Math.max(0, (MAX_WAKE_ATTEMPTS - wakeAttempt) * 5)}s restantes
+                  </p>
+                </div>
+              </div>
+              {/* Progress bar do wake up */}
+              <div className="mt-3 h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-accent-warning transition-all duration-500 ease-out rounded-full"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Passos */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {CHECKS.map((check, i) => (
               <div
                 key={check.id}
                 className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${
-                  status[i] === 'loading' ? 'bg-indigo-50' :
-                  status[i] === 'error' ? 'bg-red-50' :
-                  status[i] === 'success' ? 'bg-green-50' : 'bg-gray-50'
+                  status[i] === 'loading' ? 'bg-accent-primary/10 border border-accent-primary/20' :
+                  status[i] === 'error' ? 'bg-accent-danger/10 border border-accent-danger/20' :
+                  status[i] === 'success' ? 'bg-accent-success/10 border border-accent-success/20' :
+                  'bg-[var(--bg-tertiary)] border border-transparent'
                 }`}
               >
                 {getStatusIcon(status[i])}
                 <span className={`flex-1 text-sm font-medium ${
-                  status[i] === 'loading' ? 'text-indigo-700' :
-                  status[i] === 'error' ? 'text-red-700' :
-                  status[i] === 'success' ? 'text-green-700' : 'text-gray-500'
+                  status[i] === 'loading' ? 'text-accent-primary' :
+                  status[i] === 'error' ? 'text-accent-danger' :
+                  status[i] === 'success' ? 'text-accent-success' : 'text-[var(--text-muted)]'
                 }`}>
                   {check.label}
                 </span>
@@ -166,12 +236,12 @@ export default function LoadingScreen({ onComplete, onError }) {
             ))}
           </div>
 
-          {/* Barra de Progresso */}
-          {!error && (
+          {/* Barra de Progresso geral - só mostra quando não tem erro e não está acordando */}
+          {!error && !isWaking && (
             <div className="mt-6">
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out"
+                  className="h-full bg-gradient-to-r from-accent-primary to-accent-purple transition-all duration-500 ease-out rounded-full"
                   style={{
                     width: `${((status.filter(s => s === 'success').length) / CHECKS.length) * 100}%`
                   }}
@@ -180,31 +250,27 @@ export default function LoadingScreen({ onComplete, onError }) {
             </div>
           )}
 
-          {/* Erro */}
+          {/* Erro - só mostra após esgotar tentativas */}
           {error && (
-            <div className="mt-6 p-4 bg-red-50 rounded-xl border border-red-100">
+            <div className="mt-6 p-4 bg-accent-danger/10 rounded-xl border border-accent-danger/20">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-accent-danger/20 flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 text-accent-danger" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-red-800">Falha: {error.label}</p>
-                  <p className="text-xs text-red-600 mt-1 break-words">{error.message}</p>
-                  <div className="mt-3 p-2 bg-red-100/50 rounded-lg">
-                    <p className="text-xs font-mono text-red-700 break-all">{error.suggestion}</p>
+                  <p className="text-sm font-semibold text-accent-danger">Falha: {error.label}</p>
+                  <p className="text-xs text-accent-danger/80 mt-1 break-words">{error.message}</p>
+                  <div className="mt-3 p-2 bg-[var(--bg-tertiary)] rounded-lg">
+                    <p className="text-xs text-[var(--text-muted)] break-all">{error.suggestion}</p>
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={retry}
-                className="mt-4 w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="mt-4 w-full py-2.5 px-4 bg-accent-primary hover:bg-accent-primary/90 text-white text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+                <RefreshCw className="w-4 h-4" />
                 Tentar novamente
               </button>
             </div>
@@ -212,10 +278,12 @@ export default function LoadingScreen({ onComplete, onError }) {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-gray-400 mt-6">
-          {autoRetrying
-            ? `Servidor acordando... tentativa ${retryCount}/${MAX_AUTO_RETRIES}`
-            : 'Verificando conexões...'}
+        <p className="text-center text-xs text-[var(--text-muted)] mt-6">
+          {isWaking
+            ? 'Servidores gratuitos do Render dormem após inatividade'
+            : error
+              ? 'Clique no botão acima para tentar novamente'
+              : 'Verificando conexões...'}
         </p>
       </div>
     </div>
