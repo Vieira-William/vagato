@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from sqlalchemy import text, inspect
 
 from .database import engine, Base
 from .api import vagas, stats, scraper, config, profile, search_urls
@@ -8,8 +9,55 @@ from .api import vagas, stats, scraper, config, profile, search_urls
 # Criar diretório data se não existir
 os.makedirs("data", exist_ok=True)
 
-# Criar tabelas no banco
+# Criar tabelas novas (não afeta tabelas já existentes)
 Base.metadata.create_all(bind=engine)
+
+# ── Migração automática: adiciona colunas que faltam nas tabelas existentes ──
+def _migrar_colunas():
+    """Detecta e adiciona colunas novas sem destruir dados existentes."""
+    inspector = inspect(engine)
+    is_sqlite = "sqlite" in str(engine.url)
+
+    for table in Base.metadata.sorted_tables:
+        nome_tabela = table.name
+        try:
+            colunas_existentes = {c["name"] for c in inspector.get_columns(nome_tabela)}
+        except Exception:
+            continue  # tabela ainda não existe, create_all vai criar
+
+        for col in table.columns:
+            if col.name in colunas_existentes:
+                continue  # já existe, pula
+
+            # Monta tipo SQL compatível
+            try:
+                tipo = col.type.compile(engine.dialect)
+            except Exception:
+                tipo = "TEXT"
+
+            default_sql = ""
+            if col.default is not None and col.default.is_scalar:
+                val = col.default.arg
+                if isinstance(val, bool):
+                    default_sql = f" DEFAULT {'1' if val else '0'}" if is_sqlite else f" DEFAULT {str(val).upper()}"
+                elif isinstance(val, str):
+                    default_sql = f" DEFAULT '{val}'"
+                elif val is not None:
+                    default_sql = f" DEFAULT {val}"
+
+            nullable_sql = "" if col.nullable else " NOT NULL" if not default_sql else ""
+            ddl = f'ALTER TABLE "{nome_tabela}" ADD COLUMN "{col.name}" {tipo}{default_sql}{nullable_sql}'
+
+            try:
+                with engine.begin() as conn:
+                    conn.execute(text(ddl))
+                print(f"[Migração] ✅ {nome_tabela}.{col.name} adicionado")
+            except Exception as e:
+                # Ignora erros de "coluna já existe" (race condition)
+                if "already exists" not in str(e).lower() and "duplicate column" not in str(e).lower():
+                    print(f"[Migração] ⚠️  {nome_tabela}.{col.name}: {e}")
+
+_migrar_colunas()
 
 app = FastAPI(
     title="Vagas UX Platform API",
