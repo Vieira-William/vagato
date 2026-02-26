@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from datetime import date, datetime
-from typing import Optional, List
+from typing import Optional, List, Any
 from enum import Enum
 
 
@@ -80,15 +80,63 @@ class MomentoEmpresaEnum(str, Enum):
     nao_especificado = "nao_especificado"
 
 
+def _safe_enum(enum_class, value):
+    """Converte valor para enum com segurança. Retorna None se inválido."""
+    if value is None:
+        return None
+    try:
+        return enum_class(value)
+    except (ValueError, KeyError):
+        return None
+
+
 class VagaBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     titulo: str = Field(..., max_length=200)
     empresa: Optional[str] = Field(None, max_length=100)
     tipo_vaga: Optional[str] = Field(None, max_length=50)
-    fonte: Optional[FonteEnum] = None  # Pode ser nulo para vagas antigas
+    fonte: Optional[FonteEnum] = None
     link_vaga: Optional[str] = None
     localizacao: Optional[str] = Field(None, max_length=100)
     modalidade: Optional[ModalidadeEnum] = ModalidadeEnum.nao_especificado
     requisito_ingles: Optional[InglesEnum] = InglesEnum.nao_especificado
+
+    @field_validator('fonte', mode='before')
+    @classmethod
+    def validate_fonte(cls, v): return _safe_enum(FonteEnum, v)
+
+    @field_validator('modalidade', mode='before')
+    @classmethod
+    def validate_modalidade(cls, v): return _safe_enum(ModalidadeEnum, v) or ModalidadeEnum.nao_especificado
+
+    @field_validator('requisito_ingles', mode='before')
+    @classmethod
+    def validate_ingles(cls, v): return _safe_enum(InglesEnum, v) or InglesEnum.nao_especificado
+
+    @field_validator('forma_contato', mode='before')
+    @classmethod
+    def validate_forma_contato(cls, v): return _safe_enum(FormaContatoEnum, v)
+
+    @field_validator('nivel', mode='before')
+    @classmethod
+    def validate_nivel(cls, v): return _safe_enum(NivelEnum, v) or NivelEnum.nao_especificado
+
+    @field_validator('tipo_contrato', mode='before')
+    @classmethod
+    def validate_tipo_contrato(cls, v): return _safe_enum(TipoContratoEnum, v) or TipoContratoEnum.nao_especificado
+
+    @field_validator('carga_horaria', mode='before')
+    @classmethod
+    def validate_carga_horaria(cls, v): return _safe_enum(CargaHorariaEnum, v) or CargaHorariaEnum.nao_especificado
+
+    @field_validator('time_maturidade', mode='before')
+    @classmethod
+    def validate_maturidade(cls, v): return _safe_enum(MaturidadeTimeEnum, v) or MaturidadeTimeEnum.nao_especificado
+
+    @field_validator('momento_empresa', mode='before')
+    @classmethod
+    def validate_momento(cls, v): return _safe_enum(MomentoEmpresaEnum, v) or MomentoEmpresaEnum.nao_especificado
     forma_contato: Optional[FormaContatoEnum] = None
     email_contato: Optional[str] = Field(None, max_length=100)
     perfil_autor: Optional[str] = Field(None, max_length=200)
