@@ -511,6 +511,7 @@ curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagas-ux-platform/ma
 | Fev/2026 | Auditoria durando 1 segundo | Timeout fake em vez de SSE real | Conectar ao endpoint SSE real |
 | Fev/2026 | Schema DB com colunas faltando | Modelo alterado sem migração | Deletar DB e recriar via `create_all()` |
 | 26/02/2026 | Deploy falhando no Render | `pdfplumber` e `requests` fora do requirements.txt | Adicionar ao requirements.txt |
+| 26/02/2026 | Deploy falhando no Render | `python-multipart` faltando (necessário para UploadFile do FastAPI) | Adicionar ao requirements.txt |
 
 ---
 
