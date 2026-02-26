@@ -90,6 +90,22 @@ def _safe_enum(enum_class, value):
         return None
 
 
+def _safe_list(value) -> list:
+    """Converte string JSON ou None para lista. SQLite armazena JSON como texto."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        import json
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, ValueError):
+            return []
+    return []
+
+
 class VagaBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -137,6 +153,15 @@ class VagaBase(BaseModel):
     @field_validator('momento_empresa', mode='before')
     @classmethod
     def validate_momento(cls, v): return _safe_enum(MomentoEmpresaEnum, v) or MomentoEmpresaEnum.nao_especificado
+
+    @field_validator(
+        'skills_obrigatorias', 'skills_desejaveis', 'beneficios',
+        'responsabilidades', 'requisitos_obrigatorios', 'requisitos_desejaveis',
+        'processo_seletivo',
+        mode='before'
+    )
+    @classmethod
+    def validate_listas(cls, v): return _safe_list(v)
     forma_contato: Optional[FormaContatoEnum] = None
     email_contato: Optional[str] = Field(None, max_length=100)
     perfil_autor: Optional[str] = Field(None, max_length=200)

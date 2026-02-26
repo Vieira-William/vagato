@@ -81,7 +81,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [filtros, setFiltros] = useState({});
   const [activeTab, setActiveTab] = useState('all');
-  const [periodo, setPeriodo] = useState(30);
+  const [periodo, setPeriodo] = useState(null);
   const [busca, setBusca] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [dateRange, setDateRange] = useState(null);
@@ -374,7 +374,7 @@ export default function Dashboard() {
               className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-tertiary)] rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
             >
               <Calendar className="w-3.5 h-3.5" />
-              <span>{dateRange ? 'Personalizado' : (PERIODOS.find(p => p.value === periodo)?.label || 'Último mês')}</span>
+              <span>{dateRange ? 'Personalizado' : (PERIODOS.find(p => p.value === periodo)?.label || 'Todo período')}</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${showPeriodoDropdown ? 'rotate-180' : ''}`} />
             </button>
 
