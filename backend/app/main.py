@@ -60,25 +60,25 @@ def _migrar_colunas():
 _migrar_colunas()
 
 
-# ── Migração: Corrige valores NULL em campos que não devem ser NULL ──
-def _corrigir_valores_null():
-    """Atualiza valores NULL em campos críticos para evitar erros de serialização."""
+# ── Migração: Limpa valores inválidos de fonte (gerados por migração anterior incorreta) ──
+def _corrigir_fonte_invalida():
+    """Remove valores inválidos de 'fonte' que não existem no FonteEnum.
+    'fonte' é Optional na schema, então NULL é aceito. Só 'indeed', 'linkedin_jobs'
+    e 'linkedin_posts' são válidos. Qualquer outro valor causa 500 no Pydantic.
+    """
     try:
         with engine.begin() as conn:
-            # Se fonte for NULL, define como 'nao_especificado' ou 'indeed' como fallback
-            # Mantém registros que têm altre colunas para tentar inferir a fonte
             conn.execute(text("""
                 UPDATE "vagas"
-                SET fonte = 'nao_especificado'
-                WHERE fonte IS NULL
+                SET fonte = NULL
+                WHERE fonte NOT IN ('indeed', 'linkedin_jobs', 'linkedin_posts')
+                  AND fonte IS NOT NULL
             """))
-            print("[Migração] ✅ Corrigidos valores NULL em 'fonte'")
+            print("[Migração] ✅ Valores inválidos de 'fonte' revertidos para NULL")
     except Exception as e:
-        # Silenciosamente ignora se já foi executado
-        if "UPDATE" not in str(e):
-            print(f"[Migração] ℹ️  Valores de fonte já corrigidos: {e}")
+        print(f"[Migração] ℹ️  Migração fonte: {e}")
 
-_corrigir_valores_null()
+_corrigir_fonte_invalida()
 
 
 app = FastAPI(
@@ -160,3 +160,50 @@ def root():
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/api/debug/vagas")
+def debug_vagas():
+    """Endpoint temporário para diagnosticar o erro 500 em /api/vagas/. Remover após debug."""
+    from .database import get_db
+    from . import models
+    import traceback
+
+    db = next(get_db())
+    resultado = {}
+    try:
+        # 1. Conta total
+        resultado["total"] = db.query(models.Vaga).count()
+
+        # 2. Busca 1 vaga sem serialização Pydantic
+        vaga = db.query(models.Vaga).first()
+        if vaga:
+            resultado["primeira_vaga_raw"] = {
+                "id": vaga.id,
+                "titulo": vaga.titulo,
+                "fonte": vaga.fonte,
+                "status": vaga.status,
+                "modalidade": vaga.modalidade,
+                "nivel": getattr(vaga, "nivel", "COLUNA_NAO_EXISTE"),
+                "score_compatibilidade": getattr(vaga, "score_compatibilidade", "COLUNA_NAO_EXISTE"),
+                "is_destaque": getattr(vaga, "is_destaque", "COLUNA_NAO_EXISTE"),
+                "is_favorito": getattr(vaga, "is_favorito", "COLUNA_NAO_EXISTE"),
+                "skills_obrigatorias": getattr(vaga, "skills_obrigatorias", "COLUNA_NAO_EXISTE"),
+                "registro_bruto_uuid": getattr(vaga, "registro_bruto_uuid", "COLUNA_NAO_EXISTE"),
+            }
+
+        # 3. Tenta serialização Pydantic explicitamente
+        from . import schemas
+        try:
+            schemas.VagaResponse.model_validate(vaga, from_attributes=True)
+            resultado["pydantic_ok"] = True
+        except Exception as e:
+            resultado["pydantic_erro"] = str(e)
+
+    except Exception as e:
+        resultado["erro_sqlalchemy"] = str(e)
+        resultado["traceback"] = traceback.format_exc()
+    finally:
+        db.close()
+
+    return resultado
