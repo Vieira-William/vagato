@@ -1,21 +1,16 @@
 import { useState } from 'react';
 import { vagasService } from '../services/api';
+import ErrorBoundary from './common/ErrorBoundary';
 import {
-  Building2,
-  MapPin,
-  Globe,
-  Home,
   ExternalLink,
   Mail,
   Star,
-  DollarSign,
   MessageCircle,
   Linkedin,
   Heart,
   Info,
   Zap,
   ToggleLeft,
-  ToggleRight,
   Check,
   X,
   Phone,
@@ -25,7 +20,8 @@ import {
   Target,
   Briefcase,
   Sparkles,
-  Copy
+  Copy,
+  AlignLeft
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════
@@ -282,10 +278,11 @@ function ScoreBreakdown({ score, breakdown, isDestaque }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// MAIN VAGACARD COMPONENT
+// MAIN// VAGACARD COMPONENT - Principal
 // ═══════════════════════════════════════════════════════════════════
 
-export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compact = false }) {
+function VagaCardBase({
+  vaga, onStatusChange, onFavoritoChange, compact = false }) {
   const [status, setStatus] = useState(vaga.status);
   const [isFavorito, setIsFavorito] = useState(vaga.is_favorito || false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
@@ -582,74 +579,96 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
         </div>
       )}
 
-      {/* ═══ NOVO: EXPERIENCIA EXPANDIDA (RESPONSABILIDADES E REQUISITOS) ═══ */}
-      {((vaga.responsabilidades && vaga.responsabilidades.length > 0) || (vaga.requisitos_obrigatorios && vaga.requisitos_obrigatorios.length > 0)) && (
-        <div className="mb-3">
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDetails(!showDetails); }}
-            className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-accent-primary transition-colors"
-          >
-            {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            {showDetails ? 'Menos detalhes' : 'Ver mais detalhes da posição'}
-          </button>
+      {/* ═══ EXPERIENCIA EXPANDIDA UNIVERSAL (RESPONSABILIDADES, REQUISITOS, DESCRIÇÃO OU FALLBACK) ═══ */}
+      <div className="mb-3">
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDetails(!showDetails); }}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-accent-primary transition-colors"
+        >
+          {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {showDetails ? 'Menos detalhes' : 'Ver mais detalhes da posição'}
+        </button>
 
-          {showDetails && (
-            <div className="mt-2.5 space-y-3 bg-[var(--bg-secondary)] p-3 rounded-lg border border-[var(--border)]/70 text-[11px]">
+        {showDetails && (
+          <div className="mt-2.5 space-y-3 bg-[var(--bg-secondary)] p-3 rounded-lg border border-[var(--border)]/70 text-[11px]">
 
-              {/* Responsabilidades */}
-              {vaga.responsabilidades && vaga.responsabilidades.length > 0 && (
-                <div>
-                  <h4 className="flex items-center gap-1.5 font-bold mb-1.5 text-[var(--text-secondary)]">
-                    <Briefcase className="w-3 h-3 text-accent-primary" />
-                    Principais Responsabilidades
-                  </h4>
-                  <ul className="space-y-1 text-[var(--text-muted)]">
-                    {vaga.responsabilidades.slice(0, 3).map((item, idx) => (
-                      <li key={idx} className="flex gap-1.5 leading-snug">
-                        <span className="text-accent-primary/60 shrink-0 mt-[2px]">•</span> <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+            {/* Responsabilidades */}
+            {vaga.responsabilidades && vaga.responsabilidades.length > 0 && (
+              <div>
+                <h4 className="flex items-center gap-1.5 font-bold mb-1.5 text-[var(--text-secondary)]">
+                  <Briefcase className="w-3 h-3 text-accent-primary" />
+                  Principais Responsabilidades
+                </h4>
+                <ul className="space-y-1 text-[var(--text-muted)]">
+                  {vaga.responsabilidades.slice(0, 3).map((item, idx) => (
+                    <li key={idx} className="flex gap-1.5 leading-snug">
+                      <span className="text-accent-primary/60 shrink-0 mt-[2px]">•</span> <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Requisitos */}
+            {vaga.requisitos_obrigatorios && vaga.requisitos_obrigatorios.length > 0 && (
+              <div>
+                <h4 className="flex items-center gap-1.5 font-bold mb-1.5 text-[var(--text-secondary)]">
+                  <Target className="w-3 h-3 text-accent-warning" />
+                  Requisitos Essenciais
+                </h4>
+                <ul className="space-y-1 text-[var(--text-muted)]">
+                  {vaga.requisitos_obrigatorios.slice(0, 3).map((item, idx) => (
+                    <li key={idx} className="flex gap-1.5 leading-snug">
+                      <span className="text-accent-warning/60 shrink-0 mt-[2px]">•</span> <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Descrição Completa (Fallback se não houver Requisitos separados, ou Sempre) */}
+            {vaga.descricao_completa && !(vaga.responsabilidades?.length > 0 && vaga.requisitos_obrigatorios?.length > 0) && (
+              <div>
+                <h4 className="flex items-center gap-1.5 font-bold mb-1.5 text-[var(--text-secondary)]">
+                  <AlignLeft className="w-3 h-3 text-[var(--text-muted)]" />
+                  Descrição Original da Vaga
+                </h4>
+                <div className="text-[var(--text-muted)] leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                  {vaga.descricao_completa}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Requisitos */}
-              {vaga.requisitos_obrigatorios && vaga.requisitos_obrigatorios.length > 0 && (
-                <div>
-                  <h4 className="flex items-center gap-1.5 font-bold mb-1.5 text-[var(--text-secondary)]">
-                    <Target className="w-3 h-3 text-accent-warning" />
-                    Requisitos Essenciais
-                  </h4>
-                  <ul className="space-y-1 text-[var(--text-muted)]">
-                    {vaga.requisitos_obrigatorios.slice(0, 3).map((item, idx) => (
-                      <li key={idx} className="flex gap-1.5 leading-snug">
-                        <span className="text-accent-warning/60 shrink-0 mt-[2px]">•</span> <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            {/* Empty State: Scraper retornou nulo (Vaga Fantasma) */}
+            {!vaga.descricao_completa && !(vaga.responsabilidades?.length > 0) && !(vaga.requisitos_obrigatorios?.length > 0) && (
+              <div className="flex flex-col items-center justify-center py-4 px-2 text-center">
+                <Info className="w-5 h-5 text-[var(--text-muted)] opacity-50 mb-2" />
+                <p className="text-[var(--text-muted)] opacity-80 leading-relaxed max-w-[90%]">
+                  Nenhum texto descritivo captado para este card.<br />
+                  <span className="opacity-70 mt-1 block">Se isso for um Post do LinkedIn, abra o link original na listagem de botões abaixo para detalhes contextuais.</span>
+                </p>
+              </div>
+            )}
 
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* ═══ ACTIONS: Status Toggle + CTAs ═══ */}
-      <div className="flex items-center justify-between mt-auto pt-3 border-t border-[var(--border)]">
+      <div className="flex items-center justify-between mt-auto pt-3 border-t border-[var(--border)] gap-2">
         {/* Left side: Status Toggle + Post Original Link */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <StatusToggle status={status} onChange={handleStatusChange} disabled={isTogglingStatus} />
 
-          {/* Link para o post original (para verificação) */}
-          {(hasPostOriginal || (isLinkedInPost && hasPerfil)) && (
+          {/* Link para o post/vaga original (para verificação) */}
+          {(hasPostOriginal || hasLink) && (
             <a
-              href={hasPostOriginal || vaga.perfil_autor || vaga.contato_linkedin}
+              href={vaga.link_post_original || vaga.link_vaga}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
               className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all opacity-50 hover:opacity-100"
-              title="Ver post original"
+              title={hasPostOriginal ? "Ver post original" : "Ver vaga original"}
             >
               <Link2 className="w-3.5 h-3.5" />
             </a>
@@ -657,17 +676,16 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
         </div>
 
         {/* CTA Buttons - Ghost/Minimal style */}
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-1.5 justify-end ml-auto shrink-0">
 
-          {/* BOTÃO GERAR PITCH IA (MÁGICA) */}
-          {(hasWhatsApp || hasEmail || isLinkedInPost || hasPerfil || (vaga.como_aplicar === 'dm') || (vaga.como_aplicar === 'email')) && (
+          {/* BOTÃO GERAR PITCH IA (ícone) — aparece sempre que há um contato */}
+          {(hasWhatsApp || hasEmail || isLinkedInPost || hasPerfil || hasLink || (vaga.como_aplicar === 'dm') || (vaga.como_aplicar === 'email')) && (
             <button
               onClick={handleGeneratePitch}
-              title="Gerar Copy Contextualizada para DM usando IA"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-accent-purple/10 border border-accent-purple/30 text-accent-purple hover:bg-accent-purple hover:text-white transition-all group shadow-sm hover:shadow-accent-purple/20"
+              title="Gerar Cold Message com IA"
+              className="p-1.5 rounded-lg bg-accent-purple/10 border border-accent-purple/30 text-accent-purple hover:bg-accent-purple hover:text-white transition-all group shadow-sm hover:shadow-accent-purple/20"
             >
-              <Sparkles className="w-3.5 h-3.5 group-hover:animate-pulse" />
-              Pitch
+              <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
             </button>
           )}
 
@@ -718,10 +736,11 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all"
+              className="flex items-center justify-center gap-1.5 p-1.5 xl:px-3 xl:py-1.5 rounded-lg text-xs font-medium border border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white transition-all shadow-sm"
+              title="WhatsApp"
             >
-              WhatsApp
-              <Phone className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">WhatsApp</span>
+              <Phone className="w-3.5 h-3.5 shrink-0" />
             </a>
           )}
 
@@ -732,10 +751,11 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-accent-primary text-accent-primary hover:bg-accent-primary hover:text-white transition-all"
+              className="flex items-center justify-center gap-1.5 p-1.5 xl:px-3 xl:py-1.5 rounded-lg text-xs font-medium border border-accent-primary text-accent-primary hover:bg-accent-primary hover:text-white transition-all shadow-sm"
+              title="Aplicar"
             >
-              Aplicar
-              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Aplicar</span>
+              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
             </a>
           )}
 
@@ -747,10 +767,11 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#0A66C2] text-[#0A66C2] hover:bg-[#0A66C2] hover:text-white transition-all"
+              className="flex items-center justify-center gap-1.5 p-1.5 xl:px-3 xl:py-1.5 rounded-lg text-xs font-medium border border-[#0A66C2] text-[#0A66C2] hover:bg-[#0A66C2] hover:text-white transition-all shadow-sm"
+              title="Enviar DM"
             >
-              Enviar DM
-              <MessageCircle className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Enviar DM</span>
+              <MessageCircle className="w-3.5 h-3.5 shrink-0" />
             </a>
           )}
 
@@ -759,10 +780,11 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
             <a
               href={`mailto:${vaga.contato_email || vaga.email_contato}`}
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-accent-primary text-accent-primary hover:bg-accent-primary hover:text-white transition-all"
+              className="flex items-center justify-center gap-1.5 p-1.5 xl:px-3 xl:py-1.5 rounded-lg text-xs font-medium border border-accent-primary text-accent-primary hover:bg-accent-primary hover:text-white transition-all shadow-sm"
+              title="Enviar Email"
             >
-              Enviar Email
-              <Mail className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Enviar Email</span>
+              <Mail className="w-3.5 h-3.5 shrink-0" />
             </a>
           )}
 
@@ -776,50 +798,60 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
       </div>
 
       {/* ═══ PITCH MODAL (IA) ═══ */}
-      {showPitchModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm cursor-default" onClick={(e) => { e.stopPropagation(); setShowPitchModal(false); }}>
-          <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[var(--border)] bg-[var(--bg-tertiary)]/50">
-              <div className="flex items-center gap-2 text-accent-purple">
-                <Sparkles className="w-5 h-5" />
-                <h3 className="font-bold text-[var(--text-primary)]">Cold Message (IA)</h3>
+      {
+        showPitchModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm cursor-default" onClick={(e) => { e.stopPropagation(); setShowPitchModal(false); }}>
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-[var(--border)] bg-[var(--bg-tertiary)]/50">
+                <div className="flex items-center gap-2 text-accent-purple">
+                  <Sparkles className="w-5 h-5" />
+                  <h3 className="font-bold text-[var(--text-primary)]">Cold Message (IA)</h3>
+                </div>
+                <button onClick={() => setShowPitchModal(false)} className="p-1 hover:bg-[var(--bg-primary)] rounded-md text-[var(--text-muted)] transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button onClick={() => setShowPitchModal(false)} className="p-1 hover:bg-[var(--bg-primary)] rounded-md text-[var(--text-muted)] transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <div className="p-5">
-              <p className="text-xs text-[var(--text-muted)] mb-4">
-                A Inteligência Artificial uniu os requisitos desta vaga às skills do seu Perfil ativo para criar uma abordagem quente focada no recrutador.
-              </p>
+              <div className="p-5">
+                <p className="text-xs text-[var(--text-muted)] mb-4">
+                  A Inteligência Artificial uniu os requisitos desta vaga às skills do seu Perfil ativo para criar uma abordagem quente focada no recrutador.
+                </p>
 
-              {loadingPitch ? (
-                <div className="flex flex-col items-center justify-center py-8 text-[var(--text-muted)]">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent-purple border-t-transparent mb-3"></div>
-                  <p className="text-sm font-medium">Analisando fit e escrevendo pitch...</p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <div className="bg-[var(--bg-primary)] p-4 rounded-lg border border-[var(--border)] text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed shadow-inner max-h-[40vh] overflow-y-auto">
-                    {pitch}
+                {loadingPitch ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-[var(--text-muted)]">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent-purple border-t-transparent mb-3"></div>
+                    <p className="text-sm font-medium">Analisando fit e escrevendo pitch...</p>
                   </div>
-                  <button
-                    onClick={copiarPitch}
-                    disabled={!pitch || pitch.includes('Erro')}
-                    className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${pitchCopied ? 'bg-accent-success/20 text-accent-success' : 'bg-accent-purple text-white hover:bg-accent-purple/90 shadow-md hover:shadow-lg hover:shadow-accent-purple/20'
-                      }`}
-                  >
-                    {pitchCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {pitchCopied ? 'Copiada para a Área de Transferência!' : 'Copiar Mensagem'}
-                  </button>
-                </div>
-              )}
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="bg-[var(--bg-primary)] p-4 rounded-lg border border-[var(--border)] text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed shadow-inner max-h-[40vh] overflow-y-auto">
+                      {pitch}
+                    </div>
+                    <button
+                      onClick={copiarPitch}
+                      disabled={!pitch || pitch.includes('Erro')}
+                      className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${pitchCopied ? 'bg-accent-success/20 text-accent-success' : 'bg-accent-purple text-white hover:bg-accent-purple/90 shadow-md hover:shadow-lg hover:shadow-accent-purple/20'
+                        }`}
+                    >
+                      {pitchCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      {pitchCopied ? 'Copiada para a Área de Transferência!' : 'Copiar Mensagem'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-    </div>
+    </div >
+  );
+}
+
+export default function VagaCard(props) {
+  return (
+    <ErrorBoundary>
+      <VagaCardBase {...props} />
+    </ErrorBoundary>
   );
 }

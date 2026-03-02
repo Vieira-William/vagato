@@ -313,24 +313,47 @@ Se não for um currículo ou não contiver texto o suficiente, retorne a string 
         if not self.enabled:
             return None
 
-        prompt = f"""Você é um {perfil.get('cargo', 'Product Designer')} excepcional e proativo. Crie UMA mensagem curta de "Cold message" (para LinkedIn DM ou e-mail) focada nesta vaga.
+        # Nome do recrutador
+        contato_nome = vaga.get('contato_nome', '')
+        primeiro_nome = contato_nome.split()[0] if contato_nome else ''
+        
+        # Saudação personalizada
+        saudacao = f"Olá {primeiro_nome}!" if primeiro_nome else "Olá!"
+
+        # Montar histórico profissional para contexto
+        experiencias = perfil.get('experiencias', [])
+        historico_texto = ""
+        if experiencias:
+            partes = []
+            for exp in experiencias[:3]:
+                empresa = exp.get('empresa', '')
+                cargo = exp.get('cargo', '')
+                destaques = exp.get('destaques', [])
+                dest_txt = '; '.join(destaques[:2]) if destaques else ''
+                partes.append(f"- {cargo} na {empresa}: {dest_txt}")
+            historico_texto = "\n".join(partes)
+
+        prompt = f"""Você é {perfil.get('nome', 'um candidato')} — {perfil.get('cargo', 'Product Designer')} sênior com {perfil.get('experiencia_anos', 18)} anos de experiência. Crie UMA cold message (para LinkedIn DM ou e-mail) focada nesta vaga.
 
 Regras INEGOCIÁVEIS:
-1. Comece com "Olá!". Seja direto, muito natural, humano e confiante. Nada de jargões robóticos.
-2. Conecte rapidamente as SKILLS do seu perfil com a MISSÃO ou REQUISITOS da vaga. Mostre que você resolve a dor deles.
-3. Se a vaga cita uma Missão/Propósito específico, use isso a seu favor para gerar empatia.
-4. Termine com um Call to Action sutil (ex: convite para um bate-papo).
-5. Mantenha curtíssimo: sob 120 palavras.
-6. Retorne APENAS o texto livre da mensagem. Nem uma palavra a mais.
+1. COMECE EXATAMENTE com: "{saudacao}" — NUNCA mude essa saudação.
+2. Seja direto, muito natural, humano e confiante. Nada de jargões robóticos ou genéricos.
+3. OBRIGATÓRIO: Use 1-2 exemplos CONCRETOS do seu histórico profissional abaixo para mostrar fit. Cite a empresa real, o resultado real. Ex: "Na [Empresa], liderei [projeto] que resultou em [resultado]."
+4. Conecte seus exemplos reais com a MISSÃO ou REQUISITOS da vaga. Mostre que você já resolveu a dor deles antes.
+5. Se a vaga cita uma Missão/Propósito específico, use isso para gerar empatia genuína.
+6. Termine com um Call to Action sutil (ex: convite para um bate-papo rápido).
+7. Mantenha curtíssimo: máximo 120 palavras.
+8. Retorne APENAS o texto livre da mensagem. Nem uma palavra a mais.
 
 Vaga: {vaga.get('titulo')} na empresa {vaga.get('empresa', 'Não divulgada')}.
-Missão da empresa/vaga: {vaga.get('missao_vaga', '')}
+Missão da empresa/vaga: {vaga.get('missao_vaga', 'Não informada')}
 Responsabilidades: {', '.join(vaga.get('responsabilidades', [])[:3])}
 Requisitos: {', '.join(vaga.get('requisitos_obrigatorios', [])[:3])}
 
-Meu Perfil Real:
-Nível: {perfil.get('nivel')}
-Minhas Skills: {', '.join(perfil.get('skills', [])[:8])}
+MEU HISTÓRICO PROFISSIONAL REAL (use para dar exemplos concretos):
+{historico_texto if historico_texto else 'Não disponível — use apenas as skills.'}
+
+Minhas Skills: {', '.join(perfil.get('skills', [])[:10])}
 """
 
         try:

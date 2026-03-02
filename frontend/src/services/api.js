@@ -100,4 +100,9 @@ export const configService = {
   updateIAConfig: (data) => api.post('/config/ia/config', data),
 };
 
+export const calendarService = {
+  getAuthUrl: () => api.get('/calendar/auth'),
+  getEvents: () => api.get('/calendar/events'),
+};
+
 export default api;

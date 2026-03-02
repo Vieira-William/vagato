@@ -4,13 +4,10 @@ const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    // Verifica preferência salva ou do sistema
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme');
-      if (saved) return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      return localStorage.getItem('theme') || 'light';
     }
-    return 'dark';
+    return 'light';
   });
 
   useEffect(() => {
@@ -18,8 +15,10 @@ export function ThemeProvider({ children }) {
 
     if (theme === 'dark') {
       root.classList.add('dark');
+      console.log('ThemeContext: Added dark class');
     } else {
       root.classList.remove('dark');
+      console.log('ThemeContext: Removed dark class');
     }
 
     localStorage.setItem('theme', theme);

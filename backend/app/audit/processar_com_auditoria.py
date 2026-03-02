@@ -250,7 +250,7 @@ def processar_registro_com_auditoria(
     )
 
     db.add(vaga)
-    db.commit()
+    db.flush()
     db.refresh(vaga)
 
     transformacoes.append({
@@ -301,7 +301,7 @@ def _criar_auditoria(
         )
         db.add(auditoria)
 
-    db.commit()
+    db.flush()
 
 
 def _verificar_duplicata(
@@ -357,6 +357,7 @@ def processar_todos(
     fonte: Optional[str] = None,
     desde: Optional[str] = None,
     limite: int = None,
+    progress_callback=None,
 ) -> dict:
     """
     Processa todos os registros brutos pendentes.
@@ -365,6 +366,7 @@ def processar_todos(
         fonte: Filtrar por fonte (linkedin_posts, linkedin_jobs, indeed)
         desde: Data mínima de coleta (ISO format)
         limite: Limite de registros a processar
+        progress_callback: Função de callback para reportar progresso
 
     Returns:
         Estatísticas do processamento
@@ -412,6 +414,20 @@ def processar_todos(
         'motivos_descarte': {},
     }
 
+    # Se for 0 envia progress e sai
+    if total == 0:
+        if progress_callback:
+            progress_callback({
+                "progresso": 100,
+                "processados": 0,
+                "total": 0,
+                "message": "Nenhum registro a processar"
+            })
+        return stats
+
+    # Frequencia do log baseada no total de registros
+    freq = 50 if total > 500 else 10 if total > 50 else 5
+
     for i, registro in enumerate(registros, 1):
         vaga = processar_registro_com_auditoria(db, registro)
 
@@ -421,9 +437,21 @@ def processar_todos(
         else:
             stats['descartado'] += 1
 
-        # Progresso
-        if i % 50 == 0:
-            print(f"  Progresso: {i}/{total} ({i/total*100:.1f}%)")
+        # Progresso e Batch Commit
+        if i % freq == 0 or i == total:
+            db.commit()
+            
+            progresso_pct = int((i/total)*100)
+            print(f"  Progresso: {i}/{total} ({progresso_pct}%)")
+            if progress_callback:
+                progress_callback({
+                    "total": total,
+                    "processados": i,
+                    "vagas_criadas": stats['processado'],
+                    "descartados": stats['descartado'],
+                    "progresso": progresso_pct,
+                    "message": f"Auditando registros brutos... {i}/{total} ({progresso_pct}%)"
+                })
 
     # Conta motivos de descarte
     motivos = db.query(

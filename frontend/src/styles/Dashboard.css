@@ -1,0 +1,74 @@
+/* Soft UI Design System — Charts & Panels ☁️ */
+
+/* Soft Panel — substitui glass-panel */
+.glass-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-legacy);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.glass-panel-hover:hover {
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-2px);
+}
+
+/* Animações de Gráficos 🎬 */
+@keyframes chart-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-chart-reveal {
+  animation: chart-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Efeito de Gradiente Suave para StatCards */
+.gradient-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg,
+      transparent 0%,
+      rgba(79, 110, 247, 0.02) 30%,
+      rgba(79, 110, 247, 0.04) 50%,
+      rgba(79, 110, 247, 0.02) 70%,
+      transparent 100%);
+  transform: rotate(25deg);
+  animation: shimmer 4s infinite linear;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-50%) rotate(25deg);
+  }
+
+  100% {
+    transform: translateX(50%) rotate(25deg);
+  }
+}
+
+/* Tooltip Soft */
+.premium-tooltip {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-legacy) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-elevated) !important;
+  padding: 12px !important;
+}

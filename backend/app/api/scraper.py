@@ -200,52 +200,7 @@ def _processar_com_ia(vaga_dict: dict, extrator: AIExtractor, fonte: str) -> dic
     return vaga_atualizada
 
 
-# =====================
-# Endpoints POST legados — DEPRECATED
-# Usavam scrapers antigos sem pipeline de 2 etapas.
-# Redirecionam para v3 (streaming).
-# =====================
 
-@router.post("/indeed")
-def executar_scraper_indeed_deprecated():
-    """DEPRECATED: Use /stream/v3. Endpoint legado mantido por compatibilidade."""
-    logger.warning("⚠ DEPRECATED: POST /api/scraper/indeed chamado. Use GET /stream/v3")
-    return {"error": "Endpoint descontinuado. Use GET /api/scraper/stream/v3 para coletar vagas."}
-
-
-@router.post("/linkedin")
-def executar_scraper_linkedin_deprecated():
-    """DEPRECATED: Use /stream/v3. Endpoint legado mantido por compatibilidade."""
-    logger.warning("⚠ DEPRECATED: POST /api/scraper/linkedin chamado. Use GET /stream/v3")
-    return {"error": "Endpoint descontinuado. Use GET /api/scraper/stream/v3 para coletar vagas."}
-
-
-@router.post("/posts")
-def executar_scraper_posts_deprecated():
-    """DEPRECATED: Use /stream/v3. Endpoint legado mantido por compatibilidade."""
-    logger.warning("⚠ DEPRECATED: POST /api/scraper/posts chamado. Use GET /stream/v3")
-    return {"error": "Endpoint descontinuado. Use GET /api/scraper/stream/v3 para coletar vagas."}
-
-
-@router.post("/all")
-def executar_todos_scrapers_deprecated():
-    """DEPRECATED: Use /stream/v3. Endpoint legado mantido por compatibilidade."""
-    logger.warning("⚠ DEPRECATED: POST /api/scraper/all chamado. Use GET /stream/v3")
-    return {"error": "Endpoint descontinuado. Use GET /api/scraper/stream/v3 para coletar vagas."}
-
-
-@router.post("/test/extrair")
-def testar_extracao(texto: str, db: Session = Depends(get_db)):
-    """
-    Endpoint de teste para extração compacta de uma vaga.
-    Útil para debugging e ajuste de prompts.
-    """
-    extrator = get_extractor()
-    if not extrator.is_enabled():
-        raise HTTPException(status_code=503, detail="IA não configurada")
-
-    resultado = extrator.extrair_compacto(texto)
-    return {"extracao": resultado}
 
 
 def _send_event(event_type: str, data: dict):
@@ -253,36 +208,7 @@ def _send_event(event_type: str, data: dict):
     return f"data: {json.dumps({'type': event_type, **data})}\n\n"
 
 
-# =====================
-# Helpers legados removidos:
-# - _processar_vagas_com_progresso (usada apenas por v1/v2)
-# - _executar_scraper_com_timeout (usada apenas por v1)
-# - _executar_scraper_com_eventos (usada apenas por v1)
-# - _salvar_vagas (usada apenas pelos POST endpoints legados)
-# Todo código de coleta agora passa pelo v3 (2 etapas: coleta_bruta → analisar_brutos).
-# =====================
 
-
-@router.get("/stream")
-def stream_coleta_v1_deprecated():
-    """
-    DEPRECATED: Endpoint v1 legado. Redireciona para v3.
-    O v3 usa arquitetura de 2 etapas com todas as correções
-    (filtro UX por título, limpeza de empresa, dedup cross-source).
-    """
-    print("⚠ DEPRECATED: /api/scraper/stream (v1) chamado. Redirecionando para v3.")
-    return stream_coleta_v3()
-
-
-@router.get("/stream/v2")
-def stream_coleta_v2_deprecated():
-    """
-    DEPRECATED: Endpoint v2 legado. Redireciona para v3.
-    O v3 usa arquitetura de 2 etapas com todas as correções
-    (filtro UX por título, limpeza de empresa, dedup cross-source).
-    """
-    logger.warning("⚠ DEPRECATED: /api/scraper/stream/v2 chamado. Redirecionando para v3.")
-    return stream_coleta_v3()
 
 
 # =====================
@@ -291,11 +217,14 @@ def stream_coleta_v2_deprecated():
 # =====================
 
 @router.get("/stream/v3")
-def stream_coleta_v3():
+def stream_coleta_v3(ids: str = None, db: Session = Depends(get_db)):
     """
     Versão 3 com arquitetura de 2 etapas:
     1. Coleta TUDO sem filtro -> salva em arquivo JSON
     2. Analisa arquivo -> extrai vagas de UX/Produto -> salva no banco
+    
+    Se 'ids' for fornecido (CSV), processa apenas essas buscas.
+    Se não, processa todas as buscas ativas no banco.
     """
 
     def generate():
@@ -304,6 +233,19 @@ def stream_coleta_v3():
         total_novas = 0
         total_coletadas = 0
         last_event_time = time.time()
+
+        # Busca as URLs no banco
+        query = db.query(models.SearchUrl).filter(models.SearchUrl.ativo == True)
+        if ids:
+            id_list = [int(i.strip()) for i in ids.split(",") if i.strip().isdigit()]
+            if id_list:
+                query = query.filter(models.SearchUrl.id.in_(id_list))
+        
+        buscas = query.order_by(models.SearchUrl.ordem).all()
+        
+        if not buscas:
+            yield _send_event("complete", {"message": "Nenhuma busca ativa encontrada.", "stats": {"total_bruto": 0, "total_novas": 0}, "detalhes": {}})
+            return
 
         def make_callback(step_id):
             def callback(data):
@@ -328,179 +270,106 @@ def stream_coleta_v3():
 
         cleanup_chrome_processes()
 
-        # ===== INDEED (2 etapas) =====
-        yield _send_event("step_start", {
-            "step": "indeed",
-            "message": "Etapa 1: Coletando vagas do Indeed...",
-            "estimated_time": 30
-        })
+        for busca in buscas:
+            fonte = busca.fonte
+            nome_busca = busca.nome
+            url_custom = busca.url
+            step_id = f"busca_{busca.id}" # ID único para o frontend mapear se quiser
 
-        result_q_indeed = queue.Queue()
-        exc_q_indeed = queue.Queue()
+            yield _send_event("step_start", {
+                "step": step_id,
+                "message": f"Iniciando: {nome_busca} ({fonte})...",
+                "estimated_time": 45
+            })
 
-        def run_indeed():
-            try:
-                dados, arq = coletar_e_salvar_indeed(headless=True, progress_callback=make_callback("indeed"))
-                result_q_indeed.put((dados, arq))
-            except Exception as e:
-                exc_q_indeed.put(e)
+            result_q = queue.Queue()
+            exc_q = queue.Queue()
 
-        t = threading.Thread(target=run_indeed)
-        t.start()
-        start = time.time()
+            def run_coleta(f=fonte, u=url_custom, sid=step_id):
+                try:
+                    if f == "indeed":
+                        dados, arq = coletar_e_salvar_indeed(headless=True, progress_callback=make_callback(sid), custom_url=u)
+                    elif f == "linkedin_posts":
+                        dados, arq = coletar_e_salvar_posts(headless=True, progress_callback=make_callback(sid), custom_url=u)
+                    elif f == "linkedin_jobs":
+                        dados, arq = coletar_e_salvar_jobs(headless=True, progress_callback=make_callback(sid), custom_url=u)
+                    else:
+                        raise ValueError(f"Fonte desconhecida: {f}")
+                    result_q.put((f, dados, arq))
+                except Exception as e:
+                    exc_q.put(e)
 
-        for ev in wait_with_heartbeat(t, event_queue):
-            yield ev
+            t = threading.Thread(target=run_coleta)
+            t.start()
+            start_step = time.time()
 
-        if not exc_q_indeed.empty():
-            yield _send_event("step_error", {"step": "indeed", "message": str(exc_q_indeed.get())[:100]})
-        elif not result_q_indeed.empty():
-            dados, arq = result_q_indeed.get()
-            total_indeed = dados.get("total_vagas", 0)
-            yield _send_event("step_progress", {"step": "indeed", "message": f"{total_indeed} vagas coletadas. Filtrando...", "total_bruto": total_indeed, "progresso": 50})
+            for ev in wait_with_heartbeat(t, event_queue):
+                yield ev
 
-            res = analisar_arquivo_indeed(arq)
-            vagas = res.get("vagas", [])
+            if not exc_q.empty():
+                error_msg = str(exc_q.get())
+                yield _send_event("step_error", {"step": step_id, "message": error_msg[:100]})
+                continue
+            
+            if not result_q.empty():
+                f_type, dados, arq = result_q.get()
+                total_bruto_step = dados.get("total_vagas" if f_type != "linkedin_posts" else "total_posts", 0)
+                yield _send_event("step_progress", {"step": step_id, "message": f"{total_bruto_step} coletados. Analisando...", "total_bruto": total_bruto_step, "progresso": 50})
 
-            db = SessionLocal()
-            try:
-                novas, dups = 0, 0
-                for v in vagas:
-                    try:
-                        if crud.check_duplicate(db, v.get("titulo", ""), v.get("empresa"), v.get("link_vaga")):
-                            dups += 1
-                        else:
-                            crud.create_vaga(db, schemas.VagaCreate(**v))
-                            novas += 1
-                    except Exception as e:
-                        print(f"Erro ao inserir vaga indeed: {e}")
-                tempo = int(time.time() - start)
-                resultados["indeed"] = {"total_bruto": total_indeed, "vagas_ux": len(vagas), "novas": novas, "taxa": res.get("taxa_conversao")}
-                total_novas += novas
-                total_coletadas += total_indeed
-                yield _send_event("step_complete", {"step": "indeed", "stats": {"total_bruto": total_indeed, "vagas_ux": len(vagas), "novas": novas, "tempo": tempo, "taxa": res.get("taxa_conversao")}})
-            finally:
-                db.close()
+                # Etapa 2: Analisar
+                if f_type == "indeed":
+                    res = analisar_arquivo_indeed(arq)
+                elif f_type == "linkedin_posts":
+                    res = analisar_arquivo_posts(arq)
+                else: # linkedin_jobs
+                    res = analisar_arquivo_jobs(arq)
+                
+                vagas = res.get("vagas", [])
+                
+                # Inserção no banco
+                db_step = SessionLocal()
+                try:
+                    novas, dups = 0, 0
+                    for v in vagas:
+                        try:
+                            # Posts precisam de enriquecimento de IA
+                            if f_type == "linkedin_posts":
+                                v_proc = _processar_com_ia(v, get_extractor(), f_type)
+                                if not v_proc: continue
+                                v = v_proc
 
-        cleanup_chrome_processes()
-        time.sleep(1)
-
-        # ===== LINKEDIN POSTS (2 etapas) =====
-        yield _send_event("step_start", {
-            "step": "linkedin_posts",
-            "message": "Etapa 1: Coletando posts...",
-            "estimated_time": 60
-        })
-
-        result_q = queue.Queue()
-        exc_q = queue.Queue()
-
-        def run_posts():
-            try:
-                dados, arq = coletar_e_salvar_posts(headless=True, progress_callback=make_callback("linkedin_posts"))
-                result_q.put((dados, arq))
-            except Exception as e:
-                exc_q.put(e)
-
-        t = threading.Thread(target=run_posts)
-        t.start()
-        start = time.time()
-
-        for ev in wait_with_heartbeat(t, event_queue):
-            yield ev
-
-        if not exc_q.empty():
-            yield _send_event("step_error", {"step": "linkedin_posts", "message": str(exc_q.get())[:100]})
-        elif not result_q.empty():
-            dados, arq = result_q.get()
-            total_posts = dados.get("total_posts", 0)
-            yield _send_event("step_progress", {"step": "linkedin_posts", "message": f"{total_posts} posts coletados. Analisando...", "total_bruto": total_posts, "progresso": 50})
-
-            res = analisar_arquivo_posts(arq)
-            vagas = res.get("vagas", [])
-
-            db = SessionLocal()
-            try:
-                novas, dups = 0, 0
-                for v in vagas:
-                    try:
-                        # Processamento com IA (Enriquecimento e OCR se houver imagens)
-                        v_processada = _processar_com_ia(v, get_extractor(), "linkedin_posts")
-                        if not v_processada:
-                            continue # IA descartou
-                        v = v_processada
-
-                        if crud.check_duplicate(db, v.get("titulo", ""), v.get("empresa"), v.get("link_vaga"), v.get("perfil_autor")):
-                            dups += 1
-                        else:
-                            crud.create_vaga(db, schemas.VagaCreate(**v))
-                            novas += 1
-                    except Exception as e:
-                        print(f"Erro ao inserir vaga posts: {e}")
-                tempo = int(time.time() - start)
-                resultados["linkedin_posts"] = {"total_bruto": total_posts, "vagas_ux": len(vagas), "novas": novas, "taxa": res.get("taxa_conversao")}
-                total_novas += novas
-                total_coletadas += total_posts
-                yield _send_event("step_complete", {"step": "linkedin_posts", "stats": {"total_bruto": total_posts, "vagas_ux": len(vagas), "novas": novas, "tempo": tempo, "taxa": res.get("taxa_conversao")}})
-            finally:
-                db.close()
-
-        cleanup_chrome_processes()
-        time.sleep(1)
-
-        # ===== LINKEDIN JOBS (2 etapas) =====
-        yield _send_event("step_start", {"step": "linkedin_jobs", "message": "Etapa 1: Coletando vagas...", "estimated_time": 90})
-
-        result_q = queue.Queue()
-        exc_q = queue.Queue()
-
-        def run_jobs():
-            try:
-                dados, arq = coletar_e_salvar_jobs(headless=True, progress_callback=make_callback("linkedin_jobs"))
-                result_q.put((dados, arq))
-            except Exception as e:
-                exc_q.put(e)
-
-        t = threading.Thread(target=run_jobs)
-        t.start()
-        start = time.time()
-
-        for ev in wait_with_heartbeat(t, event_queue):
-            yield ev
-
-        if not exc_q.empty():
-            yield _send_event("step_error", {"step": "linkedin_jobs", "message": str(exc_q.get())[:100]})
-        elif not result_q.empty():
-            dados, arq = result_q.get()
-            total_jobs = dados.get("total_vagas", 0)
-            yield _send_event("step_progress", {"step": "linkedin_jobs", "message": f"{total_jobs} vagas coletadas. Filtrando...", "total_bruto": total_jobs, "progresso": 50})
-
-            res = analisar_arquivo_jobs(arq)
-            vagas = res.get("vagas", [])
-
-            db = SessionLocal()
-            try:
-                novas, dups = 0, 0
-                for v in vagas:
-                    try:
-                        if crud.check_duplicate(db, v.get("titulo", ""), v.get("empresa"), v.get("link_vaga")):
-                            dups += 1
-                        else:
-                            crud.create_vaga(db, schemas.VagaCreate(**v))
-                            novas += 1
-                    except Exception as e:
-                        print(f"Erro ao inserir vaga jobs: {e}")
-                tempo = int(time.time() - start)
-                resultados["linkedin_jobs"] = {"total_bruto": total_jobs, "vagas_ux": len(vagas), "novas": novas, "taxa": res.get("taxa_conversao")}
-                total_novas += novas
-                total_coletadas += total_jobs
-                yield _send_event("step_complete", {"step": "linkedin_jobs", "stats": {"total_bruto": total_jobs, "vagas_ux": len(vagas), "novas": novas, "tempo": tempo, "taxa": res.get("taxa_conversao")}})
-            finally:
-                db.close()
-
-        cleanup_chrome_processes()
+                            if crud.check_duplicate(db_step, v.get("titulo", ""), v.get("empresa"), v.get("link_vaga"), v.get("perfil_autor")):
+                                dups += 1
+                            else:
+                                crud.create_vaga(db_step, schemas.VagaCreate(**v))
+                                novas += 1
+                        except Exception as e:
+                            logger.error(f"Erro ao inserir vaga: {e}")
+                    
+                    tempo = int(time.time() - start_step)
+                    resultados[step_id] = {"total_bruto": total_bruto_step, "vagas_ux": len(vagas), "novas": novas, "taxa": res.get("taxa_conversao")}
+                    total_novas += novas
+                    total_coletadas += total_bruto_step
+                    
+                    yield _send_event("step_complete", {
+                        "step": step_id, 
+                        "stats": {
+                            "total_bruto": total_bruto_step, 
+                            "vagas_ux": len(vagas), 
+                            "novas": novas, 
+                            "tempo": tempo, 
+                            "taxa": res.get("taxa_conversao")
+                        }
+                    })
+                finally:
+                    db_step.close()
+            
+            cleanup_chrome_processes()
+            time.sleep(0.5)
 
         yield _send_event("complete", {"message": "Coleta finalizada!", "stats": {"total_bruto": total_coletadas, "total_novas": total_novas}, "detalhes": resultados})
+
+    return StreamingResponse(generate(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"})
 
     return StreamingResponse(generate(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"})
 
@@ -603,147 +472,190 @@ def reprocessar_vagas(
 
 # =====================
 # Endpoint de Auditoria com SSE
-# 3 etapas reais: consolidar gabarito → processar brutos → validar amostra com IA
+# A coleta v3 já cria as vagas. A auditoria apenas:
+# 1. Limpa duplicatas cross-source
+# 2. Valida amostra com IA
 # =====================
+
+def _remover_duplicatas_cross_source(progress_callback=None) -> dict:
+    """
+    Remove vagas duplicatas entre fontes (posts, jobs, indeed).
+    Mantém a vaga com mais dados preenchidos.
+    """
+    from sqlalchemy import func as sqlfunc
+    db = SessionLocal()
+    
+    try:
+        todas_vagas = db.query(models.Vaga).order_by(models.Vaga.id).all()
+        total = len(todas_vagas)
+        
+        if progress_callback:
+            progress_callback({
+                "message": f"Verificando {total} vagas para duplicatas...",
+                "progresso": 10,
+            })
+        
+        # Agrupa por título normalizado + empresa normalizada
+        def normalizar(texto):
+            if not texto:
+                return ""
+            import re
+            texto = texto.lower().strip()
+            texto = re.sub(r'[^\w\s]', '', texto)
+            texto = re.sub(r'\s+', ' ', texto)
+            return texto
+        
+        grupos = {}
+        for vaga in todas_vagas:
+            titulo_norm = normalizar(vaga.titulo)
+            empresa_norm = normalizar(vaga.empresa) if vaga.empresa else ""
+            
+            # Chave de agrupamento: título + empresa
+            chave = f"{titulo_norm}|{empresa_norm}"
+            if chave not in grupos:
+                grupos[chave] = []
+            grupos[chave].append(vaga)
+        
+        # Para cada grupo com mais de 1 vaga, manter a melhor
+        ids_remover = []
+        for chave, vagas_grupo in grupos.items():
+            if len(vagas_grupo) <= 1:
+                continue
+            
+            # Score de completude: mais campos preenchidos = melhor
+            def score_completude(v):
+                score = 0
+                if v.link_vaga: score += 3
+                if v.empresa: score += 2
+                if v.descricao_completa: score += 2
+                if v.missao_vaga: score += 1
+                if v.localizacao: score += 1
+                if v.email_contato: score += 1
+                if v.contato_nome: score += 1
+                if v.perfil_autor: score += 1
+                if v.skills_obrigatorias: score += 1
+                if v.responsabilidades: score += 1
+                if v.salario_min or v.salario_max: score += 1
+                if v.score_compatibilidade: score += 1
+                return score
+            
+            # Ordena por score (melhor primeiro), depois por id (mais antigo primeiro)
+            vagas_ordenadas = sorted(vagas_grupo, key=lambda v: (-score_completude(v), v.id))
+            
+            # Mantém o primeiro, remove o resto
+            for vaga_duplicada in vagas_ordenadas[1:]:
+                ids_remover.append(vaga_duplicada.id)
+        
+        if progress_callback:
+            progress_callback({
+                "message": f"Encontradas {len(ids_remover)} duplicatas para remover...",
+                "progresso": 60,
+            })
+        
+        # Remove duplicatas associadas na auditoria e depois a Vaga original
+        if ids_remover:
+            # Apaga referencias filhas para evitar ForeignKeyViolation
+            db.query(models.ProcessamentoAuditoria).filter(
+                models.ProcessamentoAuditoria.vaga_id.in_(ids_remover)
+            ).delete(synchronize_session=False)
+            
+            db.query(models.ValidacaoAuditoria).filter(
+                models.ValidacaoAuditoria.vaga_id.in_(ids_remover)
+            ).delete(synchronize_session=False)
+
+            # Apaga as vagas duplicadas
+            db.query(models.Vaga).filter(
+                models.Vaga.id.in_(ids_remover)
+            ).delete(synchronize_session=False)
+            
+            db.commit()
+        
+        if progress_callback:
+            progress_callback({
+                "message": f"Limpeza concluída: {len(ids_remover)} duplicatas removidas",
+                "progresso": 100,
+            })
+        
+        return {
+            "total_vagas": total,
+            "duplicatas_removidas": len(ids_remover),
+            "vagas_restantes": total - len(ids_remover),
+            "grupos_duplicados": sum(1 for v in grupos.values() if len(v) > 1),
+        }
+    
+    finally:
+        db.close()
+
 
 @router.get("/stream/auditoria")
 def stream_auditoria():
     """
-    Executa auditoria completa com streaming SSE.
+    Executa auditoria pós-coleta com streaming SSE.
 
-    Etapas:
-    1. consolidar_gabarito — unifica arquivos brutos em gabarito master
-    2. processar_todos — processa registros brutos pendentes com log de transformações
-    3. validar_amostra — valida amostra aleatória com IA (Claude Haiku)
+    Etapas (simplificadas — coleta v3 já salva as vagas):
+    1. Limpeza de duplicatas cross-source
+    2. Validação de amostra com IA (Claude Haiku)
     """
 
     def generate():
         start_total = time.time()
 
-        # ── ETAPA 1: Consolidar Gabarito ──────────────────────────────
+        # ── ETAPA 1: Limpeza de duplicatas ────────────────────────────
         yield _send_event("step_start", {
             "step": "auditoria_gabarito",
-            "message": "Consolidando arquivos brutos em gabarito master...",
-            "estimated_time": 15,
+            "message": "Limpando duplicatas entre fontes...",
+            "estimated_time": 5,
         })
 
         try:
-            from ..audit.consolidador_gabarito import consolidar_gabarito
             start = time.time()
 
             result_q: queue.Queue = queue.Queue()
             exc_q: queue.Queue = queue.Queue()
+            prog_q: queue.Queue = queue.Queue()
 
-            def run_gabarito():
+            def run_dedup():
                 try:
-                    r = consolidar_gabarito(output_format="json", salvar_banco=True)
+                    def my_progress(data):
+                        prog_q.put({"step": "auditoria_gabarito", **data})
+                    r = _remover_duplicatas_cross_source(progress_callback=my_progress)
                     result_q.put(r)
                 except Exception as e:
                     exc_q.put(e)
 
-            t = threading.Thread(target=run_gabarito)
+            t = threading.Thread(target=run_dedup)
             t.start()
 
-            # heartbeat enquanto aguarda
             last_hb = time.time()
-            while t.is_alive():
+            while t.is_alive() or not prog_q.empty():
+                while not prog_q.empty():
+                    p_data = prog_q.get()
+                    yield _send_event("step_progress", p_data)
+                    last_hb = time.time()
                 if time.time() - last_hb > 15:
                     yield _send_event("heartbeat", {"timestamp": time.time()})
                     last_hb = time.time()
-                time.sleep(0.3)
+                time.sleep(0.2)
 
             if not exc_q.empty():
                 err = str(exc_q.get())
                 yield _send_event("step_error", {
                     "step": "auditoria_gabarito",
-                    "message": f"Erro ao consolidar: {err[:120]}",
+                    "message": f"Erro na limpeza: {err[:120]}",
                 })
             else:
                 r = result_q.get() if not result_q.empty() else {}
-                total_reg = r.get("total_registros", 0)
-                banco = r.get("banco", {})
-                inseridos = banco.get("inseridos", 0)
-                duplicados = banco.get("duplicados", 0)
-                por_fonte = r.get("por_fonte", {})
+                dups = r.get("duplicatas_removidas", 0)
+                restantes = r.get("vagas_restantes", 0)
                 tempo = int(time.time() - start)
 
-                msg_partes = [f"{total_reg} registros consolidados"]
-                if por_fonte:
-                    partes_fonte = [f"{v} {k.replace('linkedin_', '').replace('_', ' ')}" for k, v in por_fonte.items()]
-                    msg_partes.append("(" + ", ".join(partes_fonte) + ")")
-                msg_partes.append(f"· {inseridos} novos no banco")
-
+                msg = f"{restantes} vagas únicas · {dups} duplicatas removidas"
                 yield _send_event("step_complete", {
                     "step": "auditoria_gabarito",
                     "stats": {
-                        "total_registros": total_reg,
-                        "inseridos_banco": inseridos,
-                        "duplicados": duplicados,
-                        "por_fonte": por_fonte,
-                        "tempo": tempo,
-                    },
-                    "message": " ".join(msg_partes),
-                })
-
-        except Exception as e:
-            yield _send_event("step_error", {
-                "step": "auditoria_gabarito",
-                "message": f"Módulo de gabarito indisponível: {str(e)[:100]}",
-            })
-
-        # ── ETAPA 2: Processar brutos pendentes ───────────────────────
-        yield _send_event("step_start", {
-            "step": "auditoria_processamento",
-            "message": "Processando registros brutos com rastreabilidade...",
-            "estimated_time": 20,
-        })
-
-        try:
-            from ..audit.processar_com_auditoria import processar_todos
-            start = time.time()
-
-            result_q2: queue.Queue = queue.Queue()
-            exc_q2: queue.Queue = queue.Queue()
-
-            def run_processar():
-                try:
-                    r = processar_todos()
-                    result_q2.put(r)
-                except Exception as e:
-                    exc_q2.put(e)
-
-            t2 = threading.Thread(target=run_processar)
-            t2.start()
-
-            last_hb = time.time()
-            while t2.is_alive():
-                if time.time() - last_hb > 15:
-                    yield _send_event("heartbeat", {"timestamp": time.time()})
-                    last_hb = time.time()
-                time.sleep(0.3)
-
-            if not exc_q2.empty():
-                err = str(exc_q2.get())
-                yield _send_event("step_error", {
-                    "step": "auditoria_processamento",
-                    "message": f"Erro no processamento: {err[:120]}",
-                })
-            else:
-                r2 = result_q2.get() if not result_q2.empty() else {}
-                total = r2.get("total", 0)
-                processados = r2.get("processado", 0)
-                descartados = r2.get("descartado", 0)
-                motivos = r2.get("motivos_descarte", {})
-                tempo = int(time.time() - start)
-
-                msg = f"{total} registros · {processados} processados · {descartados} descartados"
-                yield _send_event("step_complete", {
-                    "step": "auditoria_processamento",
-                    "stats": {
-                        "total": total,
-                        "processados": processados,
-                        "descartados": descartados,
-                        "motivos_descarte": motivos,
+                        "total_registros": r.get("total_vagas", 0),
+                        "duplicatas_removidas": dups,
+                        "vagas_restantes": restantes,
                         "tempo": tempo,
                     },
                     "message": msg,
@@ -751,8 +663,36 @@ def stream_auditoria():
 
         except Exception as e:
             yield _send_event("step_error", {
+                "step": "auditoria_gabarito",
+                "message": f"Erro na limpeza de duplicatas: {str(e)[:100]}",
+            })
+
+        # ── ETAPA 2 (skip): Processamento já feito pela coleta v3 ──
+        yield _send_event("step_start", {
+            "step": "auditoria_processamento",
+            "message": "Verificando vagas processadas...",
+            "estimated_time": 2,
+        })
+
+        try:
+            db_check = SessionLocal()
+            total_vagas = db_check.query(models.Vaga).count()
+            db_check.close()
+
+            yield _send_event("step_complete", {
                 "step": "auditoria_processamento",
-                "message": f"Módulo de processamento indisponível: {str(e)[:100]}",
+                "stats": {
+                    "total": total_vagas,
+                    "processados": total_vagas,
+                    "descartados": 0,
+                    "tempo": 0,
+                },
+                "message": f"{total_vagas} vagas já processadas pela coleta v3",
+            })
+        except Exception as e:
+            yield _send_event("step_error", {
+                "step": "auditoria_processamento",
+                "message": f"Erro ao verificar vagas: {str(e)[:100]}",
             })
 
         # ── ETAPA 3: Validar amostra com IA ───────────────────────────
@@ -768,11 +708,15 @@ def stream_auditoria():
 
             result_q3: queue.Queue = queue.Queue()
             exc_q3: queue.Queue = queue.Queue()
+            prog_q3: queue.Queue = queue.Queue()
 
             def run_validar():
                 try:
+                    def my_progress(data):
+                        prog_q3.put({"step": "auditoria_validacao", **data})
+                        
                     # 5% das vagas, máximo 30 para não demorar demais
-                    r = validar_amostra(percentual=0.05, max_amostras=30, salvar_banco=True)
+                    r = validar_amostra(percentual=0.05, max_amostras=30, salvar_banco=True, progress_callback=my_progress)
                     result_q3.put(r)
                 except Exception as e:
                     exc_q3.put(e)
@@ -781,11 +725,16 @@ def stream_auditoria():
             t3.start()
 
             last_hb = time.time()
-            while t3.is_alive():
+            while t3.is_alive() or not prog_q3.empty():
+                while not prog_q3.empty():
+                    p_data = prog_q3.get()
+                    yield _send_event("step_progress", p_data)
+                    last_hb = time.time()
+                    
                 if time.time() - last_hb > 15:
                     yield _send_event("heartbeat", {"timestamp": time.time()})
                     last_hb = time.time()
-                time.sleep(0.3)
+                time.sleep(0.2)
 
             if not exc_q3.empty():
                 err = str(exc_q3.get())

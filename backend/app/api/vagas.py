@@ -223,12 +223,16 @@ def gerar_pitch(vaga_id: int, db: Session = Depends(get_db)):
         "missao_vaga": vaga.missao_vaga,
         "responsabilidades": vaga.responsabilidades or [],
         "requisitos_obrigatorios": vaga.requisitos_obrigatorios or [],
+        "contato_nome": vaga.contato_nome,
     }
 
     perfil = {
+        "nome": WILLIAM_PROFILE.get("nome", "William"),
         "cargo": "Product Designer",  # Defaulting main role
         "nivel": WILLIAM_PROFILE.get("nivel_minimo", "senior"),
         "skills": WILLIAM_PROFILE.get("skills", []),
+        "experiencias": WILLIAM_PROFILE.get("experiencias", []),
+        "experiencia_anos": WILLIAM_PROFILE.get("experiencia_anos", 18),
     }
 
     pitch = extractor.gerar_cold_message(vaga_dict, perfil)

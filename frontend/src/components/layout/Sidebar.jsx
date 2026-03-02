@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/', icon: Target, label: 'Match' },
   { path: '/perfil', icon: User, label: 'Meu Perfil' },
-  { path: '/match', icon: BarChart3, label: 'Match' },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/configuracoes', icon: Settings, label: 'Configurações' },
 ];
 

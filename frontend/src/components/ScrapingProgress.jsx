@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { scraperService } from '../services/api';
+import { scraperService, searchUrlsService } from '../services/api';
 import {
   CheckCircle,
   XCircle,
@@ -19,6 +19,7 @@ import {
   Cpu,
   Bot,
 } from 'lucide-react';
+import SlideInConfirm from './SlideInConfirm';
 
 const STEPS_BASE = [
   { id: 'indeed', label: 'Indeed', icon: Search, color: '#2164f3' },
@@ -30,9 +31,9 @@ const STEP_AUDITORIA = { id: 'auditoria', label: 'Auditoria de Qualidade', icon:
 
 // Sub-steps da auditoria real (substituem o STEP_AUDITORIA durante execução)
 const AUDIT_SUBSTEPS = [
-  { id: 'auditoria_gabarito',       label: 'Consolidar Gabarito',   icon: Database, color: '#10b981', isAudit: true },
-  { id: 'auditoria_processamento',  label: 'Processar Registros',   icon: Cpu,      color: '#10b981', isAudit: true },
-  { id: 'auditoria_validacao',      label: 'Validar com IA',        icon: Bot,      color: '#10b981', isAudit: true },
+  { id: 'auditoria_gabarito', label: 'Limpar Duplicatas', icon: Database, color: '#10b981', isAudit: true },
+  { id: 'auditoria_processamento', label: 'Verificar Vagas', icon: Cpu, color: '#10b981', isAudit: true },
+  { id: 'auditoria_validacao', label: 'Validar com IA', icon: Bot, color: '#10b981', isAudit: true },
 ];
 
 function makeSteps(comAuditoria) {
@@ -59,32 +60,84 @@ function makeSteps(comAuditoria) {
 }
 
 export default function ScrapingProgress({ onComplete, onClose, comAuditoria = false }) {
-  // Fase idle: modal aberto mas ainda não iniciou coleta — usuário pode configurar auditoria
   const [fase, setFase] = useState('idle'); // 'idle' | 'coletando' | 'done' | 'error'
   const [auditoria, setAuditoria] = useState(comAuditoria);
-  const [steps, setSteps] = useState(() => makeSteps(comAuditoria));
+  const [disponiveis, setDisponiveis] = useState([]);
+  const [selecionados, setSelecionados] = useState([]);
+  const [steps, setSteps] = useState([]);
   const [finalStats, setFinalStats] = useState(null);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState(null);
-  const logsEndRef = useRef(null);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+
+  const [confirmarFechar, setConfirmarFechar] = useState(false);
+
+  const eventSourceRef = useRef(null);
   const timerRef = useRef(null);
   const completedRef = useRef(false);
-  const eventSourceRef = useRef(null);
 
-  // Quando auditoria muda na fase idle, recria os steps para incluir/excluir o step de auditoria
+  // Carrega buscas disponíveis para seleção
   useEffect(() => {
-    if (fase === 'idle') {
-      setSteps(makeSteps(auditoria));
+    async function loadBuscas() {
+      try {
+        const response = await searchUrlsService.listar(null, true);
+        const ativas = response.data;
+        setDisponiveis(ativas);
+        // Por padrão, seleciona todas
+        setSelecionados(ativas.map(b => b.id));
+      } catch (err) {
+        console.error("Erro ao carregar buscas:", err);
+        setError("Não consegui carregar suas configurações de busca.");
+      } finally {
+        setLoadingInitial(false);
+      }
     }
-  }, [auditoria, fase]); // eslint-disable-line react-hooks/exhaustive-deps
+    loadBuscas();
+  }, []);
 
-  // Inicia a coleta ao sair do estado idle
+  // Inicia a coleta
   const iniciarColeta = () => {
+    if (selecionados.length === 0) {
+      alert("Por favor, selecione pelo menos um lugar para buscar! 🧐");
+      return;
+    }
+
+    // Prepara os steps baseados na seleção
+    const selectedBuscas = disponiveis.filter(b => selecionados.includes(b.id));
+    const initialSteps = selectedBuscas.map(b => ({
+      id: `busca_${b.id}`,
+      label: b.nome,
+      icon: b.fonte === 'indeed' ? Search : (b.fonte === 'linkedin_posts' ? FileText : Briefcase),
+      color: b.fonte === 'indeed' ? '#2164f3' : '#0A66C2',
+      status: 'pending',
+      message: 'Aguardando...',
+      progress: 0,
+      vagasEncontradas: 0,
+      totalColetados: 0,
+      expanded: false,
+      logs: []
+    }));
+
+    if (auditoria) {
+      initialSteps.push({
+        id: 'auditoria',
+        label: 'Auditoria de Qualidade',
+        icon: Shield,
+        color: '#10b981',
+        status: 'pending',
+        message: 'Aguardando...',
+        progress: 0,
+        expanded: false,
+        logs: []
+      });
+    }
+
+    setSteps(initialSteps);
     setFase('coletando');
-    startEventSource();
+    startEventSource(selecionados.join(','));
   };
 
-  const startEventSource = () => {
+  const startEventSource = (ids) => {
     // Timer para tempo decorrido
     timerRef.current = setInterval(() => {
       setSteps(prev => prev.map(s => {
@@ -95,7 +148,8 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
       }));
     }, 1000);
 
-    const eventSource = new EventSource(scraperService.getStreamUrlV3());
+    const url = `${scraperService.getStreamUrlV3()}?ids=${ids}`;
+    const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
@@ -138,16 +192,16 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
         setSteps(prev => prev.map(s =>
           s.id === step
             ? {
-                ...s,
-                status: 'loading',
-                message: rest.message,
-                estimatedTime: rest.estimated_time || 30,
-                startTime: Date.now(),
-                progress: 0,
-                vagasEncontradas: 0,
-                totalColetados: 0,
-                expanded: true
-              }
+              ...s,
+              status: 'loading',
+              message: rest.message,
+              estimatedTime: rest.estimated_time || 30,
+              startTime: Date.now(),
+              progress: 0,
+              vagasEncontradas: 0,
+              totalColetados: 0,
+              expanded: true
+            }
             : s
         ));
         break;
@@ -185,19 +239,19 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
         setSteps(prev => prev.map(s =>
           s.id === step
             ? {
-                ...s,
-                status: 'complete',
-                progress: 100,
-                message: `${rest.stats?.total_bruto || 0} coletados → ${rest.stats?.vagas_ux || 0} UX → ${rest.stats?.novas || 0} novas`,
-                stats: {
-                  totalBruto: rest.stats?.total_bruto || 0,
-                  vagasUx: rest.stats?.vagas_ux || 0,
-                  novas: rest.stats?.novas || 0,
-                  tempo: rest.stats?.tempo || s.tempoDecorrido,
-                  taxa: rest.stats?.taxa || null
-                },
-                expanded: false
-              }
+              ...s,
+              status: 'complete',
+              progress: 100,
+              message: `${rest.stats?.total_bruto || 0} coletados → ${rest.stats?.vagas_ux || 0} UX → ${rest.stats?.novas || 0} novas`,
+              stats: {
+                totalBruto: rest.stats?.total_bruto || 0,
+                vagasUx: rest.stats?.vagas_ux || 0,
+                novas: rest.stats?.novas || 0,
+                tempo: rest.stats?.tempo || s.tempoDecorrido,
+                taxa: rest.stats?.taxa || null
+              },
+              expanded: false
+            }
             : s
         ));
         break;
@@ -214,13 +268,13 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
         setSteps(prev => prev.map(s =>
           s.id === step
             ? {
-                ...s,
-                logs: [...s.logs.slice(-50), {
-                  level: rest.level,
-                  message: rest.message,
-                  time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                }]
-              }
+              ...s,
+              logs: [...s.logs.slice(-50), {
+                level: rest.level,
+                message: rest.message,
+                time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              }]
+            }
             : s
         ));
         break;
@@ -310,16 +364,30 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
         setSteps(prev => prev.map(s =>
           s.id === step
             ? {
-                ...s,
-                status: 'loading',
-                message: rest.message || 'Processando...',
-                estimatedTime: rest.estimated_time || 30,
-                startTime: Date.now(),
-                progress: 0,
-                expanded: true,
-              }
+              ...s,
+              status: 'loading',
+              message: rest.message || 'Processando...',
+              estimatedTime: rest.estimated_time || 30,
+              startTime: Date.now(),
+              progress: 0,
+              expanded: true,
+            }
             : s
         ));
+        break;
+
+      case 'step_progress':
+        setSteps(prev => prev.map(s => {
+          if (s.id !== step) return s;
+          const progresso = rest.progresso ?? s.progress;
+          const message = rest.message || s.message;
+          return {
+            ...s,
+            status: 'processing',
+            progress: progresso,
+            message,
+          };
+        }));
         break;
 
       case 'step_complete': {
@@ -338,13 +406,13 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
         setSteps(prev => prev.map(s =>
           s.id === step
             ? {
-                ...s,
-                status: 'complete',
-                progress: 100,
-                message: msg,
-                stats: st,
-                expanded: false,
-              }
+              ...s,
+              status: 'complete',
+              progress: 100,
+              message: msg,
+              stats: st,
+              expanded: false,
+            }
             : s
         ));
         break;
@@ -418,14 +486,14 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
             </div>
             <div>
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                {fase === 'idle' ? 'Nova Coleta' : 'Coletando Vagas'}
+                {fase === 'idle' ? 'Nova Busca de Vagas' : 'Buscando Vagas agora...'}
               </h2>
               <p className="text-xs text-[var(--text-muted)]">
                 {fase === 'idle'
-                  ? 'Configure e inicie a coleta'
+                  ? 'Escolha onde quer que eu procure hoje!'
                   : isComplete
-                  ? 'Coleta finalizada'
-                  : 'Processando em tempo real...'}
+                    ? 'Tudo pronto! Terminei a busca. ✨'
+                    : 'Estou olhando tudo em tempo real para você...'}
               </p>
             </div>
           </div>
@@ -433,8 +501,8 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
             onClick={() => {
               if (fase === 'idle' || allDone) {
                 onClose();
-              } else if (confirm('Cancelar a coleta de vagas em andamento?')) {
-                onClose();
+              } else {
+                setConfirmarFechar(true);
               }
             }}
             className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
@@ -445,67 +513,164 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
 
         {/* ── FASE IDLE: tela de configuração antes de iniciar ── */}
         {fase === 'idle' && (
-          <div className="flex flex-col flex-1 p-6 gap-5">
-            {/* Fontes que serão coletadas */}
-            <div>
-              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">
-                Fontes
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {STEPS_BASE.map(s => (
-                  <div
-                    key={s.id}
-                    className="flex items-center gap-2 p-2.5 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border)]"
-                  >
-                    <s.icon className="w-4 h-4 flex-shrink-0" style={{ color: s.color }} />
-                    <span className="text-xs text-[var(--text-secondary)] font-medium">{s.label}</span>
+          <div className="flex flex-col flex-1 p-6 gap-6">
+            {loadingInitial ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
+                <div className="w-10 h-10 border-2 border-accent-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm text-[var(--text-muted)]">Carregando seus lugares de busca... 🔍</p>
+              </div>
+            ) : error ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center py-12">
+                <div className="w-12 h-12 bg-accent-danger/10 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-accent-danger" />
+                </div>
+                <div className="max-w-xs">
+                  <p className="text-sm font-medium text-[var(--text-primary)] mb-1">Ops! Algo deu errado.</p>
+                  <p className="text-xs text-[var(--text-muted)]">{error}</p>
+                </div>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--border)] text-xs font-medium rounded-lg transition-colors"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Seleção de Fontes/Buscas */}
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+                        Quais sites eu devo vigiar?
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)]">Marque os lugares que você quer que eu olhe agora.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (selecionados.length === disponiveis.length) setSelecionados([]);
+                        else setSelecionados(disponiveis.map(b => b.id));
+                      }}
+                      className="text-[10px] font-bold text-accent-primary hover:underline uppercase"
+                    >
+                      {selecionados.length === disponiveis.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                    </button>
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
+                    {disponiveis.map((busca) => {
+                      const isSelected = selecionados.includes(busca.id);
+                      const IconType = busca.fonte === 'indeed' ? Search : (busca.fonte === 'linkedin_posts' ? FileText : Briefcase);
+
+                      return (
+                        <button
+                          key={busca.id}
+                          onClick={() => {
+                            setSelecionados(prev =>
+                              prev.includes(busca.id)
+                                ? prev.filter(id => id !== busca.id)
+                                : [...prev, busca.id]
+                            );
+                          }}
+                          className={`
+                          flex items-center gap-3 p-3 rounded-xl border transition-all text-left
+                          ${isSelected
+                              ? 'bg-accent-primary/5 border-accent-primary shadow-sm'
+                              : 'bg-[var(--bg-tertiary)] border-[var(--border)] hover:border-[var(--text-muted)]'}
+                        `}
+                        >
+                          <div className={`
+                          w-8 h-8 rounded-lg flex items-center justify-center
+                          ${isSelected ? 'bg-accent-primary text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}
+                        `}>
+                            <IconType className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-semibold truncate ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
+                              {busca.nome}
+                            </p>
+                            <p className="text-[10px] text-[var(--text-muted)] opacity-70 uppercase">
+                              {busca.fonte.replace('_', ' ')}
+                            </p>
+                          </div>
+                          <div className={`
+                          w-4 h-4 rounded-full border flex items-center justify-center transition-all
+                          ${isSelected ? 'bg-accent-primary border-accent-primary' : 'bg-[var(--bg-secondary)] border-[var(--border)]'}
+                        `}>
+                            {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    {disponiveis.length === 0 && (
+                      <div className="col-span-full border-2 border-dashed border-[var(--border)] rounded-xl p-6 flex flex-col items-center justify-center gap-2">
+                        <p className="text-xs text-[var(--text-muted)] text-center">
+                          Ops! Você ainda não me disse onde procurar. Configure uma busca lá nas configurações primeiro! 🏗️
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Opção de Auditoria */}
+                <div className="border-t border-[var(--border)] pt-5">
+                  <button
+                    onClick={() => setAuditoria(!auditoria)}
+                    className={`
+                    flex items-center gap-4 w-full p-4 rounded-xl border transition-all text-left
+                    ${auditoria
+                        ? 'bg-emerald-500/5 border-emerald-500/30'
+                        : 'bg-[var(--bg-tertiary)] border-[var(--border)]'}
+                  `}
+                  >
+                    <div className={`
+                    w-10 h-10 rounded-xl flex items-center justify-center
+                    ${auditoria ? 'bg-emerald-500 text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}
+                  `}>
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">
+                        Quer que eu use meu filtro de qualidade? ✨
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        Eu vou ler cada vaga com cuidado para garantir que são mesmo de UX e Design. Demora um pouquinho mais, mas vale a pena! 😉
+                      </p>
+                    </div>
+                    <div className={`
+                    w-10 h-5 rounded-full relative transition-colors p-1 flex items-center
+                    ${auditoria ? 'bg-emerald-500' : 'bg-[var(--border)]'}
+                  `}>
+                      <div className={`
+                      w-3 h-3 bg-white rounded-full shadow-sm transition-transform
+                      ${auditoria ? 'translate-x-5' : 'translate-x-0'}
+                    `} />
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Botão de Iniciar */}
+            <div className="mt-auto">
+              <button
+                onClick={iniciarColeta}
+                disabled={selecionados.length === 0 || loadingInitial}
+                className={`
+                w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg
+                ${selecionados.length > 0 && !loadingInitial
+                    ? 'bg-accent-primary text-white hover:opacity-90 active:scale-[0.98]'
+                    : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed'}
+              `}
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>VAMOS BUSCAR!</span>
+              </button>
+              <p className="text-[10px] text-center text-[var(--text-muted)] mt-3">
+                Pode relaxar, eu te aviso quando terminar! Só peço que não feche essa janelinha enquanto eu trabalho. ⏳
+              </p>
             </div>
-
-            {/* Toggle de auditoria */}
-            <div
-              onClick={() => setAuditoria(prev => !prev)}
-              className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all select-none ${
-                auditoria
-                  ? 'border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10'
-                  : 'border-[var(--border)] bg-[var(--bg-tertiary)] hover:border-[var(--text-muted)]'
-              }`}
-            >
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                auditoria ? 'bg-emerald-500/15' : 'bg-[var(--bg-secondary)]'
-              }`}>
-                <Shield className={`w-4.5 h-4.5 ${auditoria ? 'text-emerald-500' : 'text-[var(--text-muted)]'}`} style={{ width: 18, height: 18 }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${auditoria ? 'text-emerald-500' : 'text-[var(--text-primary)]'}`}>
-                  Auditar após coleta
-                </p>
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  Verifica a qualidade das vagas encontradas
-                </p>
-              </div>
-              {/* Toggle visual */}
-              <div className={`relative inline-flex h-5 w-9 items-center rounded-full flex-shrink-0 transition-colors ${
-                auditoria ? 'bg-emerald-500' : 'bg-[var(--bg-secondary)] border border-[var(--border)]'
-              }`}>
-                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                  auditoria ? 'translate-x-4' : 'translate-x-0.5'
-                }`} />
-              </div>
-            </div>
-
-            <div className="flex-1" />
-
-            {/* Botão Iniciar */}
-            <button
-              onClick={iniciarColeta}
-              className="w-full py-3 bg-accent-primary hover:bg-accent-primary/90 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-            >
-              <Play className="w-4 h-4" />
-              Iniciar Coleta
-            </button>
           </div>
         )}
 
@@ -520,7 +685,7 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                     className="h-full bg-accent-primary transition-all duration-500 rounded-full"
                     style={{
                       width: `${steps.reduce((acc, step) => {
-                        const weight = 100 / STEPS_COUNT;
+                        const weight = 100 / steps.length;
                         if (step.status === 'complete') return acc + weight;
                         if (step.status === 'processing' || step.status === 'loading') {
                           return acc + (weight * (step.progress || 0) / 100);
@@ -533,271 +698,95 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
               </div>
             )}
 
-            {/* Steps - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {steps.map((step) => (
-                <div
-                  key={step.id}
-                  className={`rounded-xl border transition-all duration-200 overflow-hidden ${
-                    step.status === 'loading' || step.status === 'processing'
-                      ? 'bg-accent-primary/5 border-accent-primary/20'
-                      : step.status === 'complete'
-                      ? 'bg-accent-success/5 border-accent-success/20'
-                      : step.status === 'error'
-                      ? 'bg-accent-danger/5 border-accent-danger/20'
-                      : 'bg-[var(--bg-tertiary)] border-transparent'
-                  }`}
-                >
-                  <button
-                    onClick={() => toggleExpand(step.id)}
-                    className="w-full flex items-center justify-between p-3 text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      {getStepIcon(step)}
-                      <div>
-                        <span className={`text-sm font-medium ${
-                          step.status === 'loading' || step.status === 'processing' ? 'text-accent-primary' :
-                          step.status === 'complete' ? 'text-accent-success' :
-                          step.status === 'error' ? 'text-accent-danger' :
-                          'text-[var(--text-muted)]'
+            {/* Steps - Scrollable detailed list was DELETED per William's request */}
+
+            {/* Area Principal - Resumo Consolidado Contínuo */}
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+              <p className="text-sm font-medium text-[var(--text-primary)]">O que eu estou fazendo agora:</p>
+
+              <div className="space-y-2">
+                {steps.map(step => (
+                  <div key={step.id} className="p-3 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border)] transition-all">
+                    <div className="flex items-center gap-2 mb-2">
+                      <step.icon size={16} style={{ color: step.color }} />
+                      <span className="text-[var(--text-primary)] font-medium">{step.label}</span>
+
+                      <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold ${step.status === 'complete' ? 'bg-accent-success/20 text-accent-success' :
+                        step.status === 'error' ? 'bg-accent-danger/20 text-accent-danger' :
+                          step.status === 'processing' || step.status === 'loading' ? 'bg-accent-primary/20 text-accent-primary animate-pulse' :
+                            'bg-[var(--bg-secondary)] text-[var(--text-muted)]'
                         }`}>
-                          {step.label}
-                        </span>
-                        <p className="text-xs text-[var(--text-muted)]">{step.message}</p>
+                        {step.status === 'complete' ? 'ok' : step.status === 'error' ? 'erro' : step.status === 'pending' ? 'aguardando' : 'processando'}
+                      </span>
+                    </div>
+
+                    {/* Progress minificado do Step (apenas se estiver processando ativamente) */}
+                    {(step.status === 'loading' || step.status === 'processing') && (
+                      <div className="mb-2">
+                        <div className="h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden mb-1">
+                          <div className="h-full bg-accent-primary transition-all duration-300 rounded-full" style={{ width: `${step.progress || 0}%` }} />
+                        </div>
+                        <p className="text-[10px] text-accent-primary truncate">
+                          {step.message || '...'} {step.ultimaVaga && `| + ${step.ultimaVaga.titulo}`}
+                        </p>
                       </div>
-                    </div>
+                    )}
 
-                    <div className="flex items-center gap-3">
-                      {(step.status === 'loading' || step.status === 'processing') && (
-                        <div className="flex items-center gap-2">
-                          {step.totalColetados > 0 && (
-                            <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
-                              {step.totalColetados} coletados
-                            </span>
-                          )}
-                          {step.vagasEncontradas > 0 && (
-                            <span className="px-2 py-0.5 text-xs rounded-full bg-accent-primary/20 text-accent-primary">
-                              {step.vagasEncontradas} vagas UX
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-[var(--bg-secondary)] text-[var(--text-muted)]">
-                            <Clock className="w-3 h-3" />
-                            {step.tempoDecorrido}s
-                          </span>
-                        </div>
-                      )}
-
-                      {step.stats && step.status === 'complete' && !step.isAudit && (
-                        <div className="flex items-center gap-2">
-                          {step.stats.totalBruto > 0 && (
-                            <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
-                              {step.stats.totalBruto} → {step.stats.vagasUx || 0} UX
-                            </span>
-                          )}
-                          {step.stats.novas > 0 && (
-                            <span className="px-2 py-0.5 text-xs rounded-full bg-accent-success/20 text-accent-success font-medium">
-                              +{step.stats.novas} novas
-                            </span>
-                          )}
-                          {step.stats.tempo && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-[var(--bg-tertiary)] text-[var(--text-muted)]">
-                              <Clock className="w-3 h-3" />
-                              {step.stats.tempo}s
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {step.stats && step.status === 'complete' && step.isAudit && (
-                        <div className="flex items-center gap-2">
-                          {/* gabarito */}
-                          {step.id === 'auditoria_gabarito' && (
-                            <>
-                              {step.stats.total_registros > 0 && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-500/10 text-emerald-600">
-                                  {step.stats.total_registros} registros
-                                </span>
-                              )}
-                              {step.stats.inseridos_banco > 0 && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-accent-success/20 text-accent-success font-medium">
-                                  +{step.stats.inseridos_banco} novos
-                                </span>
-                              )}
-                            </>
-                          )}
-                          {/* processamento */}
-                          {step.id === 'auditoria_processamento' && (
-                            <>
-                              {step.stats.processados > 0 && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-500/10 text-emerald-600">
-                                  {step.stats.processados} processados
-                                </span>
-                              )}
-                              {step.stats.descartados > 0 && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--bg-secondary)] text-[var(--text-muted)]">
-                                  {step.stats.descartados} descartados
-                                </span>
-                              )}
-                            </>
-                          )}
-                          {/* validação */}
-                          {step.id === 'auditoria_validacao' && (
-                            <>
-                              {step.stats.taxa_acerto !== undefined && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-500/10 text-emerald-600 font-medium">
-                                  {Math.round(step.stats.taxa_acerto * 100)}% acerto
-                                </span>
-                              )}
-                              {step.stats.score_medio !== undefined && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
-                                  score {Math.round(step.stats.score_medio * 100)}%
-                                </span>
-                              )}
-                            </>
-                          )}
-                          {step.stats.tempo && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-[var(--bg-tertiary)] text-[var(--text-muted)]">
-                              <Clock className="w-3 h-3" />
-                              {step.stats.tempo}s
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {(step.logs.length > 0 || step.status === 'processing') && (
-                        step.expanded
-                          ? <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
-                          : <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
-                      )}
-                    </div>
-                  </button>
-
-                  {(step.status === 'loading' || step.status === 'processing') && (
-                    <div className="px-3 pb-2">
-                      <div className="h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
-                        {step.progress > 0 ? (
-                          <div
-                            className="h-full bg-accent-primary transition-all duration-300 rounded-full"
-                            style={{ width: `${step.progress}%` }}
-                          />
-                        ) : (
-                          <div className="h-full bg-accent-primary/40 animate-pulse rounded-full" style={{ width: '100%' }} />
+                    {/* Stats de coleta (scraping) */}
+                    {!step.isAudit && (step.stats || step.totalColetados > 0) && (
+                      <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-1">
+                        <span>{step.stats?.totalBruto || step.totalColetados || 0} coletados</span>
+                        <span className="text-[var(--border)]">→</span>
+                        <span>{step.stats?.vagasUx || step.vagasEncontradas || 0} vagas UX</span>
+                        <span className="text-[var(--border)]">→</span>
+                        <span className="text-accent-success font-medium">{step.stats?.novas || 0} novas</span>
+                        {step.stats?.taxa && (
+                          <span className="text-xs text-[var(--text-muted)]">({step.stats.taxa})</span>
                         )}
                       </div>
-                      <div className="flex justify-between mt-1 text-[10px] text-[var(--text-muted)]">
-                        <span>{step.progress > 0 ? `${step.progress}%` : 'Iniciando...'}</span>
-                        {step.totalPaginas > 0 && (
-                          <span>{step.paginaAtual}/{step.totalPaginas}</span>
+                    )}
+                    {/* Stats de auditoria */}
+                    {step.isAudit && step.stats && (
+                      <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-1">
+                        {step.id === 'auditoria_gabarito' && (
+                          <><span>{step.stats.total_registros || 0} vagas</span><span className="text-[var(--border)]">→</span><span className="text-accent-success font-medium">{step.stats.inseridos_banco || 0} novas</span></>
+                        )}
+                        {step.id === 'auditoria_processamento' && (
+                          <><span>{step.stats.processados || 0} processadas</span><span className="text-[var(--border)]">·</span><span>{step.stats.descartados || 0} descartadas</span></>
+                        )}
+                        {step.id === 'auditoria_validacao' && (
+                          <><span>{step.stats.total_amostras || 0} amostras</span><span className="text-[var(--border)]">·</span><span className="text-emerald-500 font-medium">{Math.round((step.stats.taxa_acerto || 0) * 100)}% acerto</span></>
                         )}
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {step.ultimaVaga && (step.status === 'loading' || step.status === 'processing') && (
-                    <div className="px-3 pb-2">
-                      <div className="text-xs text-accent-primary animate-pulse truncate">
-                        + {step.ultimaVaga.titulo} {step.ultimaVaga.empresa && `@ ${step.ultimaVaga.empresa}`}
-                      </div>
-                    </div>
-                  )}
+                    {step.status === 'error' && (
+                      <div className="text-xs text-accent-danger mt-1 bg-accent-danger/5 p-2 rounded">{step.message}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
 
-                  {step.expanded && step.logs.length > 0 && (
-                    <div className="border-t border-[var(--border)] bg-[var(--bg-primary)]/50 max-h-40 overflow-y-auto">
-                      <div className="p-2 space-y-0.5 font-mono text-[11px]">
-                        {step.logs.map((log, i) => (
-                          <div
-                            key={i}
-                            className={`flex items-start gap-2 py-0.5 px-2 rounded ${
-                              log.level === 'success' ? 'text-accent-success' :
-                              log.level === 'warning' ? 'text-yellow-600' :
-                              log.level === 'error' ? 'text-accent-danger' :
-                              log.level === 'skip' ? 'text-[var(--text-muted)]' :
-                              'text-[var(--text-secondary)]'
-                            }`}
-                          >
-                            <span className="opacity-50 flex-shrink-0">{log.time}</span>
-                            <span className="flex-shrink-0">{getLogIcon(log.level)}</span>
-                            <span className="break-all">{log.message}</span>
-                          </div>
-                        ))}
-                        <div ref={logsEndRef} />
-                      </div>
-                    </div>
-                  )}
+              {allDone && finalStats && (
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="p-4 rounded-xl bg-[var(--bg-tertiary)] text-center border border-[var(--border)]">
+                    <p className="text-3xl font-bold text-[var(--text-primary)]">{finalStats.total_bruto || 0}</p>
+                    <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold text-[var(--text-muted)] mt-1">Vagas que eu li</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-accent-success/10 text-center border border-accent-success/20">
+                    <p className="text-3xl font-bold text-accent-success">{finalStats.total_novas || 0}</p>
+                    <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold text-accent-success/70 mt-1">Vagas Nota 10 encontradas</p>
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
 
-            {/* Footer com resumo */}
-            {allDone && finalStats && (
-              <div className="p-4 border-t border-[var(--border)] space-y-4">
-                <p className="text-sm font-medium text-[var(--text-primary)]">Resumo da Coleta</p>
-
-                <div className="space-y-2">
-                  {steps.map(step => (
-                    <div key={step.id} className="p-2 rounded bg-[var(--bg-tertiary)]">
-                      <div className="flex items-center gap-2 mb-1">
-                        <step.icon size={14} style={{ color: step.color }} />
-                        <span className="text-sm font-medium text-[var(--text-primary)]">{step.label}</span>
-                        <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full ${
-                          step.status === 'complete' ? 'bg-accent-success/20 text-accent-success' :
-                          step.status === 'error' ? 'bg-accent-danger/20 text-accent-danger' :
-                          'bg-[var(--bg-secondary)] text-[var(--text-muted)]'
-                        }`}>
-                          {step.status === 'complete' ? 'ok' : step.status === 'error' ? 'erro' : step.message}
-                        </span>
-                      </div>
-                      {/* Stats de coleta (scraping) */}
-                      {!step.isAudit && (
-                        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                          <span>{step.stats?.totalBruto || 0} coletados</span>
-                          <span>→</span>
-                          <span>{step.stats?.vagasUx || 0} vagas UX</span>
-                          <span>→</span>
-                          <span className="text-accent-success font-medium">{step.stats?.novas || 0} novas</span>
-                          {step.stats?.taxa && (
-                            <span className="text-[var(--text-muted)]">({step.stats.taxa})</span>
-                          )}
-                        </div>
-                      )}
-                      {/* Stats de auditoria */}
-                      {step.isAudit && step.stats && (
-                        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                          {step.id === 'auditoria_gabarito' && (
-                            <><span>{step.stats.total_registros || 0} registros</span><span>·</span><span className="text-emerald-600">{step.stats.inseridos_banco || 0} novos</span></>
-                          )}
-                          {step.id === 'auditoria_processamento' && (
-                            <><span>{step.stats.processados || 0} processados</span><span>·</span><span>{step.stats.descartados || 0} descartados</span></>
-                          )}
-                          {step.id === 'auditoria_validacao' && (
-                            <><span>{step.stats.total_amostras || 0} amostras</span><span>·</span><span className="text-emerald-600">{Math.round((step.stats.taxa_acerto || 0) * 100)}% acerto</span></>
-                          )}
-                          {step.stats.tempo && <><span>·</span><span>{step.stats.tempo}s</span></>}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-[var(--bg-tertiary)] text-center">
-                    <p className="text-2xl font-bold text-[var(--text-primary)]">{finalStats.total_bruto || 0}</p>
-                    <p className="text-xs text-[var(--text-muted)]">Posts/Vagas Coletados</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-accent-success/10 text-center">
-                    <p className="text-2xl font-bold text-accent-success">{finalStats.total_novas || 0}</p>
-                    <p className="text-xs text-accent-success/70">Novas Vagas UX</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleFechar}
-                  className="w-full py-2.5 px-4 bg-accent-primary hover:bg-accent-primary/90 text-white font-medium rounded-lg transition-colors"
-                >
-                  Fechar e Atualizar Lista
-                </button>
-              </div>
-            )}
+            <button
+              onClick={handleFechar}
+              className="w-full py-2.5 px-4 bg-accent-primary hover:bg-accent-primary/90 text-white font-medium rounded-lg transition-colors"
+            >
+              Ver minhas novas vagas!
+            </button>
 
             {/* Error state */}
             {error && (
@@ -809,6 +798,18 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
             )}
           </>
         )}
+
+        {/* Alerta de Confirmação Lateral */}
+        <SlideInConfirm
+          show={confirmarFechar}
+          title="Ei! Quer mesmo parar?"
+          message="A Sirius já começou a procurar suas vagas. Se você sair agora, pode perder o que ela já encontrou."
+          onConfirm={onClose}
+          onCancel={() => setConfirmarFechar(false)}
+          confirmText="Sim, quero parar"
+          cancelText="Não, quero continuar!"
+          type="warning"
+        />
       </div>
     </div>
   );

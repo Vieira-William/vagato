@@ -137,6 +137,7 @@ def validar_amostra(
     percentual: float = 0.05,
     max_amostras: int = 50,
     salvar_banco: bool = True,
+    progress_callback=None,
 ) -> Dict:
     """
     Valida amostra aleatória de vagas contra registros brutos.
@@ -145,9 +146,7 @@ def validar_amostra(
         percentual: Percentual de vagas a validar (default 5%)
         max_amostras: Máximo de amostras por execução
         salvar_banco: Se True, salva resultados no banco
-
-    Returns:
-        Relatório de validação
+        progress_callback: Função para reportar progresso
     """
     db = SessionLocal()
 
@@ -163,6 +162,8 @@ def validar_amostra(
     if not vagas_com_rastreio:
         print("Nenhuma vaga com rastreabilidade encontrada.")
         db.close()
+        if progress_callback:
+            progress_callback({"progresso": 100, "message": "Nenhuma vaga para validar."})
         return {'erro': 'Nenhuma vaga rastreável'}
 
     # Seleciona amostra
@@ -173,12 +174,13 @@ def validar_amostra(
     print(f"Amostra selecionada: {qtd_amostra} ({percentual*100:.1f}%)")
 
     amostra = random.sample(vagas_com_rastreio, min(qtd_amostra, len(vagas_com_rastreio)))
+    total = len(amostra)
 
     resultados = []
     discrepancias_total = 0
     scores = []
 
-    print(f"\nValidando {len(amostra)} vagas...")
+    print(f"\nValidando {total} vagas...")
 
     for i, vaga in enumerate(amostra, 1):
         # Busca registro bruto
@@ -221,6 +223,16 @@ def validar_amostra(
             'registro_uuid': vaga.registro_bruto_uuid,
             **resultado
         })
+
+        if progress_callback:
+            progresso_pct = int((i/total)*100)
+            progress_callback({
+                "progresso": progresso_pct,
+                "processados": i,
+                "total_amostras": total,
+                "message": f"Validando com a IA... {i}/{total} amostras",
+                "vagas_com_discrepancia": discrepancias_total
+            })
 
     db.close()
 

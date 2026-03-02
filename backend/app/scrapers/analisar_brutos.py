@@ -233,7 +233,7 @@ def expandir_link_encurtado(link: str) -> Optional[str]:
 
     try:
         import requests
-        resp = requests.get(link, timeout=10, allow_redirects=True)
+        resp = requests.head(link, timeout=3, allow_redirects=True)
         url_final = resp.url
         _links_expandidos_cache[link] = url_final
         return url_final

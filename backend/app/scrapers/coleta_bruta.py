@@ -38,14 +38,14 @@ def salvar_bruto(dados: dict, fonte: str) -> str:
     return arquivo
 
 
-def coletar_posts_brutos(max_scrolls: int = 200, headless: bool = True, progress_callback=None) -> dict:
+def coletar_posts_brutos(max_scrolls: int = 200, headless: bool = True, progress_callback=None, custom_url: str = None) -> dict:
     """
     Coleta TODOS os posts do LinkedIn SEM filtrar por UX/Produto.
 
     Returns:
         Dict com metadados e lista de posts brutos
     """
-    url = "https://www.linkedin.com/search/results/content/?keywords=ux%20vaga&datePosted=%22past-24h%22&sortBy=%22date_posted%22"
+    url = custom_url or "https://www.linkedin.com/search/results/content/?keywords=ux%20vaga&datePosted=%22past-24h%22&sortBy=%22date_posted%22"
     driver = None
     posts = []
     textos_vistos = set()
@@ -63,6 +63,12 @@ def coletar_posts_brutos(max_scrolls: int = 200, headless: bool = True, progress
 
     try:
         driver = criar_driver_com_perfil(headless=headless)
+        
+        if not garantir_login_linkedin(driver):
+            print("ERRO: Não foi possível fazer login no LinkedIn (Posts)")
+            resultado["erro"] = "Login falhou"
+            return resultado
+            
         driver.get(url)
         time.sleep(5)
 
@@ -206,14 +212,14 @@ def coletar_posts_brutos(max_scrolls: int = 200, headless: bool = True, progress
             driver.quit()
 
 
-def coletar_jobs_brutos(max_paginas: int = 20, headless: bool = True, progress_callback=None) -> dict:
+def coletar_jobs_brutos(max_paginas: int = 20, headless: bool = True, progress_callback=None, custom_url: str = None) -> dict:
     """
     Coleta TODAS as vagas do LinkedIn Jobs SEM filtrar por UX/Produto.
 
     Returns:
         Dict com metadados e lista de vagas brutas
     """
-    base_url = "https://www.linkedin.com/jobs/search/?f_TPR=r86400&f_WT=2&keywords=Product%20Designer&sortBy=R"
+    base_url = custom_url or "https://www.linkedin.com/jobs/search/?f_TPR=r86400&f_WT=2&keywords=Product%20Designer&sortBy=R"
     driver = None
     vagas = []
     links_vistos = set()
@@ -393,7 +399,7 @@ def coletar_jobs_brutos(max_paginas: int = 20, headless: bool = True, progress_c
             driver.quit()
 
 
-def coletar_indeed_brutos(max_paginas: int = 5, headless: bool = True, progress_callback=None) -> dict:
+def coletar_indeed_brutos(max_paginas: int = 5, headless: bool = True, progress_callback=None, custom_url: str = None) -> dict:
     """
     Coleta TODAS as vagas do Indeed SEM filtrar por UX/Produto.
 
@@ -405,7 +411,7 @@ def coletar_indeed_brutos(max_paginas: int = 5, headless: bool = True, progress_
     from selenium.webdriver.support import expected_conditions as EC
     import re
 
-    base_url = "https://br.indeed.com/empregos?q=UX+Designer+OR+Product+Designer&l=Brasil&fromage=1"
+    base_url = custom_url or "https://br.indeed.com/empregos?q=UX+Designer+OR+Product+Designer&l=Brasil&fromage=1"
     driver = None
     vagas = []
     links_vistos = set()
@@ -570,38 +576,38 @@ def coletar_indeed_brutos(max_paginas: int = 5, headless: bool = True, progress_
             driver.quit()
 
 
-def coletar_e_salvar_posts(headless: bool = True, progress_callback=None) -> tuple:
+def coletar_e_salvar_posts(headless: bool = True, progress_callback=None, custom_url: str = None) -> tuple:
     """
     Coleta posts brutos e salva em arquivo.
 
     Returns:
         (dados_brutos, caminho_arquivo)
     """
-    dados = coletar_posts_brutos(headless=headless, progress_callback=progress_callback)
+    dados = coletar_posts_brutos(headless=headless, progress_callback=progress_callback, custom_url=custom_url)
     arquivo = salvar_bruto(dados, "posts")
     return dados, arquivo
 
 
-def coletar_e_salvar_jobs(headless: bool = True, progress_callback=None) -> tuple:
+def coletar_e_salvar_jobs(headless: bool = True, progress_callback=None, custom_url: str = None) -> tuple:
     """
     Coleta jobs brutos e salva em arquivo.
 
     Returns:
         (dados_brutos, caminho_arquivo)
     """
-    dados = coletar_jobs_brutos(headless=headless, progress_callback=progress_callback)
+    dados = coletar_jobs_brutos(headless=headless, progress_callback=progress_callback, custom_url=custom_url)
     arquivo = salvar_bruto(dados, "jobs")
     return dados, arquivo
 
 
-def coletar_e_salvar_indeed(headless: bool = True, progress_callback=None) -> tuple:
+def coletar_e_salvar_indeed(headless: bool = True, progress_callback=None, custom_url: str = None) -> tuple:
     """
     Coleta vagas do Indeed brutas e salva em arquivo.
 
     Returns:
         (dados_brutos, caminho_arquivo)
     """
-    dados = coletar_indeed_brutos(headless=headless, progress_callback=progress_callback)
+    dados = coletar_indeed_brutos(headless=headless, progress_callback=progress_callback, custom_url=custom_url)
     arquivo = salvar_bruto(dados, "indeed")
     return dados, arquivo
 

@@ -104,6 +104,41 @@ WILLIAM_PROFILE = {
     # Salario (nao especificado = aceita qualquer)
     "salario_minimo": None,
     "salario_maximo": None,
+
+    # Histórico Profissional (para Cold Messages contextualizadas)
+    # IMPORTANTE: Atualize com dados reais do currículo do usuário
+    "experiencias": [
+        {
+            "empresa": "Empresa Atual/Recente",
+            "cargo": "Senior Product Designer",
+            "periodo": "2020 - Atual",
+            "destaques": [
+                "Liderança de Design System utilizado por 5+ squads",
+                "Aumento de 40% na conversão de onboarding através de redesign",
+                "Mentoria de 3 designers júnior",
+            ]
+        },
+        {
+            "empresa": "Empresa Anterior",
+            "cargo": "Product Designer",
+            "periodo": "2016 - 2020",
+            "destaques": [
+                "Redesign completo do app mobile com 200k+ usuários",
+                "Implementação de cultura de UX Research com testes semanais",
+                "Parceria com PMs para definição de roadmap de produto",
+            ]
+        },
+        {
+            "empresa": "Empresa Anterior 2",
+            "cargo": "UX Designer",
+            "periodo": "2008 - 2016",
+            "destaques": [
+                "Criação de interfaces para sistemas complexos (B2B/SaaS)",
+                "Condução de workshops de Design Thinking com stakeholders",
+                "Transição de Waterfall para Agile em time de produto",
+            ]
+        },
+    ],
 }
 
 

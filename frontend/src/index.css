@@ -1,96 +1,152 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --bg-primary: #f8fafc;
-    --bg-secondary: #ffffff;
-    --bg-tertiary: #f1f5f9;
-    --border: #e2e8f0;
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
-    --text-muted: #94a3b8;
+    --background: 40 20% 95%;
+    /* #f5f3ef */
+    --foreground: 240 10% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+
+    --primary: 240 10% 10%;
+    --primary-foreground: 40 20% 98%;
+
+    --secondary: 240 10% 96%;
+    --secondary-foreground: 240 10% 10%;
+
+    --muted: 240 10% 94%;
+    --muted-foreground: 240 8% 46%;
+
+    --accent: 226 96% 60%;
+    /* Electric Azure */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 10% 90%;
+    --input: 240 10% 90%;
+    --ring: 226 96% 60%;
+
+    --radius: 1.5rem;
   }
 
   .dark {
-    --bg-primary: #0f0f12;
-    --bg-secondary: #1a1a1f;
-    --bg-tertiary: #252529;
-    --border: #2e2e33;
-    --text-primary: #ffffff;
-    --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 10% 3.9%;
+
+    --secondary: 240 10% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 10% 15%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 226 96% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 10% 18%;
+    --input: 240 10% 18%;
+    --ring: 226 96% 60%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border) / 0.3);
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 300;
+    /* Outfit Light por padrão */
+    transition: background-color 0.4s ease, color 0.4s ease;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer components {
-  .card {
-    @apply bg-[var(--bg-secondary)] border border-[var(--border)] rounded-2xl p-5 transition-all duration-200;
+
+  /* FASE 1: Raio de Sol — Glow Effect Puro (sem Tailwind blur) */
+  .bg-sunbeam {
+    position: fixed;
+    top: -10%;
+    right: -5%;
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle at 70% 30%,
+        rgba(255, 184, 0, 0.12) 0%,
+        rgba(255, 184, 0, 0.04) 40%,
+        rgba(245, 243, 239, 0) 70%);
+    pointer-events: none;
+    z-index: -10;
+    border-radius: 50%;
   }
 
-  .card:hover {
-    @apply border-accent-info/30;
+  /* Utilitários Premium */
+  .glass {
+    @apply bg-white/60 dark:bg-black/60 backdrop-blur-md border border-white/40 dark:border-white/20 shadow-sm;
   }
 
-  .btn-primary {
-    @apply px-4 py-2 bg-accent-primary text-white rounded-lg font-medium transition-all duration-200 hover:bg-accent-primary/90 hover:shadow-glow-primary;
+  .shadow-soft {
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.02);
   }
 
-  .btn-secondary {
-    @apply px-4 py-2 bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border)] rounded-lg font-medium transition-all duration-200 hover:bg-[var(--border)];
+  .dark .shadow-soft {
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.2);
   }
 
-  .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full;
-  }
-
-  .input {
-    @apply w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary transition-colors;
-  }
-
-  .select {
-    @apply w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-accent-primary transition-colors cursor-pointer;
+  .bg-striped-delicate {
+    background: repeating-linear-gradient(-45deg,
+        transparent,
+        transparent 4px,
+        rgba(255, 255, 255, 0.8) 4px,
+        rgba(255, 255, 255, 0.8) 5px);
   }
 }
 
-/* Scrollbar estilizado para dark mode */
-.dark ::-webkit-scrollbar {
+/* Scrollbar estilizado */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+/* Scrollbar estilizado */
+::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.dark ::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+::-webkit-scrollbar-track {
+  background: hsl(var(--secondary));
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: var(--border);
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
   border-radius: 4px;
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* Recharts customização para dark mode */
-.dark .recharts-cartesian-grid-horizontal line,
-.dark .recharts-cartesian-grid-vertical line {
-  stroke: var(--border);
-}
-
-.dark .recharts-text {
-  fill: var(--text-secondary);
-}
-
-.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
-  background-color: var(--bg-secondary) !important;
-  border-color: var(--border) !important;
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }

@@ -165,22 +165,34 @@ def fazer_login_linkedin(driver, credentials: dict) -> bool:
             print(f"Erro ao clicar em entrar: {e}")
             return False
 
-        # Aguarda redirecionamento
-        time.sleep(3)
+        # Aguarda redirecionamento ou aprovação do usuário (checkpoint/2FA no celular)
+        print("Aguardando redirecionamento de login (talvez precise de aprovação no celular)...")
+        max_espera_segundos = 120
+        login_sucesso = False
+        
+        for idx in range(max_espera_segundos):
+            url = driver.current_url
+            if "feed" in url or "jobs" in url or ("checkpoint" not in url and "login" not in url and idx > 3):
+                login_sucesso = True
+                break
+            
+            if "checkpoint" in url and idx == 3:
+                print("⚠ LinkedIn solicitou verificação de segurança (2FA).")
+                print("⚠ POR FAVOR, APROVE A SOLICITAÇÃO NO SEU CELULAR AGORA. (Aguardando até 2 minutos...)")
+                
+            time.sleep(1)
 
         # Verifica se login foi bem sucedido
-        if "feed" in driver.current_url or "jobs" in driver.current_url or "checkpoint" not in driver.current_url:
-            # Pode ter verificação de segurança
-            if "checkpoint" in driver.current_url:
-                print("LinkedIn solicitou verificação de segurança. Faça login manualmente.")
-                return False
-
+        if login_sucesso:
             print("Login LinkedIn realizado com sucesso!")
             # Salva cookies para sessões futuras
             salvar_cookies(driver, "linkedin")
             return True
         else:
-            print("Falha no login - verifique as credenciais")
+            if "checkpoint" in driver.current_url:
+                print("Tempo esgotado para aprovação manual no celular.")
+            else:
+                print("Falha no login - verifique as credenciais")
             return False
 
     except Exception as e:

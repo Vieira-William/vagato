@@ -2,9 +2,16 @@
   "habilitado": true,
   "horarios": [
     {
-      "hora": 16,
-      "minuto": 30,
-      "ativo": true
+      "hora": 14,
+      "minuto": 0,
+      "ativo": true,
+      "auditar": true
+    },
+    {
+      "hora": 9,
+      "minuto": 0,
+      "ativo": true,
+      "auditar": true
     }
   ],
   "auditar_apos_coleta": true

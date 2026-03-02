@@ -214,6 +214,67 @@ def restaurar_urls_padrao(db: Session = Depends(get_db)):
     }
 
 
+@router.get("/test")
+def testar_url_busca(url: str):
+    """
+    Testa se uma URL de busca retorna resultados (vagas).
+    """
+    import requests
+    from bs4 import BeautifulSoup
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    try:
+        # Timeout curto para não travar a UI
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code != 200:
+            return {
+                "success": False, 
+                "message": f"Plataforma retornou erro {response.status_code}",
+                "count": 0
+            }
+        
+        # Heurística rápida para detectar vagas
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Patterns comuns de job cards
+        patterns = [
+            ".job-card-container", ".base-card", # LinkedIn
+            ".job_seen_beacon", ".tapItem",      # Indeed
+            ".result-card", "[data-testid='job-card']"
+        ]
+        
+        found = False
+        for p in patterns:
+            if soup.select(p):
+                found = True
+                break
+        
+        # Verificação extra por texto se os seletores falharem (posts orgânicos)
+        if not found:
+            text_indicators = ["vaga", "hiring", "opportunities", "jobs"]
+            text_content = response.text.lower()
+            if any(indicator in text_content for indicator in text_indicators):
+                found = True
+
+        return {
+            "success": found,
+            "message": "Encontramos vagas frescas!" if found else "Busca válida, mas sem resultados imediatos.",
+            "count": 1 if found else 0
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao testar URL: {e}")
+        return {
+            "success": False, 
+            "message": "Erro de conexão com a plataforma.",
+            "count": 0
+        }
+
+
 @router.get("/fontes")
 def listar_fontes():
     """

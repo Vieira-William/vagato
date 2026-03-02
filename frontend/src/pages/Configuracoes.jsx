@@ -19,9 +19,22 @@ import {
   Zap,
   Coins,
   History,
-  Target
+  Target,
+  ShieldCheck,
+  Save,
+  Search,
+  MapPin,
+  ChevronLeft,
+  Copy
 } from 'lucide-react';
+import SlideInConfirm from '../components/SlideInConfirm';
 import { searchUrlsService, configService } from '../services/api';
+import { urlBuilder } from '../utils/urlBuilder';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -40,7 +53,29 @@ export default function Configuracoes() {
   const [loadingUrls, setLoadingUrls] = useState(true);
   const [fontes, setFontes] = useState([]);
   const [showAddUrl, setShowAddUrl] = useState(false);
-  const [novaUrl, setNovaUrl] = useState({ nome: '', url: '', fonte: 'linkedin_jobs' });
+  const [novaUrl, setNovaUrl] = useState({ id: null, nome: '', url: '', fonte: 'linkedin_jobs' });
+  const [smartFilters, setSmartFilters] = useState({
+    keywords: '',
+    location: 'Brasil',
+    remote: 'all',
+    level: 'all',
+    jobType: 'all',
+    timeRange: '24h',
+    easyApply: false,
+    under10: false,
+    sortBy: 'DD',
+    industry: '',
+    function: '',
+    company: '',
+    salary: '',
+    education: 'all',
+    lang: ''
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [searchStep, setSearchStep] = useState(1);
+  const [addMethod, setAddMethod] = useState('smart');
+  const [validatingUrl, setValidatingUrl] = useState(false);
+  const [confirmarFechar, setConfirmarFechar] = useState(false);
 
   // Match Weights states
   const [weights, setWeights] = useState({
@@ -71,14 +106,11 @@ export default function Configuracoes() {
     fetchIAStatus();
   }, []);
 
-  // Auto-refresh IA status a cada 5 segundos
   useEffect(() => {
     if (!autoRefreshIA) return;
-
     const interval = setInterval(() => {
       fetchIAStatus();
-    }, 5000);
-
+    }, 10000);
     return () => clearInterval(interval);
   }, [autoRefreshIA]);
 
@@ -119,15 +151,7 @@ export default function Configuracoes() {
     try {
       setLoadingWeights(true);
       const response = await configService.getMatchWeights();
-      setWeights({
-        skills: response.data.skills,
-        nivel: response.data.nivel,
-        modalidade: response.data.modalidade,
-        tipo_contrato: response.data.tipo_contrato,
-        salario: response.data.salario,
-        ingles: response.data.ingles,
-        localizacao: response.data.localizacao,
-      });
+      setWeights(response.data);
     } catch (error) {
       console.error('Erro ao carregar pesos:', error);
     } finally {
@@ -137,7 +161,6 @@ export default function Configuracoes() {
 
   const fetchIAStatus = async () => {
     try {
-      setLoadingIA(true);
       const response = await configService.getIAStatus();
       setIaStatus(response.data);
     } catch (error) {
@@ -147,25 +170,20 @@ export default function Configuracoes() {
     }
   };
 
-  // LinkedIn handlers
   const handleSaveLinkedIn = async (e) => {
     e.preventDefault();
-
     if (!linkedinEmail || !linkedinPassword) {
       setMessage({ type: 'error', text: 'Preencha email e senha' });
       return;
     }
-
     setSaving(true);
     setMessage(null);
-
     try {
       const response = await fetch(`${API_URL}/api/config/linkedin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: linkedinEmail, password: linkedinPassword }),
       });
-
       if (response.ok) {
         setMessage({ type: 'success', text: 'Credenciais salvas com sucesso!' });
         setLinkedinPassword('');
@@ -181,29 +199,12 @@ export default function Configuracoes() {
     }
   };
 
-  const handleRemoveLinkedIn = async () => {
-    if (!confirm('Remover credenciais do LinkedIn?')) return;
-
-    try {
-      const response = await fetch(`${API_URL}/api/config/linkedin`, { method: 'DELETE' });
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Credenciais removidas' });
-        setLinkedinEmail('');
-        fetchConfigStatus();
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao remover' });
-    }
-  };
-
   const handleTestLinkedIn = async () => {
     setTesting(true);
     setMessage(null);
-
     try {
       const response = await fetch(`${API_URL}/api/config/linkedin/test`, { method: 'POST' });
       const data = await response.json();
-
       if (response.ok && data.success) {
         setMessage({ type: 'success', text: data.message });
       } else {
@@ -216,7 +217,6 @@ export default function Configuracoes() {
     }
   };
 
-  // URL handlers
   const handleToggleUrl = async (id) => {
     try {
       await searchUrlsService.toggle(id);
@@ -228,7 +228,6 @@ export default function Configuracoes() {
 
   const handleDeleteUrl = async (id, nome) => {
     if (!confirm(`Excluir URL "${nome}"?`)) return;
-
     try {
       await searchUrlsService.deletar(id);
       fetchUrls();
@@ -237,39 +236,8 @@ export default function Configuracoes() {
     }
   };
 
-  const handleAddUrl = async () => {
-    if (!novaUrl.nome || !novaUrl.url) {
-      setMessage({ type: 'error', text: 'Preencha nome e URL' });
-      return;
-    }
-
-    try {
-      await searchUrlsService.criar(novaUrl);
-      setNovaUrl({ nome: '', url: '', fonte: 'linkedin_jobs' });
-      setShowAddUrl(false);
-      fetchUrls();
-      setMessage({ type: 'success', text: 'URL adicionada com sucesso!' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao adicionar URL' });
-    }
-  };
-
-  const handleRestaurarPadroes = async () => {
-    if (!confirm('Restaurar URLs padrão? Isso removerá todas as URLs personalizadas.')) return;
-
-    try {
-      await searchUrlsService.restaurarPadroes();
-      fetchUrls();
-      setMessage({ type: 'success', text: 'URLs restauradas para padrão' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao restaurar URLs' });
-    }
-  };
-
-  // Match Weights handlers
   const handleWeightChange = (key, value) => {
     const numValue = parseFloat(value);
-    if (isNaN(numValue) || numValue < 0 || numValue > 1) return;
     setWeights((prev) => ({ ...prev, [key]: numValue }));
   };
 
@@ -278,50 +246,27 @@ export default function Configuracoes() {
 
   const handleSaveWeights = async () => {
     if (!weightsValid) {
-      setMessage({ type: 'error', text: `A soma dos pesos deve ser 100%. Atual: ${Math.round(totalWeights * 100)}%` });
+      setMessage({ type: 'error', text: `A soma deve ser 100%. Atual: ${Math.round(totalWeights * 100)}%` });
       return;
     }
-
     setSavingWeights(true);
     try {
       await configService.saveMatchWeights(weights);
       setMessage({ type: 'success', text: 'Pesos salvos com sucesso!' });
     } catch (error) {
-      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erro ao salvar pesos' });
+      setMessage({ type: 'error', text: 'Erro ao salvar pesos' });
     } finally {
       setSavingWeights(false);
     }
   };
 
-  const handleResetWeights = async () => {
-    if (!confirm('Restaurar pesos para os valores padrão?')) return;
-
-    try {
-      const response = await configService.resetMatchWeights();
-      setWeights({
-        skills: response.data.skills,
-        nivel: response.data.nivel,
-        modalidade: response.data.modalidade,
-        tipo_contrato: response.data.tipo_contrato,
-        salario: response.data.salario,
-        ingles: response.data.ingles,
-        localizacao: response.data.localizacao,
-      });
-      setMessage({ type: 'success', text: 'Pesos restaurados para padrão' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Erro ao restaurar pesos' });
-    }
-  };
-
   const handleRecalcularScores = async () => {
-    if (!confirm('Recalcular scores de todas as vagas pendentes com os pesos atuais?')) return;
-
     setRecalculando(true);
     try {
       const response = await configService.recalcularScores();
       setMessage({ type: 'success', text: response.data.message });
     } catch (error) {
-      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erro ao recalcular scores' });
+      setMessage({ type: 'error', text: 'Erro ao recalcular' });
     } finally {
       setRecalculando(false);
     }
@@ -330,7 +275,6 @@ export default function Configuracoes() {
   const handleUpdateIAConfig = async (e) => {
     e.preventDefault();
     if (!newCredit) return;
-
     setRecharging(true);
     try {
       await configService.updateIAConfig({ saldo_inicial_usd: parseFloat(newCredit) });
@@ -344,552 +288,168 @@ export default function Configuracoes() {
     }
   };
 
-  // Agrupa URLs por fonte
-  const urlsPorFonte = urls.reduce((acc, url) => {
-    if (!acc[url.fonte]) acc[url.fonte] = [];
-    acc[url.fonte].push(url);
-    return acc;
-  }, {});
-
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center">
-          <Settings className="w-5 h-5 text-accent-primary" />
-        </div>
+    <div className="max-w-5xl mx-auto space-y-8 pb-12">
+      {/* Header — Estilo Ilha Flutuante (Gabarito) */}
+      <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-10 shadow-soft flex flex-col md:flex-row items-center justify-between gap-6 border border-white/40 transition-all">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Configurações</h1>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Configure credenciais e URLs de busca
-          </p>
+          <h1 className="text-4xl font-light text-[#2C2C2E] tracking-tighter mb-2">Ajustes</h1>
+          <p className="text-[#2C2C2E]/60 text-sm font-medium">Configure a inteligência por trás da plataforma. ⚡</p>
+        </div>
+        <div className="w-12 h-12 bg-white/50 backdrop-blur-lg rounded-2xl flex items-center justify-center border border-white/60">
+          <Settings className="w-6 h-6 text-[#2C2C2E]" strokeWidth={1.5} />
         </div>
       </div>
 
-      {/* Mensagem de feedback */}
+      {/* Alerta de Feedback */}
       {message && (
-        <div
-          className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'success'
-              ? 'bg-green-500/10 text-green-500 border border-green-500/20'
-              : 'bg-red-500/10 text-red-500 border border-red-500/20'
-            }`}
-        >
-          {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-          <span>{message.text}</span>
+        <div className={cn(
+          "p-6 rounded-[24px] flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500",
+          message.type === 'success' ? "bg-green-50 text-green-600 border border-green-100" : "bg-red-50 text-red-600 border border-red-100"
+        )}>
+          {message.type === 'success' ? <Check className="w-5 h-5" strokeWidth={2.5} /> : <AlertCircle className="w-5 h-5" strokeWidth={2} />}
+          <span className="text-sm font-bold">{message.text}</span>
         </div>
       )}
 
-      {/* LinkedIn Card */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#0A66C2] flex items-center justify-center">
-              <Linkedin className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-[var(--text-primary)]">LinkedIn</h2>
-              <p className="text-xs text-[var(--text-secondary)]">Credenciais para coletar vagas</p>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-          {configStatus && (
-            <div
-              className={`px-3 py-1 rounded-full text-xs font-medium ${configStatus.linkedin_configured
-                  ? 'bg-green-500/10 text-green-500'
-                  : 'bg-yellow-500/10 text-yellow-500'
-                }`}
-            >
-              {configStatus.linkedin_configured ? 'Configurado' : 'Não configurado'}
-            </div>
-          )}
-        </div>
-
-        <form onSubmit={handleSaveLinkedIn} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Email</label>
-              <input
-                type="email"
-                value={linkedinEmail}
-                onChange={(e) => setLinkedinEmail(e.target.value)}
-                placeholder="seu.email@exemplo.com"
-                className="w-full px-3 py-2 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)] text-[var(--text-primary)] focus:border-accent-primary focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">Senha</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={linkedinPassword}
-                  onChange={(e) => setLinkedinPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 pr-10 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)] text-[var(--text-primary)] focus:border-accent-primary focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+        {/* ILHA: IA CONSUMPTION (Dark Premium Azure) */}
+        <Card className="rounded-[32px] border-none shadow-soft bg-[#2C2C2E] text-white p-8 md:col-span-1 flex flex-col justify-between overflow-hidden relative group">
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-10">
+              <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
+                <Zap className="w-5 h-5 text-[#375DFB] fill-[#375DFB]" strokeWidth={1.5} />
               </div>
+              <Badge className="bg-[#375DFB] text-white border-none rounded-full px-4 py-1 text-[10px] font-black tracking-widest">IA ONLINE</Badge>
             </div>
-          </div>
 
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-4 py-2 rounded-lg bg-accent-primary text-white font-medium hover:bg-accent-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Salvar
-            </button>
-
-            {configStatus?.linkedin_configured && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleTestLinkedIn}
-                  disabled={testing}
-                  className="px-4 py-2 rounded-lg bg-[#0A66C2] text-white font-medium hover:bg-[#0A66C2]/90 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                  Testar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRemoveLinkedIn}
-                  className="px-4 py-2 rounded-lg border border-red-500/30 text-red-500 hover:bg-red-500/10"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </>
-            )}
-          </div>
-        </form>
-      </div>
-
-      {/* URLs de Busca */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-accent-primary/10 flex items-center justify-center">
-              <Link2 className="w-5 h-5 text-accent-primary" />
+            <div className="space-y-1 mb-8">
+              <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">Créditos API</p>
+              <h3 className="text-4xl font-light tracking-tight">${iaStatus?.saldo_disponivel_usd?.toFixed(2)}</h3>
             </div>
-            <div>
-              <h2 className="font-semibold text-[var(--text-primary)]">URLs de Busca</h2>
-              <p className="text-xs text-[var(--text-secondary)]">Configure as fontes de vagas</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleRestaurarPadroes}
-              className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
-              title="Restaurar padrões"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowAddUrl(!showAddUrl)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-accent-primary text-white text-sm font-medium hover:bg-accent-primary/90"
-            >
-              <Plus className="w-4 h-4" />
-              Adicionar
-            </button>
-          </div>
-        </div>
-
-        {/* Form para adicionar URL */}
-        {showAddUrl && (
-          <div className="mb-4 p-4 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-              <input
-                type="text"
-                value={novaUrl.nome}
-                onChange={(e) => setNovaUrl({ ...novaUrl, nome: e.target.value })}
-                placeholder="Nome da URL"
-                className="px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-primary)] focus:border-accent-primary focus:outline-none"
-              />
-              <select
-                value={novaUrl.fonte}
-                onChange={(e) => setNovaUrl({ ...novaUrl, fonte: e.target.value })}
-                className="px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-primary)] focus:border-accent-primary focus:outline-none"
-              >
-                {fontes.map((fonte) => (
-                  <option key={fonte.id} value={fonte.id}>{fonte.nome}</option>
-                ))}
-              </select>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleAddUrl}
-                  className="flex-1 px-3 py-2 rounded-lg bg-accent-primary text-white font-medium hover:bg-accent-primary/90"
-                >
-                  Adicionar
-                </button>
-                <button
-                  onClick={() => setShowAddUrl(false)}
-                  className="px-3 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-            <input
-              type="url"
-              value={novaUrl.url}
-              onChange={(e) => setNovaUrl({ ...novaUrl, url: e.target.value })}
-              placeholder="https://www.linkedin.com/jobs/search/?..."
-              className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-primary)] focus:border-accent-primary focus:outline-none"
-            />
-          </div>
-        )}
-
-        {/* Lista de URLs */}
-        {loadingUrls ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {Object.entries(urlsPorFonte).map(([fonte, urlsFonte]) => (
-              <div key={fonte}>
-                <h3 className="text-sm font-medium text-[var(--text-muted)] mb-2">
-                  {fontes.find((f) => f.id === fonte)?.nome || fonte}
-                </h3>
-                <div className="space-y-2">
-                  {urlsFonte.map((url) => (
-                    <div
-                      key={url.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg border ${url.ativo
-                          ? 'bg-[var(--bg-tertiary)] border-[var(--border)]'
-                          : 'bg-[var(--bg-tertiary)]/50 border-[var(--border)]/50 opacity-60'
-                        }`}
-                    >
-                      <button
-                        onClick={() => handleToggleUrl(url.id)}
-                        className={`flex-shrink-0 ${url.ativo ? 'text-accent-success' : 'text-[var(--text-muted)]'}`}
-                      >
-                        {url.ativo ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">{url.nome}</p>
-                        <p className="text-xs text-[var(--text-muted)] truncate">{url.url}</p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteUrl(url.id, url.nome)}
-                        className="p-1.5 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-4 p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
-          <p className="text-xs text-[var(--text-muted)]">
-            <strong>Dica:</strong> Você pode adicionar URLs personalizadas de busca do LinkedIn ou Indeed.
-            Use os filtros do site (remoto, últimas 24h, etc) e copie a URL.
-          </p>
-        </div>
-      </div>
-
-      {/* Match Weights Card */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-              <Sliders className="w-5 h-5 text-purple-500" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-[var(--text-primary)]">Pesos de Matching</h2>
-              <p className="text-xs text-[var(--text-secondary)]">Configure a importância de cada critério</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleResetWeights}
-              className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
-              title="Restaurar padrões"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {loadingWeights ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
-          </div>
-        ) : (
-          <>
-            {/* Sliders para cada peso */}
             <div className="space-y-4">
-              {[
-                { key: 'skills', label: 'Skills Técnicas', desc: 'Correspondência com suas habilidades' },
-                { key: 'nivel', label: 'Nível/Senioridade', desc: 'Compatibilidade com seu nível de experiência' },
-                { key: 'modalidade', label: 'Modalidade', desc: 'Remoto, híbrido ou presencial' },
-                { key: 'tipo_contrato', label: 'Tipo de Contrato', desc: 'CLT, PJ, freelancer, etc.' },
-                { key: 'salario', label: 'Salário', desc: 'Faixa salarial compatível' },
-                { key: 'ingles', label: 'Inglês', desc: 'Requisito de idioma' },
-                { key: 'localizacao', label: 'Localização', desc: 'Proximidade com suas preferências' },
-              ].map(({ key, label, desc }) => (
-                <div key={key} className="flex items-center gap-4">
-                  <div className="w-32 flex-shrink-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
-                    <p className="text-[10px] text-[var(--text-muted)]">{desc}</p>
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={Math.round(weights[key] * 100)}
-                      onChange={(e) => handleWeightChange(key, e.target.value / 100)}
-                      className="w-full h-2 bg-[var(--bg-tertiary)] rounded-lg appearance-none cursor-pointer accent-accent-primary"
-                    />
-                  </div>
-                  <div className="w-14 text-right">
-                    <span className={`text-sm font-bold ${weights[key] >= 0.20 ? 'text-accent-primary' :
-                        weights[key] >= 0.10 ? 'text-[var(--text-primary)]' :
-                          'text-[var(--text-muted)]'
-                      }`}>
-                      {Math.round(weights[key] * 100)}%
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Total e validação */}
-            <div className={`mt-4 p-3 rounded-lg flex items-center justify-between ${weightsValid
-                ? 'bg-accent-success/10 border border-accent-success/20'
-                : 'bg-red-500/10 border border-red-500/20'
-              }`}>
-              <div className="flex items-center gap-2">
-                {weightsValid ? (
-                  <Check className="w-4 h-4 text-accent-success" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-red-500" />
-                )}
-                <span className={`text-sm font-medium ${weightsValid ? 'text-accent-success' : 'text-red-500'}`}>
-                  Total: {Math.round(totalWeights * 100)}%
-                </span>
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{iaStatus?.saldo_percentual_restante?.toFixed(0)}% Restante</span>
               </div>
-              {!weightsValid && (
-                <span className="text-xs text-red-500">
-                  A soma deve ser exatamente 100%
-                </span>
-              )}
-            </div>
-
-            {/* Botões de ação */}
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={handleSaveWeights}
-                disabled={savingWeights || !weightsValid}
-                className="flex-1 px-4 py-2 rounded-lg bg-accent-primary text-white font-medium hover:bg-accent-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {savingWeights ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                Salvar Pesos
-              </button>
-              <button
-                onClick={handleRecalcularScores}
-                disabled={recalculando}
-                className="px-4 py-2 rounded-lg bg-purple-500 text-white font-medium hover:bg-purple-500/90 disabled:opacity-50 flex items-center gap-2"
-              >
-                {recalculando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                Recalcular
-              </button>
-            </div>
-
-            <div className="mt-4 p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
-              <p className="text-xs text-[var(--text-muted)]">
-                <strong>Como funciona:</strong> Os pesos determinam a importância de cada critério no cálculo do score de compatibilidade.
-                Após alterar os pesos, clique em "Recalcular" para atualizar os scores de todas as vagas pendentes.
-              </p>
-            </div>
-          </>
-        )}
-      </div>
-      {/* IA Consumption Card */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <Coins className="w-5 h-5 text-orange-500" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-[var(--text-primary)]">Consumo de IA</h2>
-              <p className="text-xs text-[var(--text-secondary)]">Monitoramento de créditos Anthropic</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchIAStatus}
-              className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingIA ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {loadingIA && !iaStatus ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Alerta se em_alerta */}
-            {iaStatus?.em_alerta && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-red-500">⚠️ Créditos Baixos</p>
-                  <p className="text-xs text-red-400/80">Você tem apenas ${iaStatus?.saldo_disponivel_usd?.toFixed(2)} USD restantes. Recarregue para continuar usando IA.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Main Progress Card */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Saldo Disponível</p>
-                  <p className={`text-2xl font-bold ${iaStatus?.em_alerta ? 'text-red-500' : 'text-accent-success'}`}>
-                    ${iaStatus?.saldo_disponivel_usd?.toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Percentual</p>
-                  <p className="text-2xl font-bold text-[var(--text-primary)]">
-                    {iaStatus?.saldo_percentual_restante?.toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="h-4 w-full bg-[var(--bg-tertiary)] rounded-full overflow-hidden border border-[var(--border)]">
+              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className={`h-full transition-all duration-500 ${
-                    iaStatus?.saldo_percentual_restante < 20 ? 'bg-red-500' :
-                    iaStatus?.saldo_percentual_restante < 50 ? 'bg-orange-500' : 'bg-accent-success'
-                  }`}
+                  className="h-full bg-[#375DFB] transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(55,93,251,0.5)]"
                   style={{ width: `${iaStatus?.saldo_percentual_restante || 0}%` }}
                 />
               </div>
-
-              <div className="flex justify-between text-[11px] text-[var(--text-muted)] uppercase tracking-wider">
-                <span>Gasto: ${iaStatus?.gasto_acumulado_usd?.toFixed(4)} USD</span>
-                <span>Total: ${iaStatus?.saldo_inicial_usd?.toFixed(2)} USD</span>
-              </div>
             </div>
+          </div>
 
-            {/* Detalhamento por Modelo */}
-            <div className="border-t border-[var(--border)] pt-4">
-              <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Consumo por Modelo</p>
-              <div className="grid grid-cols-3 gap-2">
-                {/* Haiku */}
-                <div className="p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                    <span className="text-[10px] font-bold text-[var(--text-primary)]">HAIKU</span>
-                  </div>
-                  <p className="text-xs font-semibold text-[var(--text-primary)]">{iaStatus?.detalhes?.haiku_calls || 0}</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">chamadas</p>
-                  <p className="text-[11px] font-medium text-accent-primary mt-1">${iaStatus?.detalhes?.gasto_haiku_usd?.toFixed(4)}</p>
-                </div>
+          <div className="mt-10 pt-6 border-t border-white/5 relative z-10">
+            <form onSubmit={handleUpdateIAConfig} className="space-y-4">
+              <Input
+                type="number"
+                value={newCredit}
+                onChange={(e) => setNewCredit(e.target.value)}
+                placeholder="USD Amount"
+                className="bg-white/5 border-none text-white placeholder:text-gray-600 h-10 rounded-xl px-4 text-sm"
+              />
+              <Button className="w-full bg-[#375DFB] text-white rounded-full font-black text-[11px] uppercase tracking-widest h-11 shadow-lg shadow-[#375DFB]/30 hover:scale-105 transition-all">
+                Atualizar Saldo
+              </Button>
+            </form>
+          </div>
 
-                {/* Sonnet */}
-                <div className="p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
-                    <span className="text-[10px] font-bold text-[var(--text-primary)]">SONNET</span>
-                  </div>
-                  <p className="text-xs font-semibold text-[var(--text-primary)]">{iaStatus?.detalhes?.sonnet_calls || 0}</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">chamadas</p>
-                  <p className="text-[11px] font-medium text-purple-400 mt-1">${iaStatus?.detalhes?.gasto_sonnet_usd?.toFixed(4)}</p>
-                </div>
+          {/* Azure Glow */}
+          <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-[#375DFB]/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-[#375DFB]/20 transition-all duration-700" />
+        </Card>
 
-                {/* Vision */}
-                <div className="p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
-                    <span className="text-[10px] font-bold text-[var(--text-primary)]">VISION</span>
-                  </div>
-                  <p className="text-xs font-semibold text-[var(--text-primary)]">{iaStatus?.detalhes?.vision_calls || 0}</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">chamadas</p>
-                  <p className="text-[11px] font-medium text-amber-400 mt-1">${iaStatus?.detalhes?.gasto_vision_usd?.toFixed(4)}</p>
-                </div>
-              </div>
+        {/* ILHA: PESOS DO MATCH */}
+        <Card className="rounded-[32px] border-none shadow-soft bg-white/70 backdrop-blur-lg p-10 md:col-span-2 transition-all hover:bg-white/80">
+          <CardHeader className="p-0 mb-8 flex flex-row items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-[#2C2C2E] tracking-tight">O que priorizar?</h2>
+              <p className="text-sm text-[#2C2C2E]/60 font-medium">Ajuste os pesos para o cálculo de Match.</p>
             </div>
-
-            {/* AI Models Legend */}
-            <div className="border-t border-[var(--border)] pt-4 grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <span className="text-[10px] font-bold text-[var(--text-primary)]">CLAUDE HAIKU</span>
-                </div>
-                <p className="text-[11px] text-[var(--text-secondary)]">Extração, Análise e Vision (baixo custo)</p>
-              </div>
-              <div className="p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                  <span className="text-[10px] font-bold text-[var(--text-primary)]">CLAUDE SONNET</span>
-                </div>
-                <p className="text-[11px] text-[var(--text-secondary)]">Geração de Pitch (Máxima qualidade)</p>
-              </div>
+            <div className={cn(
+              "px-4 py-2 rounded-full text-[10px] font-black tracking-widest border transition-all",
+              weightsValid ? "bg-green-50 text-green-600 border-green-200 shadow-sm" : "bg-red-50 text-red-600 border-red-200"
+            )}>
+              PESO: {Math.round(totalWeights * 100)}%
             </div>
-
-            {/* Recharge / Config */}
-            <div className="pt-4 border-t border-[var(--border)]">
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Configurar Créditos Totais (USD)</label>
-              <form onSubmit={handleUpdateIAConfig} className="flex gap-2">
-                <div className="relative flex-1">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">$</div>
+          </CardHeader>
+          <CardContent className="p-0 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+              {[
+                { key: 'skills', label: 'Habilidades', color: 'bg-indigo-500' },
+                { key: 'nivel', label: 'Nível Exp.', color: 'bg-slate-700' },
+                { key: 'modalidade', label: 'Modalidade', color: 'bg-emerald-500' },
+                { key: 'salario', label: 'Remuneração', color: 'bg-[#375DFB]' },
+                { key: 'ingles', label: 'Idioma Inglês', color: 'bg-violet-500' },
+                { key: 'tipo_contrato', label: 'Tipo Contrato', color: 'bg-sky-500' }
+              ].map(w => (
+                <div key={w.key} className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{w.label}</span>
+                    <span className="text-[12px] font-black text-[#2C2C2E]">{Math.round(weights[w.key] * 100)}%</span>
+                  </div>
                   <input
-                    type="number"
-                    step="0.01"
-                    value={newCredit}
-                    onChange={(e) => setNewCredit(e.target.value)}
-                    placeholder="Ex: 20.00"
-                    className="w-full pl-7 pr-3 py-2 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)] text-[var(--text-primary)] focus:border-accent-primary focus:outline-none"
+                    type="range" min="0" max="100"
+                    value={Math.round(weights[w.key] * 100)}
+                    onChange={(e) => handleWeightChange(w.key, e.target.value / 100)}
+                    className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#375DFB] transition-all"
                   />
                 </div>
-                <button
-                  type="submit"
-                  disabled={recharging || !newCredit}
-                  className="px-4 py-2 rounded-lg bg-[#F59E0B] text-white font-medium hover:bg-[#D97706] disabled:opacity-50 flex items-center gap-2"
-                >
-                  {recharging ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  Atualizar
-                </button>
-              </form>
-              <p className="mt-2 text-[10px] text-[var(--text-muted)] italic">
-                Informe o valor total de créditos comprados no console da Anthropic. O sistema calculará o saldo descontando o uso real.
-              </p>
+              ))}
+            </div>
+            <div className="pt-6 flex flex-col sm:flex-row gap-3">
+              <Button onClick={handleSaveWeights} className="h-11 rounded-full px-10 bg-[#2C2C2E] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg hover:bg-black transition-all">Salvar Pesos</Button>
+              <Button onClick={handleRecalcularScores} variant="secondary" className="h-11 rounded-full px-8 bg-white/50 border border-white/60 text-[#2C2C2E] font-bold text-[11px] uppercase tracking-widest hover:bg-white transition-all">Recalcular Tudo</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ILHA: CONTA LINKEDIN */}
+        <Card className="rounded-[32px] border-none shadow-soft bg-white/70 backdrop-blur-lg p-10 md:col-span-3 transition-all hover:bg-white/80">
+          <div className="flex flex-col lg:flex-row gap-12">
+            <div className="lg:w-1/3">
+              <div className="w-16 h-16 rounded-[22px] bg-[#0A66C2] flex items-center justify-center mb-6 shadow-xl shadow-[#0A66C2]/10">
+                <Linkedin className="w-8 h-8 text-white" strokeWidth={1.5} />
+              </div>
+              <h2 className="text-2xl font-semibold text-[#2C2C2E] mb-2 tracking-tight">LinkedIn Sync</h2>
+              <p className="text-[#2C2C2E]/60 text-sm leading-relaxed font-medium">Conecte sua conta para automatizar a varredura de vagas em tempo real.</p>
             </div>
 
-            {iaStatus?.ultima_atualizacao && (
-              <div className="text-center">
-                <p className="text-[10px] text-[var(--text-muted)] flex items-center justify-center gap-1">
-                  <History className="w-3 h-3" />
-                  Último débito em: {new Date(iaStatus.ultima_atualizacao).toLocaleString()}
-                </p>
-              </div>
-            )}
+            <div className="flex-1 space-y-6">
+              <form onSubmit={handleSaveLinkedIn} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Usuário / Email</label>
+                  <Input
+                    value={linkedinEmail}
+                    onChange={(e) => setLinkedinEmail(e.target.value)}
+                    placeholder="Seu email principal"
+                    className="rounded-2xl bg-white/50 border-white/60 h-11"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Senha LinkedIn</label>
+                  <Input
+                    type="password"
+                    value={linkedinPassword}
+                    onChange={(e) => setLinkedinPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="rounded-2xl bg-white/50 border-white/60 h-11"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex flex-col sm:flex-row gap-4 pt-4">
+                  <Button type="submit" className="h-11 rounded-full px-10 bg-[#375DFB] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg shadow-[#375DFB]/20 hover:scale-[1.02] transition-all">Configurar Acesso</Button>
+                  <Button type="button" onClick={handleTestLinkedIn} variant="secondary" className="h-11 rounded-full px-8 bg-white/50 border border-white/60 text-[#2C2C2E] font-bold text-[11px] uppercase tracking-widest gap-2 hover:bg-white transition-all">
+                    <Play className="w-3.5 h-3.5" strokeWidth={2.5} /> Testar Conexão
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
-        )}
+        </Card>
+
       </div>
     </div>
   );
 }
-

@@ -1,39 +1,34 @@
-import { clsx } from 'clsx';
+import * as React from "react"
+import { cva } from "class-variance-authority";
 
-const variants = {
-  default: 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]',
-  primary: 'bg-accent-primary/15 text-accent-primary',
-  success: 'bg-accent-success/15 text-accent-success',
-  warning: 'bg-accent-warning/15 text-accent-warning',
-  danger: 'bg-accent-danger/15 text-accent-danger',
-  info: 'bg-accent-info/15 text-accent-info',
-  purple: 'bg-accent-purple/15 text-accent-purple',
-};
+import { cn } from "@/lib/utils"
 
-const sizes = {
-  sm: 'text-[10px] px-1.5 py-0.5 gap-1',
-  md: 'text-xs px-2 py-1 gap-1.5',
-  lg: 'text-sm px-2.5 py-1.5 gap-2',
-};
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border-none px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
+        outline: "text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
 
-const iconSizes = {
-  sm: 'w-3 h-3',
-  md: 'w-3.5 h-3.5',
-  lg: 'w-4 h-4',
-};
-
-export default function Badge({ children, variant = 'default', size = 'md', icon: Icon, className }) {
-  return (
-    <span
-      className={clsx(
-        'inline-flex items-center font-medium rounded-full whitespace-nowrap',
-        variants[variant],
-        sizes[size],
-        className
-      )}
-    >
-      {Icon && <Icon className={iconSizes[size]} />}
-      {children}
-    </span>
-  );
+function Badge({
+  className,
+  variant,
+  ...props
+}) {
+  return (<div className={cn(badgeVariants({ variant }), className)} {...props} />);
 }
+
+export { Badge, badgeVariants }

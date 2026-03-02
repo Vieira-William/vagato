@@ -4,7 +4,7 @@ import os
 from sqlalchemy import text, inspect
 
 from .database import engine, Base
-from .api import vagas, stats, scraper, config, profile, search_urls
+from .api import vagas, stats, scraper, config, profile, search_urls, calendar
 
 # Criar diretório data se não existir
 os.makedirs("data", exist_ok=True)
@@ -135,6 +135,20 @@ app.add_middleware(
         "http://localhost:5176",
         "http://localhost:5177",
         "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
+        "http://127.0.0.1:3000",
+        "http://192.168.1.16:5173",
+        "http://192.168.1.16:5174",
+        "http://192.168.1.16:5175",
+        "http://192.168.1.22:5173",
+        "http://192.168.1.22:5174",
+        "http://192.168.1.22:5175",
+        "http://Williams-Mac-mini.local:5173",
+        "http://Williams-Mac-mini.local:5174",
+        "http://MacBook-Air-de-William.local:5173",
+        "http://MacBook-Air-de-William.local:5174",
         "https://vagas-frontend.onrender.com",
     ],
     allow_credentials=True,
@@ -149,6 +163,7 @@ app.include_router(scraper.router, prefix="/api")
 app.include_router(config.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
 app.include_router(search_urls.router, prefix="/api")
+app.include_router(calendar.router, prefix="/api")
 
 
 @app.get("/")
@@ -161,49 +176,3 @@ def root():
 def health_check():
     return {"status": "healthy"}
 
-
-@app.get("/api/debug/vagas")
-def debug_vagas():
-    """Endpoint temporário para diagnosticar o erro 500 em /api/vagas/. Remover após debug."""
-    from .database import get_db
-    from . import models
-    import traceback
-
-    db = next(get_db())
-    resultado = {}
-    try:
-        # 1. Conta total
-        resultado["total"] = db.query(models.Vaga).count()
-
-        # 2. Busca 1 vaga sem serialização Pydantic
-        vaga = db.query(models.Vaga).first()
-        if vaga:
-            resultado["primeira_vaga_raw"] = {
-                "id": vaga.id,
-                "titulo": vaga.titulo,
-                "fonte": vaga.fonte,
-                "status": vaga.status,
-                "modalidade": vaga.modalidade,
-                "nivel": getattr(vaga, "nivel", "COLUNA_NAO_EXISTE"),
-                "score_compatibilidade": getattr(vaga, "score_compatibilidade", "COLUNA_NAO_EXISTE"),
-                "is_destaque": getattr(vaga, "is_destaque", "COLUNA_NAO_EXISTE"),
-                "is_favorito": getattr(vaga, "is_favorito", "COLUNA_NAO_EXISTE"),
-                "skills_obrigatorias": getattr(vaga, "skills_obrigatorias", "COLUNA_NAO_EXISTE"),
-                "registro_bruto_uuid": getattr(vaga, "registro_bruto_uuid", "COLUNA_NAO_EXISTE"),
-            }
-
-        # 3. Tenta serialização Pydantic explicitamente
-        from . import schemas
-        try:
-            schemas.VagaResponse.model_validate(vaga, from_attributes=True)
-            resultado["pydantic_ok"] = True
-        except Exception as e:
-            resultado["pydantic_erro"] = str(e)
-
-    except Exception as e:
-        resultado["erro_sqlalchemy"] = str(e)
-        resultado["traceback"] = traceback.format_exc()
-    finally:
-        db.close()
-
-    return resultado
