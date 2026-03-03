@@ -1,37 +1,35 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { Briefcase, CheckCircle, XCircle, Loader2, RefreshCw, AlertTriangle, Coffee } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const CHECKS = [
-  { id: 'api',      label: 'Conectando ao servidor',    endpoint: '/health' },
-  { id: 'database', label: 'Verificando banco de dados', endpoint: '/vagas/?limit=1' },
-  { id: 'stats',    label: 'Carregando estatísticas',    endpoint: '/stats/' },
+  { id: 'api', label: 'Conectando ao núcleo', endpoint: '/health' },
+  { id: 'database', label: 'Verificando as vagas', endpoint: '/vagas/?limit=1' },
+  { id: 'stats', label: 'Carregando inteligência', endpoint: '/stats/' },
 ];
 
 const MAX_ATTEMPTS = 12;
-const RETRY_DELAY  = 5000; // 5s entre tentativas
+const RETRY_DELAY = 5000;
 
 const WAKE_MESSAGES = [
   'Acordando o servidor...',
-  'Backend está iniciando...',
-  'Aguarde, isso pode levar até 60s...',
-  'Servidores gratuitos demoram um pouco...',
-  'Quase lá, servidor aquecendo...',
-  'Estabelecendo conexão...',
+  'Organizando o seu Dashboard...',
+  'Aguarde, leva uns segundinhos...',
+  'Preparando a sua plataforma UX...',
+  'Quase lá, aquecendo os motores...',
 ];
 
 export default function LoadingScreen({ onComplete, onError }) {
-  // 'pending' | 'loading' | 'success' | 'error'
-  const [statuses, setStatuses]   = useState(['pending', 'pending', 'pending']);
-  const [attempt,  setAttempt]    = useState(0);   // tentativas de wake-up
-  const [isWaking, setIsWaking]   = useState(false);
-  const [error,    setError]      = useState(null);
+  const [statuses, setStatuses] = useState(['pending', 'pending', 'pending']);
+  const [attempt, setAttempt] = useState(0);
+  const [isWaking, setIsWaking] = useState(false);
+  const [error, setError] = useState(null);
 
-  const mountedRef  = useRef(true);
-  const attemptRef  = useRef(0);       // ref para acessar dentro de closures/loops
-  const runningRef  = useRef(false);   // evita múltiplas execuções paralelas
+  const mountedRef = useRef(true);
+  const attemptRef = useRef(0);
+  const runningRef = useRef(false);
 
-  // Atualiza status de um check individual
   const updateStatus = useCallback((index, value) => {
     setStatuses(prev => {
       const next = [...prev];
@@ -40,8 +38,6 @@ export default function LoadingScreen({ onComplete, onError }) {
     });
   }, []);
 
-  // Tenta executar os 3 health checks em sequência
-  // Retorna true se todos passaram, false se algum falhou
   const tryChecks = useCallback(async () => {
     for (let i = 0; i < CHECKS.length; i++) {
       if (!mountedRef.current) return false;
@@ -50,19 +46,16 @@ export default function LoadingScreen({ onComplete, onError }) {
         await api.get(CHECKS[i].endpoint);
         if (!mountedRef.current) return false;
         updateStatus(i, 'success');
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 400));
       } catch (err) {
         if (!mountedRef.current) return false;
-        // Mantém o check com problema em 'loading' (spinner) enquanto tenta acordar
-        // Só marca erro depois de esgotar tentativas
         updateStatus(i, 'loading');
         return { failedIndex: i, err };
       }
     }
-    return true; // todos ok
+    return true;
   }, [updateStatus]);
 
-  // Loop principal de wake-up
   const runHealthChecks = useCallback(async () => {
     if (runningRef.current) return;
     runningRef.current = true;
@@ -84,15 +77,14 @@ export default function LoadingScreen({ onComplete, onError }) {
         err.response?.status === 503;
 
       if (!isRetryable || attemptRef.current >= MAX_ATTEMPTS) {
-        // Esgotou tentativas ou erro não recuperável → mostra erro
         if (!mountedRef.current) break;
         updateStatus(failedIndex, 'error');
         setIsWaking(false);
         setError({
-          step:       CHECKS[failedIndex].id,
-          label:      CHECKS[failedIndex].label,
-          message:    err.response?.data?.detail || err.message,
-          status:     err.response?.status,
+          step: CHECKS[failedIndex].id,
+          label: CHECKS[failedIndex].label,
+          message: err.response?.data?.detail || err.message,
+          status: err.response?.status,
           suggestion: getSuggestion(CHECKS[failedIndex].id, err),
         });
         onError?.({ step: CHECKS[failedIndex].id });
@@ -100,12 +92,10 @@ export default function LoadingScreen({ onComplete, onError }) {
         return;
       }
 
-      // Incrementa contador e aguarda para nova tentativa
       attemptRef.current += 1;
       setAttempt(attemptRef.current);
       setIsWaking(true);
 
-      // Reseta checks anteriores como pending para a próxima rodada
       setStatuses(prev => prev.map((s, idx) => idx < failedIndex ? s : 'pending'));
 
       await new Promise(r => setTimeout(r, RETRY_DELAY));
@@ -114,10 +104,9 @@ export default function LoadingScreen({ onComplete, onError }) {
       result = await tryChecks();
     }
 
-    // Tudo passou!
     if (mountedRef.current && result === true) {
       setIsWaking(false);
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 800)); // Pequena pausa pra ver tudo verdinho
       onComplete?.();
     }
 
@@ -130,7 +119,6 @@ export default function LoadingScreen({ onComplete, onError }) {
     return () => { mountedRef.current = false; };
   }, []);
 
-  // Reinicia tudo ao clicar em "Tentar novamente"
   const retry = () => {
     runningRef.current = false;
     runHealthChecks();
@@ -138,16 +126,16 @@ export default function LoadingScreen({ onComplete, onError }) {
 
   const getSuggestion = (checkId, err) => {
     if (err.code === 'ERR_NETWORK')
-      return 'Não foi possível conectar ao servidor. Verifique sua internet ou tente novamente.';
+      return 'Isso me parece um erro de conexão. Tente checar o seu Wi-Fi.';
     switch (checkId) {
       case 'api':
         return err.response?.status >= 500
-          ? 'O servidor não conseguiu iniciar. Aguarde alguns minutos e tente novamente.'
-          : 'Servidor não está respondendo.';
+          ? 'Nossos robôs estão dormindo. Dê uns minutos a eles e tente de novo.'
+          : 'Poxa, o servidor não acordou.';
       case 'database':
-        return 'Erro ao conectar com o banco de dados.';
+        return 'Meu túnel até os arquivos não funcionou. Reabrindo em instantes.';
       case 'stats':
-        return 'Erro ao carregar estatísticas.';
+        return 'Me perdi nos cálculos, vamos tentar contar de novo.';
       default:
         return err.message;
     }
@@ -155,130 +143,119 @@ export default function LoadingScreen({ onComplete, onError }) {
 
   const getIcon = (s) => {
     switch (s) {
-      case 'pending': return <div className="w-5 h-5 rounded-full border-2 border-[var(--border)]" />;
-      case 'loading': return <Loader2 className="w-5 h-5 text-accent-primary animate-spin" />;
-      case 'success': return <CheckCircle className="w-5 h-5 text-accent-success" />;
-      case 'error':   return <XCircle className="w-5 h-5 text-accent-danger" />;
-      default:        return null;
+      case 'pending': return <div className="w-4 h-4 rounded-full border border-[#2C2C2E]/20" />;
+      case 'loading': return <Loader2 className="w-4 h-4 text-[#375DFB] animate-spin" />;
+      case 'success': return <CheckCircle className="w-5 h-5 text-emerald-500 bg-white rounded-full shadow-sm" />;
+      case 'error': return <XCircle className="w-5 h-5 text-red-500 bg-white rounded-full shadow-sm" />;
+      default: return null;
     }
   };
 
-  const successCount    = statuses.filter(s => s === 'success').length;
+  const successCount = statuses.filter(s => s === 'success').length;
   const progressPercent = (attempt / MAX_ATTEMPTS) * 100;
-  const wakeMsg         = WAKE_MESSAGES[Math.floor(attempt / 2) % WAKE_MESSAGES.length];
-  const secsLeft        = Math.max(0, (MAX_ATTEMPTS - attempt) * 5);
+  const wakeMsg = WAKE_MESSAGES[Math.floor(attempt / 2) % WAKE_MESSAGES.length];
+  const secsLeft = Math.max(0, (MAX_ATTEMPTS - attempt) * 5);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-[#F8F9FE] flex flex-col items-center justify-center p-6 relative overflow-hidden">
 
-        {/* Cabeçalho */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent-primary mb-4 shadow-lg shadow-accent-primary/20">
-            <Briefcase className="w-8 h-8 text-white" />
+      {/* Background Decorativo Suave (Ambientação Crextio) */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#375DFB] rounded-[100px] blur-[120px] opacity-[0.05] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#375DFB] rounded-[100px] blur-[120px] opacity-[0.05] pointer-events-none" />
+
+      <div className="max-w-md w-full z-10 animate-in fade-in zoom-in-95 duration-700 ease-out">
+        {/* Logo / Ícone */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[28px] bg-gradient-to-br from-[#375DFB] to-[#5B7BFF] mb-6 shadow-xl shadow-[#375DFB]/20 transition-transform hover:scale-105 duration-300">
+            <Briefcase className="w-10 h-10 text-white fill-white/10" strokeWidth={1.5} />
           </div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Vagas UX Platform</h1>
-          <p className="text-[var(--text-secondary)] mt-1">
-            {isWaking ? wakeMsg : error ? 'Falha ao conectar' : 'Iniciando aplicação...'}
+          <h1 className="text-4xl font-light tracking-tighter text-[#2C2C2E]">Vagas UX</h1>
+          <p className="text-[#2C2C2E]/60 mt-2 font-medium text-sm">
+            {isWaking ? wakeMsg : error ? 'Ops, uma pequena falha' : 'Iniciando o seu ambiente de trabalho...'}
           </p>
         </div>
 
-        {/* Card */}
-        <div className="card">
-
-          {/* Banner wake-up */}
+        {/* Card Principal - Estilo Ilhas Flutuantes (Bento) */}
+        <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white transition-all duration-300">
+          {/* Banner de Hibernação */}
           {isWaking && (
-            <div className="mb-4 p-3 bg-accent-warning/10 border border-accent-warning/20 rounded-xl">
-              <div className="flex items-center gap-3">
-                <Coffee className="w-5 h-5 text-accent-warning animate-pulse flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-accent-warning">Servidor dormindo</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    Tentativa {attempt} de {MAX_ATTEMPTS} &bull; ~{secsLeft}s restantes
-                  </p>
-                </div>
+            <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100/50 flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                <Coffee className="w-5 h-5 text-amber-500 animate-pulse" />
               </div>
-              {/* Barra de progresso wake-up */}
-              <div className="mt-3 h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-accent-warning transition-all duration-500 ease-out rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-[#2C2C2E]">Acordando a base de dados</p>
+                <p className="text-[11px] text-[#2C2C2E]/60 font-medium uppercase tracking-wider mt-0.5">
+                  Tentativa {attempt}/{MAX_ATTEMPTS} · Falta ~{secsLeft}s
+                </p>
+                {/* Micropulse bar */}
+                <div className="mt-2.5 h-1 bg-amber-500/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-500 transition-all duration-[5000ms] ease-linear" style={{ width: `${progressPercent}%` }} />
+                </div>
               </div>
             </div>
           )}
 
-          {/* Lista de checks */}
-          <div className="space-y-3">
+          {/* A lista de status limpa */}
+          <div className="space-y-4">
             {CHECKS.map((check, i) => (
               <div
                 key={check.id}
-                className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${
-                  statuses[i] === 'loading' ? 'bg-accent-primary/10 border border-accent-primary/20' :
-                  statuses[i] === 'error'   ? 'bg-accent-danger/10 border border-accent-danger/20' :
-                  statuses[i] === 'success' ? 'bg-accent-success/10 border border-accent-success/20' :
-                  'bg-[var(--bg-tertiary)] border border-transparent'
-                }`}
+                className={cn(
+                  "flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 border",
+                  statuses[i] === 'loading' ? 'bg-[#375DFB]/[0.03] border-[#375DFB]/10 scale-[1.02] shadow-sm' :
+                    statuses[i] === 'error' ? 'bg-red-50 border-red-100' :
+                      statuses[i] === 'success' ? 'bg-emerald-50/50 border-emerald-100/30' :
+                        'bg-black/5 border-transparent opacity-60'
+                )}
               >
-                {getIcon(statuses[i])}
-                <span className={`flex-1 text-sm font-medium ${
-                  statuses[i] === 'loading' ? 'text-accent-primary' :
-                  statuses[i] === 'error'   ? 'text-accent-danger' :
-                  statuses[i] === 'success' ? 'text-accent-success' :
-                  'text-[var(--text-muted)]'
-                }`}>
-                  {check.label}
+                <div className="flex-shrink-0 flex items-center justify-center w-6 min-h-[24px]">
+                  {getIcon(statuses[i])}
+                </div>
+                <span className={cn(
+                  "flex-1 text-[13px] font-bold tracking-tight transition-colors",
+                  statuses[i] === 'loading' ? 'text-[#375DFB]' :
+                    statuses[i] === 'error' ? 'text-red-600' :
+                      statuses[i] === 'success' ? 'text-emerald-700' :
+                        'text-[#2C2C2E]/60 font-medium'
+                )}>
+                  {statuses[i] === 'loading' ? 'Aguarde... ' + check.label.toLowerCase() : check.label}
                 </span>
               </div>
             ))}
           </div>
 
-          {/* Barra de progresso geral (sem erro e sem wake-up) */}
+          {/* Barra de Progresso Final (Sem erro e Sem wake) */}
           {!error && !isWaking && (
-            <div className="mt-6">
-              <div className="h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+            <div className="mt-8">
+              <div className="h-1.5 bg-black/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-accent-primary to-accent-purple transition-all duration-500 ease-out rounded-full"
+                  className="h-full bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] transition-all duration-700 ease-out rounded-full"
                   style={{ width: `${(successCount / CHECKS.length) * 100}%` }}
                 />
               </div>
             </div>
           )}
 
-          {/* Erro */}
+          {/* Retorno de Erro Bruto */}
           {error && (
-            <div className="mt-6 p-4 bg-accent-danger/10 rounded-xl border border-accent-danger/20">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-accent-danger/20 flex items-center justify-center">
-                  <AlertTriangle className="w-4 h-4 text-accent-danger" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-accent-danger">Falha: {error.label}</p>
-                  <p className="text-xs text-accent-danger/80 mt-1 break-words">{error.message}</p>
-                  <div className="mt-3 p-2 bg-[var(--bg-tertiary)] rounded-lg">
-                    <p className="text-xs text-[var(--text-muted)]">{error.suggestion}</p>
-                  </div>
-                </div>
+            <div className="mt-8 text-center animate-in slide-in-from-bottom-2 fade-in">
+              <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-5 h-5" strokeWidth={2} />
               </div>
+              <h3 className="text-[#2C2C2E] font-bold text-lg leading-tight mb-2">Falhamos e fomos sinceros.</h3>
+              <p className="text-[13px] text-[#2C2C2E]/60 mb-6">{error.message}</p>
               <button
                 onClick={retry}
-                className="mt-4 w-full py-2.5 px-4 bg-accent-primary hover:bg-accent-primary/90 text-white text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="bg-[#375DFB] hover:bg-[#284BDE] text-white w-full h-12 rounded-full font-bold text-sm transition-transform active:scale-95 shadow-lg flex items-center justify-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Tentar novamente
+                Tentar reconexão
               </button>
+              <p className="text-[10px] text-[#2C2C2E]/40 mt-4 uppercase font-bold tracking-widest">{error.suggestion}</p>
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-[var(--text-muted)] mt-6">
-          {isWaking
-            ? 'Servidores gratuitos do Render dormem após inatividade'
-            : error
-              ? 'Clique acima para tentar novamente'
-              : 'Verificando conexões...'}
-        </p>
       </div>
     </div>
   );

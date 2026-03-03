@@ -25,7 +25,8 @@ import {
   Search,
   MapPin,
   ChevronLeft,
-  Copy
+  Copy,
+  Calendar
 } from 'lucide-react';
 import SlideInConfirm from '../components/SlideInConfirm';
 import { searchUrlsService, configService, calendarService } from '../services/api';
@@ -484,49 +485,51 @@ export default function Configuracoes() {
         <Card className="rounded-[32px] border-none shadow-soft bg-white/70 backdrop-blur-lg p-10 md:col-span-3 transition-all hover:bg-white/80">
           <div className="flex flex-col lg:flex-row gap-12">
             <div className="lg:w-1/3">
-              <div className="w-16 h-16 rounded-[22px] bg-[#F5F3EF] flex items-center justify-center mb-6 shadow-sm">
+              <div className="w-16 h-16 rounded-[22px] bg-[#F8F9FE] border border-black/5 flex items-center justify-center mb-6 shadow-sm">
                 <Link2 className="w-8 h-8 text-[#2C2C2E]" strokeWidth={1.5} />
               </div>
               <h2 className="text-2xl font-semibold text-[#2C2C2E] mb-2 tracking-tight">Integrações</h2>
               <p className="text-[#2C2C2E]/60 text-sm leading-relaxed font-medium">Conecte ferramentas externas para potencializar seu workflow.</p>
             </div>
 
-            <div className="flex-1">
-              <div className="bg-white/50 rounded-[24px] border border-white/60 p-6 flex items-center justify-between group hover:bg-white transition-all">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[#375DFB] flex items-center justify-center text-white shadow-lg shadow-[#375DFB]/10">
-                    <Calendar className="w-6 h-6" strokeWidth={1.5} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-[#2C2C2E]">Google Calendar</h4>
-                    <p className="text-[11px] text-[#2C2C2E]/50 font-medium">Sincronize sua agenda de entrevistas.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f8f9fa] border border-gray-100">
-                    <div className={cn("w-2 h-2 rounded-full", calendarConnected ? "bg-green-500 animate-pulse" : "bg-gray-300")} />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                      {loadingCalendar ? '...' : calendarConnected ? 'Conectado' : 'Desconectado'}
-                    </span>
+            <div className="flex-1 space-y-4">
+              <div className="bg-white/50 rounded-[24px] border border-white p-6 flex items-center justify-between group hover:bg-white transition-all shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-6 w-full">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-[16px] bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] flex items-center justify-center text-white shadow-lg shadow-[#375DFB]/20">
+                      <Calendar className="w-6 h-6" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h4 className="text-[15px] font-bold text-[#2C2C2E]">Google Calendar</h4>
+                      <p className="text-[12px] text-gray-400 font-semibold mt-0.5">Sincronize sua agenda de entrevistas</p>
+                    </div>
                   </div>
 
-                  {calendarConnected ? (
-                    <Button
-                      variant="ghost"
-                      onClick={handleDisconnectCalendar}
-                      className="h-9 px-4 rounded-xl text-red-500 hover:bg-red-50 text-[11px] font-black uppercase tracking-tighter"
-                    >
-                      Desconectar
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleConnectCalendar}
-                      className="h-9 px-6 rounded-xl bg-[#2C2C2E] text-white hover:bg-black text-[11px] font-black uppercase tracking-tighter shadow-sm"
-                    >
-                      Conectar
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-4 lg:justify-end">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-black/5 bg-black/5">
+                      <div className={cn("w-2 h-2 rounded-full", calendarConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-gray-300")} />
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${calendarConnected ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {loadingCalendar ? '...' : calendarConnected ? 'Conectado' : 'Desconectado'}
+                      </span>
+                    </div>
+
+                    {calendarConnected ? (
+                      <Button
+                        variant="ghost"
+                        onClick={handleDisconnectCalendar}
+                        className="h-10 px-6 rounded-full text-red-500 hover:bg-red-50 hover:text-red-600 text-[11px] font-black uppercase tracking-widest bg-transparent"
+                      >
+                        Desconectar
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleConnectCalendar}
+                        className="h-10 px-8 rounded-full bg-[#2C2C2E] hover:bg-black text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-black/10 transition-all active:scale-95"
+                      >
+                        Conectar
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

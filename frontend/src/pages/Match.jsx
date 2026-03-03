@@ -11,14 +11,14 @@ import PeriodoSelector from '../components/ui/PeriodoSelector';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#a855f7'];
 
-// Custom Tooltip component for dark theme
+// Custom Tooltip component for light glass theme
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-3 shadow-xl">
-        <p className="text-xs text-[var(--text-muted)] mb-1">{label}</p>
+      <div className="bg-white/90 backdrop-blur-xl border border-white rounded-[16px] p-4 shadow-xl">
+        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-2">{label}</p>
         {payload.map((entry, index) => (
-          <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
+          <p key={index} className="text-sm font-bold" style={{ color: entry.color }}>
             {entry.name}: {entry.value}
           </p>
         ))}
@@ -61,10 +61,10 @@ export default function Match() {
 
   if (loading || !dados) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-accent-primary border-t-transparent mx-auto"></div>
-          <p className="text-[var(--text-secondary)] mt-4">Carregando analytics...</p>
+      <div className="min-h-[calc(100vh-80px)] bg-[#F8F9FE] flex items-center justify-center p-6">
+        <div className="text-center bg-white/70 backdrop-blur-lg rounded-[32px] p-12 shadow-soft border border-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#375DFB] border-t-transparent mx-auto"></div>
+          <p className="text-[#2C2C2E]/60 mt-6 font-medium text-sm">Carregando seus insights...</p>
         </div>
       </div>
     );
@@ -90,15 +90,15 @@ export default function Match() {
   const crescimentoPositivo = dados.crescimento.vs_periodo_anterior >= 0;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      {/* Header */}
-      <div className="border-b border-[var(--border)] bg-[var(--bg-secondary)]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+    <div className="min-h-screen bg-[#F8F9FE] pb-12">
+      {/* Header Estilo Gabarito (TopNav ou equivalente em linha) */}
+      <div className="border-b border-white/20 bg-white/30 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[var(--text-primary)]">Match</h1>
-              <p className="text-sm text-[var(--text-secondary)] mt-1">
-                Insights e métricas do período
+              <h1 className="text-2xl font-light text-[#2C2C2E] tracking-tighter">Insights do Match</h1>
+              <p className="text-xs font-semibold text-[#2C2C2E]/50 uppercase tracking-widest mt-1">
+                Visualização de dados do período
               </p>
             </div>
             <PeriodoSelector value={periodo} onChange={setPeriodo} />
@@ -106,33 +106,32 @@ export default function Match() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-6 py-6">
+      <main className="max-w-7xl mx-auto px-6 py-8">
         {/* IA Credit Alert */}
         {iaStatus && iaStatus.saldo_atual_usd < iaStatus.alerta_limite_usd && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between group">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
+          <div className="mb-6 p-5 rounded-[24px] bg-red-500/10 border border-red-500/20 flex flex-col md:flex-row items-center justify-between gap-4 group transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-red-500">Créditos de IA acabando!</h4>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Seu saldo atual é de <span className="font-bold text-[var(--text-primary)]">${iaStatus.saldo_atual_usd.toFixed(4)}</span>.
-                  A coleta automática pode ser interrompida em breve.
+                <h4 className="text-sm font-bold text-red-600">Créditos de Extrator (IA) baixos!</h4>
+                <p className="text-[13px] text-red-600/70 font-medium mt-0.5">
+                  Saldo atual: <span className="font-bold">${iaStatus.saldo_atual_usd.toFixed(4)}</span>.
                 </p>
               </div>
             </div>
             <Link
               to="/configuracoes"
-              className="px-4 py-2 rounded-lg bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors flex items-center gap-2"
+              className="px-6 py-3 rounded-full bg-red-500 text-white text-[11px] font-black uppercase tracking-widest hover:bg-red-600 transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2"
             >
               Configurar Saldo
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         )}
 
-        {/* KPIs */}
+        {/* KPIs Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard
             title="Total no Período"
@@ -146,88 +145,92 @@ export default function Match() {
             icon={Calendar}
             color="info"
           />
-          <div className="card">
-            <div className="flex items-center gap-3 mb-3">
-              <div className={`p-2 rounded-xl ${crescimentoPositivo ? 'bg-accent-success/15' : 'bg-accent-danger/15'}`}>
+          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-white transition-transform hover:bg-white/90">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`p-3 rounded-2xl ${crescimentoPositivo ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
                 {crescimentoPositivo
-                  ? <TrendingUp className="w-5 h-5 text-accent-success" />
-                  : <TrendingDown className="w-5 h-5 text-accent-danger" />
+                  ? <TrendingUp className="w-5 h-5 text-emerald-500" strokeWidth={2.5} />
+                  : <TrendingDown className="w-5 h-5 text-red-500" strokeWidth={2.5} />
                 }
               </div>
-              <span className="text-sm text-[var(--text-secondary)]">Crescimento</span>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Crescimento</span>
             </div>
-            <p className={`text-2xl font-bold ${crescimentoPositivo ? 'text-accent-success' : 'text-accent-danger'}`}>
+            <p className={`text-4xl font-light tracking-tighter ${crescimentoPositivo ? 'text-emerald-600' : 'text-red-600'}`}>
               {crescimentoPositivo ? '+' : ''}{dados.crescimento.vs_periodo_anterior}%
             </p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">vs período anterior</p>
+            <p className="text-[11px] text-gray-500 font-semibold mt-2">VS PERÍODO ANTERIOR</p>
           </div>
-          <div className="card">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-accent-purple/15">
-                <Calendar className="w-5 h-5 text-accent-purple" />
+          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-white transition-transform hover:bg-white/90">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 rounded-2xl bg-purple-500/10">
+                <Calendar className="w-5 h-5 text-purple-500" strokeWidth={2.5} />
               </div>
-              <span className="text-sm text-[var(--text-secondary)]">Período</span>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Período Ativo</span>
             </div>
-            <p className="text-sm font-medium text-[var(--text-primary)]">
+            <p className="text-xl font-bold text-[#2C2C2E] truncate">
               {dados.data_inicio}
             </p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">até {dados.data_fim}</p>
+            <p className="text-[11px] text-gray-500 font-semibold mt-2 truncate">ATÉ {dados.data_fim}</p>
           </div>
         </div>
 
         {/* Gráficos Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Vagas por dia - Area Chart com gradiente */}
-          <div className="card">
-            <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">Vagas por Dia</h3>
-            <ResponsiveContainer width="100%" height={220}>
+          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
+            <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest mb-6">Ritmo de Coleta</h3>
+            <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={porDiaReversed}>
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#375DFB" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#375DFB" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis
                   dataKey="data"
-                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                  tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
                   tickFormatter={d => d.slice(5)}
-                  axisLine={{ stroke: 'var(--border)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  dy={10}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
-                  axisLine={{ stroke: 'var(--border)' }}
+                  tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dx={-10}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Area
                   type="monotone"
                   dataKey="total"
-                  stroke="#6366f1"
-                  strokeWidth={2}
+                  stroke="#375DFB"
+                  strokeWidth={4}
                   fill="url(#colorTotal)"
-                  dot={{ r: 3, fill: '#6366f1', strokeWidth: 2, stroke: 'var(--bg-secondary)' }}
-                  activeDot={{ r: 5, fill: '#6366f1', stroke: '#fff', strokeWidth: 2 }}
+                  dot={{ r: 4, fill: '#fff', strokeWidth: 3, stroke: '#375DFB' }}
+                  activeDot={{ r: 7, fill: '#375DFB', stroke: '#fff', strokeWidth: 3 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
           {/* Distribuição por fonte - Donut Chart */}
-          <div className="card">
-            <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">Por Fonte</h3>
-            <ResponsiveContainer width="100%" height={220}>
+          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
+            <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest mb-6">Origem dos Matchs</h3>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
                   data={fontePieData}
                   cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
-                  paddingAngle={3}
+                  cy="45%"
+                  innerRadius={70}
+                  outerRadius={100}
+                  paddingAngle={5}
                   dataKey="value"
-                  stroke="var(--bg-secondary)"
-                  strokeWidth={2}
+                  stroke="none"
+                  cornerRadius={10}
                 >
                   {fontePieData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -237,8 +240,9 @@ export default function Match() {
                 <Legend
                   verticalAlign="bottom"
                   iconType="circle"
-                  iconSize={8}
-                  formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>}
+                  iconSize={10}
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  formatter={(value) => <span className="text-[12px] font-bold text-[#2C2C2E] ml-1">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -248,160 +252,153 @@ export default function Match() {
         {/* Gráficos Row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Modalidade - Bar Chart */}
-          <div className="card">
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-4 h-4 text-[var(--text-muted)]" />
-              <h3 className="text-sm font-medium text-[var(--text-primary)]">Por Modalidade</h3>
+          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-emerald-600" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest">Modalidades</h3>
             </div>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={modalidadeData} layout="vertical">
                 <defs>
                   <linearGradient id="colorModalidade" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
-                    <stop offset="100%" stopColor="#22c55e" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#15803d" stopOpacity={1} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} axisLine={{ stroke: 'var(--border)' }} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.05)" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <YAxis
                   dataKey="name"
                   type="category"
-                  tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
-                  width={80}
-                  axisLine={{ stroke: 'var(--border)' }}
+                  tick={{ fontSize: 12, fill: '#4B5563', fontWeight: 600 }}
+                  width={90}
+                  axisLine={false}
+                  tickLine={false}
                 />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" fill="url(#colorModalidade)" radius={[0, 6, 6, 0]} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
+                <Bar dataKey="value" fill="url(#colorModalidade)" radius={[0, 10, 10, 0]} barSize={32} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           {/* Top Empresas */}
-          <div className="card">
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-4 h-4 text-[var(--text-muted)]" />
-              <h3 className="text-sm font-medium text-[var(--text-primary)]">Top Empresas</h3>
+          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-[#375DFB]/10 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-[#375DFB]" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest">Líderes de Contratação</h3>
             </div>
-            <div className="space-y-2 max-h-[200px] overflow-auto">
+            <div className="space-y-3 max-h-[220px] overflow-auto custom-scrollbar pr-2">
               {dados.top_empresas.slice(0, 8).map((e, i) => (
-                <div key={i} className="flex justify-between items-center p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[var(--bg-tertiary)] flex items-center justify-center">
-                      <span className="text-xs font-bold text-[var(--text-secondary)]">
+                <div key={i} className="flex justify-between items-center p-3 rounded-2xl hover:bg-white/80 border border-transparent hover:border-black/5 transition-all group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-sm flex items-center justify-center border border-white group-hover:scale-105 transition-transform">
+                      <span className="text-sm font-black text-gray-500 uppercase">
                         {e.empresa?.charAt(0) || '?'}
                       </span>
                     </div>
-                    <span className="text-sm text-[var(--text-primary)] truncate max-w-[150px]">{e.empresa}</span>
+                    <span className="text-sm font-semibold text-[#2C2C2E] truncate max-w-[180px]">{e.empresa}</span>
                   </div>
-                  <span className="text-sm font-medium text-accent-primary bg-accent-primary/10 px-2.5 py-1 rounded-full">
+                  <span className="text-[12px] font-black tracking-widest text-[#375DFB] bg-[#375DFB]/10 px-4 py-1.5 rounded-full border border-[#375DFB]/20">
                     {e.count}
                   </span>
                 </div>
               ))}
               {dados.top_empresas.length === 0 && (
-                <p className="text-sm text-[var(--text-muted)] text-center py-4">Nenhuma empresa registrada</p>
+                <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Vazio</p>
+                </div>
               )}
             </div>
           </div>
         </div>
 
         {/* Histórico por fonte (stacked area) */}
-        <div className="card mb-6">
-          <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">Histórico por Fonte</h3>
-          <ResponsiveContainer width="100%" height={280}>
+        <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white mb-6">
+          <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest mb-6">Mapeamento Evolutivo por Origem</h3>
+          <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={porDiaReversed}>
               <defs>
                 <linearGradient id="colorIndeed" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.6} />
-                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0.1} />
+                  <stop offset="0%" stopColor="#375DFB" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#375DFB" stopOpacity={0.1} />
                 </linearGradient>
                 <linearGradient id="colorLinkedin" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.6} />
-                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0.1} />
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0.1} />
                 </linearGradient>
                 <linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.6} />
+                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.8} />
                   <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
               <XAxis
                 dataKey="data"
-                tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
                 tickFormatter={d => d.slice(5)}
-                axisLine={{ stroke: 'var(--border)' }}
+                axisLine={false}
+                tickLine={false}
+                dy={10}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
-                axisLine={{ stroke: 'var(--border)' }}
+                tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
+                axisLine={false}
+                tickLine={false}
+                dx={-10}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend
                 verticalAlign="top"
                 align="right"
                 iconType="circle"
-                iconSize={8}
-                wrapperStyle={{ paddingBottom: 20 }}
-                formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>}
+                iconSize={10}
+                wrapperStyle={{ paddingBottom: '20px' }}
+                formatter={(value) => <span className="text-[12px] font-bold text-[#2C2C2E] ml-2">{value}</span>}
               />
-              <Area
-                type="monotone"
-                dataKey="indeed"
-                stackId="1"
-                stroke="#6366f1"
-                strokeWidth={2}
-                fill="url(#colorIndeed)"
-                name="Indeed"
-              />
-              <Area
-                type="monotone"
-                dataKey="linkedin_jobs"
-                stackId="1"
-                stroke="#22c55e"
-                strokeWidth={2}
-                fill="url(#colorLinkedin)"
-                name="LinkedIn Jobs"
-              />
-              <Area
-                type="monotone"
-                dataKey="linkedin_posts"
-                stackId="1"
-                stroke="#f59e0b"
-                strokeWidth={2}
-                fill="url(#colorPosts)"
-                name="LinkedIn Posts"
-              />
+              <Area type="monotone" dataKey="indeed" stackId="1" stroke="#375DFB" strokeWidth={3} fill="url(#colorIndeed)" name="Indeed" />
+              <Area type="monotone" dataKey="linkedin_jobs" stackId="1" stroke="#10b981" strokeWidth={3} fill="url(#colorLinkedin)" name="LinkedIn Jobs" />
+              <Area type="monotone" dataKey="linkedin_posts" stackId="1" stroke="#f59e0b" strokeWidth={3} fill="url(#colorPosts)" name="LinkedIn Posts" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Requisitos de Inglês */}
         {inglesData.length > 0 && (
-          <div className="card">
-            <div className="flex items-center gap-2 mb-4">
-              <Globe className="w-4 h-4 text-[var(--text-muted)]" />
-              <h3 className="text-sm font-medium text-[var(--text-primary)]">Requisitos de Inglês</h3>
+          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center">
+                <Globe className="w-5 h-5 text-purple-600" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest">Skill: Inglês Exigido</h3>
             </div>
-            <ResponsiveContainer width="100%" height={160}>
+            <ResponsiveContainer width="100%" height={200}>
               <BarChart data={inglesData}>
                 <defs>
                   <linearGradient id="colorIngles" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#a855f7" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#a855f7" stopOpacity={0.6} />
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#c084fc" stopOpacity={0.5} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.5} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
-                  axisLine={{ stroke: 'var(--border)' }}
+                  tick={{ fontSize: 12, fill: '#4B5563', fontWeight: 600 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dy={10}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
-                  axisLine={{ stroke: 'var(--border)' }}
+                  tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dx={-10}
                 />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" fill="url(#colorIngles)" radius={[6, 6, 0, 0]} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
+                <Bar dataKey="value" fill="url(#colorIngles)" radius={[8, 8, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
           </div>

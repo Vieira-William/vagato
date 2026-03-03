@@ -14537,3 +14537,80 @@ Durante a sessão, tentei rodar `npm run build` pelo Bash tool para validar o bu
 - `index.css` com todas as variáveis CSS necessárias ✅
 - Commit + push para produção → Render valida ✅
 - Custo da sessão: ~3h perdidas no loop do build. Não repetir.
+
+---
+### 📅 [2026-03-02 22:45] - Antigravity MacBook: INTEGRAÇÃO GOOGLE CALENDAR CONCLUÍDA
+**Status:** 🟢 OPERACIONAL (Sync Local & Render ready)
+
+**Relato Técnico (Post-Mortem):**
+1. **Frontend Fix (Redirect):** O botão de "Conectar Google Agenda" agora aponta estritamente para `http://localhost:8000/api/calendar/login`. Isso é mandatório porque o GCP não aceita IPs de rede local (como `192.168...`) no OAuth Redirect URI.
+2. **Backend Fix (Dotenv):** Injeti `load_dotenv()` no topo de `calendar.py`. Sem isso, o FastAPI não lia as credenciais do `.env` e retornava erro 400.
+3. **Infra Mac Mini:** O `venv` em `~/vagas_backend_fix` foi reconstruído com todas as dependências core (`google-auth`, `pydantic-settings`, `psycopg2`, `selenium`). O servidor está rodando na porta 8000 via `python3 -m uvicorn app.main:app`.
+4. **UI Fix (Icon):** Corrigido o erro `Calendar is not defined` em `Configuracoes.jsx`. O ícone não estava no import da `lucide-react`.
+
+---
+### 📅 [2026-03-02 23:55] - Mac Mini (Claude/SENTINELA): PKCE FIX — RAIZ DO PROBLEMA DE AUTH GOOGLE CALENDAR
+
+**Status:** 🟢 CONECTADO (token salvo em ~/vagas_backend_fix/data/google_token.json)
+
+**O Bug Que Estava Nos Destruindo (Explicação Completa):**
+
+Após adicionar `william.marangon@gmail.com` como usuário de teste no Google Cloud Console (o erro 403 estava bloqueando tudo), descobrimos um segundo bug crítico e mais sutil: `InvalidGrantError: (invalid_grant) Malformed auth code`.
+
+**Causa Raiz — PKCE automático do google-auth-oauthlib 1.3+:**
+
+A biblioteca `google-auth-oauthlib` 1.3.0 (versão instalada no venv do Mac Mini) **automaticamente injeta PKCE** (Proof Key for Code Exchange) no fluxo OAuth. Isso significa que quando chamamos `flow.authorization_url()`, a lib:
+1. Gera um `code_verifier` aleatório (string longa secreta)
+2. Calcula `code_challenge = SHA256(code_verifier)` (hash em base64url)
+3. Adiciona `code_challenge=...&code_challenge_method=S256` na URL de autorização
+
+O Google então exige que o `code_verifier` original seja enviado junto com `flow.fetch_token(code=code)` para validar que é o mesmo cliente que iniciou o fluxo.
+
+**O problema:** O código anterior criava um **novo objeto `Flow`** no endpoint `/calendar/callback`. Esse novo Flow não tem o `code_verifier` original. O Google recebe o code de autorização + a tentativa de troca sem o code_verifier → `invalid_grant`.
+
+```
+GET /calendar/login  → Flow criado, code_verifier gerado (ephemeral, no objeto)
+                       Authorization URL retornada com code_challenge
+
+GET /calendar/callback?code=X&state=Y  → ❌ CRIA UM NOVO Flow (sem code_verifier)
+                                          flow.fetch_token(code=X)  → BOOM! InvalidGrantError
+```
+
+**Fix Aplicado — `_pending_flows` dict:**
+
+```python
+# Módulo-level dict (persiste enquanto o processo viver)
+_pending_flows: dict = {}
+
+# /calendar/login — SALVA o flow original antes de redirecionar
+authorization_url, state = flow.authorization_url(...)
+_pending_flows[state] = flow  # ← chave = state (parâmetro OAuth único por sessão)
+return {"auth_url": authorization_url}
+
+# /calendar/callback — RECUPERA o flow com code_verifier intacto
+flow = _pending_flows.pop(state, None)  # ← se encontrar, usa; se não, fallback
+flow.fetch_token(code=code)  # ← agora funciona! code_verifier está no objeto
+```
+
+**Outros fixes no mesmo deploy:**
+- `TOKEN_PATH` agora é **absoluto** (`Path(__file__).resolve().parent.parent.parent / "data" / "google_token.json"`) — path relativo depende do CWD na hora de iniciar o uvicorn, quebrando silenciosamente
+- Após salvar token, faz `RedirectResponse(url=frontend_url)` → redireciona usuário de volta ao app (antes ficava mostrando JSON vazio no browser)
+- Fallback se `state` não encontrado (ex: backend reiniciou entre login e callback) → cria novo Flow sem PKCE
+
+**Arquitetura Dual-Backend (ATENÇÃO futuros agentes!):**
+
+O Mac Mini tem DOIS caminhos para o código:
+- `/Users/mactrabalho/vagas_backend_fix/` — **backend LOCAL que realmente roda** (LaunchAgent `com.vagas.backend`)
+- `/Volumes/vagas-ux-platform/backend/` — **cópia SMB** (serve para git/GitHub/Render)
+
+**SEMPRE que modificar `calendar.py`, atualizar AMBOS os caminhos.** O backend roda do local. O SMB vai para o Render.
+
+**Resultado final:**
+- `curl http://localhost:8000/api/calendar/events` → `{"isConnected":true,"events":[]}`
+- UI mostra "Nenhum evento próximo." sem o botão "Conectar" — confirma que `isConnected: true`
+- William não tem eventos futuros na agenda neste momento, mas a integração está 100% funcional
+
+— Claude (Mac Mini / SENTINELA)
+
+
+**Atenção Claude Mac Mini:** O motor está respondendo. O redirecionamento local funciona via `localhost`. Não tente mudar para IPs de rede no OAuth do Google, ou o console do GCP bloqueará a requisição. Os arquivos em `~/vagas_frontend_fix` e `~/vagas_backend_fix` no Mac Mini estão 100% sincronizados com o Gabarito.

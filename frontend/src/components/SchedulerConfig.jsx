@@ -31,24 +31,24 @@ function TimeSpinner({ value, min, max, onChange, label }) {
       <button
         type="button"
         onClick={increment}
-        className="w-7 h-5 flex items-center justify-center rounded-t-md bg-[var(--bg-secondary)] hover:bg-accent-primary/10 text-[var(--text-muted)] hover:text-accent-primary transition-colors border border-[var(--border)] border-b-0"
+        className="w-8 h-6 flex items-center justify-center rounded-t-xl bg-black/5 hover:bg-[#375DFB]/10 text-gray-400 hover:text-[#375DFB] transition-colors border-none"
         tabIndex={-1}
       >
-        <ChevronUp className="w-3 h-3" />
+        <ChevronUp className="w-4 h-4" />
       </button>
-      <div className="w-7 h-7 flex items-center justify-center bg-[var(--bg-secondary)] border border-[var(--border)] text-sm font-mono font-semibold text-[var(--text-primary)]">
+      <div className="w-8 h-8 flex items-center justify-center bg-transparent text-sm font-black text-[#2C2C2E]">
         {String(value).padStart(2, '0')}
       </div>
       <button
         type="button"
         onClick={decrement}
-        className="w-7 h-5 flex items-center justify-center rounded-b-md bg-[var(--bg-secondary)] hover:bg-accent-primary/10 text-[var(--text-muted)] hover:text-accent-primary transition-colors border border-[var(--border)] border-t-0"
+        className="w-8 h-6 flex items-center justify-center rounded-b-xl bg-black/5 hover:bg-[#375DFB]/10 text-gray-400 hover:text-[#375DFB] transition-colors border-none"
         tabIndex={-1}
       >
-        <ChevronDown className="w-3 h-3" />
+        <ChevronDown className="w-4 h-4" />
       </button>
       {label && (
-        <span className="text-[9px] text-[var(--text-muted)] mt-0.5 uppercase tracking-wide">{label}</span>
+        <span className="text-[9px] font-black text-gray-400 mt-1 uppercase tracking-widest">{label}</span>
       )}
     </div>
   );
@@ -67,14 +67,12 @@ function Toggle({ checked, onChange, size = 'md' }) {
       aria-checked={checked}
       type="button"
       onClick={onChange}
-      className={`relative inline-flex ${s.track} items-center rounded-full transition-colors flex-shrink-0 ${
-        checked ? 'bg-accent-primary' : 'bg-[var(--bg-tertiary)] border border-[var(--border)]'
-      }`}
+      className={`relative inline-flex ${s.track} items-center rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-[#375DFB] shadow-inner' : 'bg-black/10'
+        }`}
     >
       <span
-        className={`inline-block ${s.thumb} transform rounded-full bg-white shadow transition-transform ${
-          checked ? s.on : s.off
-        }`}
+        className={`inline-block ${s.thumb} transform rounded-full bg-white shadow-sm transition-all duration-300 ${checked ? s.on : s.off
+          }`}
       />
     </button>
   );
@@ -94,7 +92,7 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
   useEffect(() => {
     configService.getAgendamento()
       .then(res => setConfig(res.data))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -154,34 +152,39 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
   return (
     <div
       ref={popoverRef}
-      className="absolute right-0 top-full mt-2 z-50 w-80 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl shadow-2xl overflow-hidden"
+      className="absolute right-0 top-full mt-4 z-50 w-[360px] bg-white/90 backdrop-blur-2xl border border-white rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-tertiary)]">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-accent-primary" />
-          <span className="text-sm font-semibold text-[var(--text-primary)]">Coleta Automática</span>
+      <div className="flex items-center justify-between px-6 py-5 border-b border-black/5 bg-transparent">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-[14px] bg-[#375DFB]/10 flex items-center justify-center">
+            <Clock className="w-5 h-5 text-[#375DFB]" />
+          </div>
+          <div>
+            <h3 className="text-[13px] font-bold text-[#2C2C2E]">Coleta Automática</h3>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Agendador de Tarefas</p>
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="p-1 rounded-md hover:bg-[var(--bg-secondary)] text-[var(--text-muted)] transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 text-gray-400 hover:text-[#2C2C2E] transition-colors"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-10">
-          <Loader2 className="w-5 h-5 animate-spin text-accent-primary" />
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-[#375DFB] border-t-transparent rounded-full animate-spin"></div>
         </div>
       ) : (
-        <div className="p-4 space-y-4">
+        <div className="p-6 space-y-6">
 
           {/* Toggle global habilitado */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-black/5 border border-transparent hover:border-black/5 transition-colors">
             <div>
-              <p className="text-sm font-medium text-[var(--text-primary)]">Habilitada</p>
-              <p className="text-[11px] text-[var(--text-muted)]">Ativa o agendamento automático</p>
+              <p className="text-[13px] font-bold text-[#2C2C2E]">Habilitada</p>
+              <p className="text-[10px] font-semibold text-gray-500 mt-0.5">Executar buscas sem aviso prévio</p>
             </div>
             <Toggle
               checked={config.habilitado}
@@ -190,18 +193,18 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
           </div>
 
           {/* Seção de horários */}
-          <div className={`space-y-2 transition-opacity duration-200 ${config.habilitado ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+          <div className={`space-y-4 transition-opacity duration-300 ${config.habilitado ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
             {/* Cabeçalho da seção */}
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 Horários · {config.horarios.length}/3
               </span>
               {config.horarios.length < 3 && (
                 <button
                   onClick={adicionarHorario}
-                  className="flex items-center gap-1 text-[11px] text-accent-primary hover:text-accent-primary/80 font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#375DFB]/5 hover:bg-[#375DFB]/10 text-[10px] font-black uppercase tracking-widest text-[#375DFB] transition-colors"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3.5 h-3.5" />
                   Adicionar
                 </button>
               )}
@@ -211,9 +214,11 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
             {config.horarios.length === 0 && (
               <button
                 onClick={adicionarHorario}
-                className="w-full py-3 border-2 border-dashed border-[var(--border)] rounded-xl text-xs text-[var(--text-muted)] hover:border-accent-primary hover:text-accent-primary transition-colors flex items-center justify-center gap-1.5"
+                className="w-full py-6 border-2 border-dashed border-gray-200 rounded-[20px] bg-transparent text-[11px] font-bold text-gray-400 hover:border-[#375DFB] hover:text-[#375DFB] hover:bg-[#375DFB]/5 transition-all flex flex-col items-center justify-center gap-2"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
                 Adicionar primeiro horário
               </button>
             )}
@@ -222,14 +227,13 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
             {config.horarios.map((h, idx) => (
               <div
                 key={idx}
-                className={`rounded-xl border transition-all duration-200 overflow-hidden ${
-                  h.ativo
-                    ? 'border-accent-primary/20 bg-accent-primary/5'
-                    : 'border-[var(--border)] bg-[var(--bg-tertiary)]'
-                }`}
+                className={`rounded-[20px] border transition-all duration-300 overflow-hidden ${h.ativo
+                    ? 'border-[#375DFB]/10 bg-white shadow-lg shadow-[#375DFB]/5 scale-[1.02]'
+                    : 'border-black/5 bg-transparent'
+                  }`}
               >
                 {/* Linha principal: toggle + time spinner + delete */}
-                <div className="flex items-center gap-3 px-3 py-2.5">
+                <div className="flex items-center gap-4 px-4 py-3">
                   {/* Toggle individual */}
                   <Toggle
                     checked={h.ativo}
@@ -238,7 +242,7 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
                   />
 
                   {/* Time spinner */}
-                  <div className={`flex items-start gap-1 flex-1 transition-opacity ${h.ativo ? 'opacity-100' : 'opacity-50'}`}>
+                  <div className={`flex items-start gap-2 flex-1 justify-center transition-opacity ${h.ativo ? 'opacity-100' : 'opacity-40'}`}>
                     <TimeSpinner
                       value={h.hora}
                       min={0}
@@ -246,7 +250,7 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
                       label="hora"
                       onChange={v => atualizarHorario(idx, 'hora', v)}
                     />
-                    <span className="text-[var(--text-muted)] text-lg font-bold mt-1 leading-none">:</span>
+                    <span className="text-gray-300 text-xl font-light mt-1">:</span>
                     <TimeSpinner
                       value={h.minuto}
                       min={0}
@@ -259,24 +263,25 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
                   {/* Deletar */}
                   <button
                     onClick={() => removerHorario(idx)}
-                    className="p-1 rounded-lg text-[var(--text-muted)] hover:text-accent-danger hover:bg-accent-danger/10 transition-colors flex-shrink-0"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Sub-linha: auditoria individual */}
                 <div
-                  className={`flex items-center justify-between px-3 py-2 border-t transition-colors cursor-pointer ${
-                    h.ativo
-                      ? 'border-accent-primary/10 hover:bg-accent-primary/5'
-                      : 'border-[var(--border)] opacity-50 pointer-events-none'
-                  }`}
+                  className={`flex items-center justify-between px-5 py-3 border-t transition-colors cursor-pointer ${h.ativo
+                      ? 'border-emerald-500/10 hover:bg-emerald-500/5'
+                      : 'border-black/5 opacity-40 pointer-events-none'
+                    }`}
                   onClick={() => atualizarHorario(idx, 'auditar', !h.auditar)}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <Shield className="w-3 h-3 text-[var(--text-muted)]" />
-                    <span className="text-[11px] text-[var(--text-secondary)]">Auditar após coleta</span>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${h.auditar && h.ativo ? 'bg-emerald-500/10 text-emerald-600' : 'bg-black/5 text-gray-400'}`}>
+                      <Shield className="w-3.5 h-3.5" />
+                    </div>
+                    <span className={`text-[11px] font-bold ${h.auditar && h.ativo ? 'text-emerald-700' : 'text-gray-500'}`}>Auditar usando IA</span>
                   </div>
                   <Toggle
                     checked={!!h.auditar}
@@ -290,14 +295,13 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
 
           {/* Feedback */}
           {feedback && (
-            <div className={`flex items-center gap-2 p-2.5 rounded-lg text-xs ${
-              feedback.tipo === 'ok'
-                ? 'bg-accent-success/10 text-accent-success'
-                : 'bg-accent-danger/10 text-accent-danger'
-            }`}>
+            <div className={`flex items-center gap-3 p-3 rounded-xl text-[11px] font-bold uppercase tracking-widest ${feedback.tipo === 'ok'
+                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                : 'bg-red-50 text-red-600 border border-red-100'
+              }`}>
               {feedback.tipo === 'ok'
-                ? <Check className="w-3.5 h-3.5 flex-shrink-0" />
-                : <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                ? <Check className="w-4 h-4 flex-shrink-0" />
+                : <AlertCircle className="w-4 h-4 flex-shrink-0" />
               }
               {feedback.texto}
             </div>
@@ -307,19 +311,19 @@ export default function SchedulerConfig({ onClose, anchorRef }) {
           <button
             onClick={salvar}
             disabled={salvando}
-            className="w-full py-2 bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full h-12 bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] hover:opacity-90 disabled:opacity-50 text-white text-[11px] font-black uppercase tracking-widest rounded-full transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 mt-4"
           >
             {salvando ? (
-              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...</>
+              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> SALVANDO...</>
             ) : (
-              <><Check className="w-3.5 h-3.5" /> Salvar</>
+              <><Check className="w-4 h-4" /> SALVAR CONFIGURAÇÃO</>
             )}
           </button>
 
           {/* Nota fuso */}
-          <p className="text-[10px] text-[var(--text-muted)] text-center flex items-center justify-center gap-1">
-            <Shield className="w-3 h-3" />
-            Horários no fuso de São Paulo (BRT)
+          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest text-center flex items-center justify-center gap-1.5 pt-2 border-t border-black/5">
+            <Shield className="w-3.5 h-3.5" />
+            Horários no fuso de Brasília (BRT)
           </p>
         </div>
       )}

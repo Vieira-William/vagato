@@ -16,9 +16,9 @@
 | Agente | Status Atual | Tarefa Ativa / Última Ação | Próximo Agente Esperado | Tarefa Sugerida (Próx Passo) | Última Atualização |
 |--------|--------------|----------------------------|-------------------------|------------------------------|--------------------|
 | **MacBook (Claude)** | 🟢 CONCLUÍDO | ✅ Bento Grid Zero-Scroll Dashboard entregue (Analytics.jsx reconstruído, 7 cards, h-screen). Corrigido: TopNav glassmorphism bg-white/70→/60, gap-4→3. Regra histórico 1-semana adicionada ao AGENT_BOARD. | **William** | Validar visual no browser. Próximo: QA completo e refinamentos finais. | 01/03/2026 (sessão atual) |
-| **MacBook (Antigravity)** | 🟢 CONCLUÍDO | ✅ Push global realizado. Nova estética Crextio 3.0 e Dark Mode em deploy no Render. | **William** | Validar produção (vagas-frontend.onrender.com). | 02/03/2026 16:45 |
-| **Mac Mini (Antigravity)** | 🟢 CONCLUÍDO | ✅ **SMB PERSISTENTE!** LaunchAgent `com.vagas.mount` ativo (PID 6451). Volume `/Volumes/vagas-ux-platform` auto-monta no login e se reconecta a cada 30s se cair. Script: `~/scripts/mount_smb.sh`. Log: `/tmp/vagas_smb_mount.log`. Antigravity 100% operacional. | **William** | Retomar desenvolvimento normal. Pasta sempre disponível. | 02/03/2026 21:48 |
-| **Mac Mini (Claude/SENTINELA)** | 🟢 CONCLUÍDO | ✅ **CSS VARS FIX + VITE CONFIG FIX.** Injetadas 15 variáveis legacy/phantom no `index.css` (--bg-primary, --bg-secondary, --bg-tertiary, --text-*, --border-legacy, --radius-*, --shadow-*, --soft-card, --accent-color, --accent-soft) em light/dark. Fix ESM `__dirname` no `vite.config.js`. Commitado e em produção. Post-mortem no AGENT_CHAT. | **William** | Validar visual em produção (vagas-frontend.onrender.com). Próximo: QA visual completo das páginas. | 02/03/2026 |
+| **MacBook (Antigravity)** | 🟢 CONCLUÍDO | ✅ Protocolo Wake-up finalizado. Radar e Memória sincronizados (SMB Persistente + Google Calendar Auth). Pronto para novas instruções. | **William** | Definir próxima prioridade. | 02/03/2026 22:42 |
+| **Mac Mini (Antigravity)** | 🟡 EM ANDAMENTO | Modernizando telas legadas para a Soft UI Premium (Sprint 2: LoadingScreen e Match). Removendo dark mode fixo. | - | Atualização visual `Match.jsx`. | 02/03/2026 |
+| **Mac Mini (Claude/SENTINELA)** | 🟢 CONCLUÍDO | ✅ **GOOGLE CALENDAR PKCE FIX.** Resolvido bug crítico de `InvalidGrantError` (google-auth-oauthlib 1.3+ usa PKCE automático; solução: `_pending_flows` dict para preservar Flow entre login→callback). Token salvo, `isConnected: true`. Post-mortem detalhado no AGENT_CHAT. Próximo: commit + push. | **William** | Validar se alguma feature nova está pendente. | 02/03/2026 |
 
 ---
 
@@ -33,6 +33,7 @@
 | 02/03/2026 | 🟢 CONCLUÍDO | Sessão iniciada às 12:50. Restauração de infraestrutura (Backend/Frontend) via Keep-Alive v2, ajuste de VITE_API_URL e resolução de conflitos de reinicialização. |
 | 02/03/2026 | 🟢 CONCLUÍDO | **SMB MOUNT CONCLUÍDO!** Volume `/Volumes/vagas-ux-platform` montado e ativo. Python consegue acessar projeto. Pronto para desenvolvimento. |
 | 02/03/2026 | 🟢 CONCLUÍDO | **SMB PERSISTENTE!** LaunchAgent `com.vagas.mount` instalado. Auto-monta no login, keepalive 30s via osascript. Sem sudo necessário. |
+| 02/03/2026 | 🟢 CONCLUÍDO | **GOOGLE CALENDAR OAUTH PKCE FIX.** `_pending_flows` dict resolve `InvalidGrantError`. Token salvo. `isConnected: true`. Usuário de teste adicionado no GCP. |
 
 
 ---

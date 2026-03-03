@@ -475,25 +475,25 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
   const STEPS_COUNT = steps.length;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--bg-secondary)] rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-[var(--border)]">
+    <div className="fixed inset-0 bg-[#F8F9FE]/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+      <div className="bg-white/90 backdrop-blur-2xl rounded-[32px] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-white">
 
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-[var(--border)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent-primary/10 flex items-center justify-center">
-              <Terminal className="w-5 h-5 text-accent-primary" />
+        <div className="flex justify-between items-center p-6 border-b border-black/5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-[20px] bg-[#375DFB]/10 flex items-center justify-center">
+              <Terminal className="w-6 h-6 text-[#375DFB]" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+              <h2 className="text-xl font-light tracking-tight text-[#2C2C2E]">
                 {fase === 'idle' ? 'Nova Busca de Vagas' : 'Buscando Vagas agora...'}
               </h2>
-              <p className="text-xs text-[var(--text-muted)]">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-1">
                 {fase === 'idle'
-                  ? 'Escolha onde quer que eu procure hoje!'
+                  ? 'Escolha onde quer procurar hoje'
                   : isComplete
-                    ? 'Tudo pronto! Terminei a busca. ✨'
-                    : 'Estou olhando tudo em tempo real para você...'}
+                    ? 'Tudo pronto! Terminei a busca.'
+                    : 'Avaliando dados em tempo real'}
               </p>
             </div>
           </div>
@@ -505,7 +505,7 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                 setConfirmarFechar(true);
               }
             }}
-            className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2C2C2E] hover:bg-black/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -513,24 +513,24 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
 
         {/* ── FASE IDLE: tela de configuração antes de iniciar ── */}
         {fase === 'idle' && (
-          <div className="flex flex-col flex-1 p-6 gap-6">
+          <div className="flex flex-col flex-1 p-8 gap-8 overflow-y-auto custom-scrollbar">
             {loadingInitial ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
-                <div className="w-10 h-10 border-2 border-accent-primary border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm text-[var(--text-muted)]">Carregando seus lugares de busca... 🔍</p>
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12">
+                <div className="w-12 h-12 border-4 border-[#375DFB] border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Carregando fontes mapeadas...</p>
               </div>
             ) : error ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center py-12">
-                <div className="w-12 h-12 bg-accent-danger/10 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-accent-danger" />
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-2">
+                  <AlertTriangle className="w-8 h-8 text-red-500" />
                 </div>
                 <div className="max-w-xs">
-                  <p className="text-sm font-medium text-[var(--text-primary)] mb-1">Ops! Algo deu errado.</p>
-                  <p className="text-xs text-[var(--text-muted)]">{error}</p>
+                  <p className="text-base font-bold text-[#2C2C2E] mb-2">Ops! Algo deu errado.</p>
+                  <p className="text-[13px] text-gray-500">{error}</p>
                 </div>
                 <button
                   onClick={() => window.location.reload()}
-                  className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--border)] text-xs font-medium rounded-lg transition-colors"
+                  className="px-6 py-3 mt-2 bg-[#375DFB]/10 hover:bg-[#375DFB]/20 text-[#375DFB] rounded-full text-xs font-black uppercase tracking-widest transition-colors"
                 >
                   Tentar novamente
                 </button>
@@ -539,25 +539,24 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
               <>
                 {/* Seleção de Fontes/Buscas */}
                 <div>
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-between items-center mb-5">
                     <div>
-                      <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
-                        Quais sites eu devo vigiar?
-                      </p>
-                      <p className="text-xs text-[var(--text-muted)]">Marque os lugares que você quer que eu olhe agora.</p>
+                      <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                        Onde quer monitorar?
+                      </h3>
                     </div>
                     <button
                       onClick={() => {
                         if (selecionados.length === disponiveis.length) setSelecionados([]);
                         else setSelecionados(disponiveis.map(b => b.id));
                       }}
-                      className="text-[10px] font-bold text-accent-primary hover:underline uppercase"
+                      className="text-[11px] font-black text-[#375DFB] hover:text-[#284BDE] transition-colors uppercase tracking-widest bg-[#375DFB]/5 hover:bg-[#375DFB]/10 px-3 py-1.5 rounded-full"
                     >
-                      {selecionados.length === disponiveis.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                      {selecionados.length === disponiveis.length ? 'Desmarcar todos' : 'Marcar todos'}
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                     {disponiveis.map((busca) => {
                       const isSelected = selecionados.includes(busca.id);
                       const IconType = busca.fonte === 'indeed' ? Search : (busca.fonte === 'linkedin_posts' ? FileText : Briefcase);
@@ -573,40 +572,40 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                             );
                           }}
                           className={`
-                          flex items-center gap-3 p-3 rounded-xl border transition-all text-left
+                          flex items-center gap-4 p-4 rounded-2xl border transition-all text-left group
                           ${isSelected
-                              ? 'bg-accent-primary/5 border-accent-primary shadow-sm'
-                              : 'bg-[var(--bg-tertiary)] border-[var(--border)] hover:border-[var(--text-muted)]'}
+                              ? 'bg-white border-[#375DFB] shadow-md scale-[1.02]'
+                              : 'bg-black/5 border-transparent hover:border-black/10 hover:bg-white'}
                         `}
                         >
                           <div className={`
-                          w-8 h-8 rounded-lg flex items-center justify-center
-                          ${isSelected ? 'bg-accent-primary text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}
+                          w-10 h-10 rounded-[14px] flex items-center justify-center transition-colors
+                          ${isSelected ? 'bg-[#375DFB] text-white shadow-lg shadow-[#375DFB]/20' : 'bg-white text-gray-400 shadow-sm'}
                         `}>
-                            <IconType className="w-4 h-4" />
+                            <IconType className="w-5 h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-xs font-semibold truncate ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
+                            <p className={`text-[13px] font-bold truncate transition-colors ${isSelected ? 'text-[#375DFB]' : 'text-[#2C2C2E]'}`}>
                               {busca.nome}
                             </p>
-                            <p className="text-[10px] text-[var(--text-muted)] opacity-70 uppercase">
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5">
                               {busca.fonte.replace('_', ' ')}
                             </p>
                           </div>
                           <div className={`
-                          w-4 h-4 rounded-full border flex items-center justify-center transition-all
-                          ${isSelected ? 'bg-accent-primary border-accent-primary' : 'bg-[var(--bg-secondary)] border-[var(--border)]'}
+                          w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0
+                          ${isSelected ? 'bg-[#375DFB] border-[#375DFB]' : 'bg-transparent border-gray-300'}
                         `}>
-                            {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                            {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
                           </div>
                         </button>
                       );
                     })}
 
                     {disponiveis.length === 0 && (
-                      <div className="col-span-full border-2 border-dashed border-[var(--border)] rounded-xl p-6 flex flex-col items-center justify-center gap-2">
-                        <p className="text-xs text-[var(--text-muted)] text-center">
-                          Ops! Você ainda não me disse onde procurar. Configure uma busca lá nas configurações primeiro! 🏗️
+                      <div className="col-span-full border-2 border-dashed border-gray-200 bg-gray-50 rounded-[20px] p-8 flex items-center justify-center">
+                        <p className="text-[13px] font-semibold text-gray-500 text-center uppercase tracking-widest">
+                          Nenhuma rotina configurada. Verifique as configurações. ⚙️
                         </p>
                       </div>
                     )}
@@ -614,37 +613,37 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                 </div>
 
                 {/* Opção de Auditoria */}
-                <div className="border-t border-[var(--border)] pt-5">
+                <div className="border-t border-black/5 pt-6">
                   <button
                     onClick={() => setAuditoria(!auditoria)}
                     className={`
-                    flex items-center gap-4 w-full p-4 rounded-xl border transition-all text-left
+                    flex items-center gap-5 w-full p-5 rounded-2xl border transition-all text-left group
                     ${auditoria
-                        ? 'bg-emerald-500/5 border-emerald-500/30'
-                        : 'bg-[var(--bg-tertiary)] border-[var(--border)]'}
+                        ? 'bg-emerald-50 border-emerald-500 shadow-md'
+                        : 'bg-black/5 border-transparent hover:border-black/10'}
                   `}
                   >
                     <div className={`
-                    w-10 h-10 rounded-xl flex items-center justify-center
-                    ${auditoria ? 'bg-emerald-500 text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)]'}
+                    w-12 h-12 rounded-[16px] flex items-center justify-center transition-colors
+                    ${auditoria ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white text-gray-400 shadow-sm'}
                   `}>
-                      <Shield className="w-5 h-5" />
+                      <Shield className="w-6 h-6" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">
-                        Quer que eu use meu filtro de qualidade? ✨
+                      <p className={`text-sm font-bold truncate transition-colors ${auditoria ? 'text-emerald-700' : 'text-[#2C2C2E]'}`}>
+                        Filtro de Qualidade Inteligente
                       </p>
-                      <p className="text-xs text-[var(--text-muted)]">
-                        Eu vou ler cada vaga com cuidado para garantir que são mesmo de UX e Design. Demora um pouquinho mais, mas vale a pena! 😉
+                      <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                        Refina os resultados eliminando descartes usando IA
                       </p>
                     </div>
                     <div className={`
-                    w-10 h-5 rounded-full relative transition-colors p-1 flex items-center
-                    ${auditoria ? 'bg-emerald-500' : 'bg-[var(--border)]'}
+                    w-12 h-6 rounded-full relative transition-colors p-1 flex items-center shadow-inner
+                    ${auditoria ? 'bg-emerald-500' : 'bg-gray-300'}
                   `}>
                       <div className={`
-                      w-3 h-3 bg-white rounded-full shadow-sm transition-transform
-                      ${auditoria ? 'translate-x-5' : 'translate-x-0'}
+                      w-4 h-4 bg-white rounded-full shadow-sm transition-transform
+                      ${auditoria ? 'translate-x-6' : 'translate-x-0'}
                     `} />
                     </div>
                   </button>
@@ -653,23 +652,20 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
             )}
 
             {/* Botão de Iniciar */}
-            <div className="mt-auto">
+            <div className="mt-auto pt-4">
               <button
                 onClick={iniciarColeta}
                 disabled={selecionados.length === 0 || loadingInitial}
                 className={`
-                w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg
+                w-full h-14 rounded-full font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all
                 ${selecionados.length > 0 && !loadingInitial
-                    ? 'bg-accent-primary text-white hover:opacity-90 active:scale-[0.98]'
-                    : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed'}
+                    ? 'bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] text-white hover:opacity-90 active:scale-95 shadow-lg shadow-[#375DFB]/30'
+                    : 'bg-black/5 text-gray-400 cursor-not-allowed'}
               `}
               >
-                <Play className="w-4 h-4 fill-current" />
-                <span>VAMOS BUSCAR!</span>
+                <Database className="w-5 h-5" strokeWidth={2.5} />
+                <span>INICIAR COLETA GLOBAL</span>
               </button>
-              <p className="text-[10px] text-center text-[var(--text-muted)] mt-3">
-                Pode relaxar, eu te aviso quando terminar! Só peço que não feche essa janelinha enquanto eu trabalho. ⏳
-              </p>
             </div>
           </div>
         )}
@@ -677,12 +673,12 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
         {/* ── FASE COLETANDO / DONE: progresso em tempo real ── */}
         {fase !== 'idle' && (
           <>
-            {/* Progress Bar Global */}
+            {/* Progress Bar Global (Soft UI style) */}
             {!allDone && (
-              <div className="px-4 py-2 border-b border-[var(--border)]">
-                <div className="h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+              <div className="px-6 py-4 border-b border-black/5 bg-white/50 backdrop-blur-sm">
+                <div className="h-2 bg-black/5 rounded-full overflow-hidden shadow-inner">
                   <div
-                    className="h-full bg-accent-primary transition-all duration-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] transition-all duration-700 ease-out rounded-full shadow-[0_0_10px_rgba(55,93,251,0.5)]"
                     style={{
                       width: `${steps.reduce((acc, step) => {
                         const weight = 100 / steps.length;
@@ -698,35 +694,35 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
               </div>
             )}
 
-            {/* Steps - Scrollable detailed list was DELETED per William's request */}
-
             {/* Area Principal - Resumo Consolidado Contínuo */}
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-              <p className="text-sm font-medium text-[var(--text-primary)]">O que eu estou fazendo agora:</p>
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 bg-black/[0.02]">
+              <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Execução em tempo real</h3>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {steps.map(step => (
-                  <div key={step.id} className="p-3 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border)] transition-all">
-                    <div className="flex items-center gap-2 mb-2">
-                      <step.icon size={16} style={{ color: step.color }} />
-                      <span className="text-[var(--text-primary)] font-medium">{step.label}</span>
+                  <div key={step.id} className="p-4 rounded-2xl bg-white shadow-sm border border-black/5 transition-all">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-black/5 flex items-center justify-center">
+                        <step.icon size={16} style={{ color: step.status === 'complete' ? '#10b981' : step.color }} />
+                      </div>
+                      <span className="text-[13px] text-[#2C2C2E] font-bold">{step.label}</span>
 
-                      <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold ${step.status === 'complete' ? 'bg-accent-success/20 text-accent-success' :
-                        step.status === 'error' ? 'bg-accent-danger/20 text-accent-danger' :
-                          step.status === 'processing' || step.status === 'loading' ? 'bg-accent-primary/20 text-accent-primary animate-pulse' :
-                            'bg-[var(--bg-secondary)] text-[var(--text-muted)]'
+                      <span className={`ml-auto text-[9px] px-2.5 py-1 rounded-full uppercase tracking-widest font-black ${step.status === 'complete' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                        step.status === 'error' ? 'bg-red-50 text-red-600 border border-red-100' :
+                          step.status === 'processing' || step.status === 'loading' ? 'bg-[#375DFB]/10 text-[#375DFB] border border-[#375DFB]/20 animate-pulse' :
+                            'bg-gray-100 text-gray-500 border border-gray-200'
                         }`}>
-                        {step.status === 'complete' ? 'ok' : step.status === 'error' ? 'erro' : step.status === 'pending' ? 'aguardando' : 'processando'}
+                        {step.status === 'complete' ? 'concluído' : step.status === 'error' ? 'falha' : step.status === 'pending' ? 'aguarda' : 'executando'}
                       </span>
                     </div>
 
                     {/* Progress minificado do Step (apenas se estiver processando ativamente) */}
                     {(step.status === 'loading' || step.status === 'processing') && (
-                      <div className="mb-2">
-                        <div className="h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden mb-1">
-                          <div className="h-full bg-accent-primary transition-all duration-300 rounded-full" style={{ width: `${step.progress || 0}%` }} />
+                      <div className="mb-2 mt-3">
+                        <div className="h-1.5 bg-black/5 rounded-full overflow-hidden mb-2">
+                          <div className="h-full bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] transition-all duration-300 rounded-full" style={{ width: `${step.progress || 0}%` }} />
                         </div>
-                        <p className="text-[10px] text-accent-primary truncate">
+                        <p className="text-[11px] font-semibold text-[#375DFB] truncate">
                           {step.message || '...'} {step.ultimaVaga && `| + ${step.ultimaVaga.titulo}`}
                         </p>
                       </div>
@@ -734,64 +730,71 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
 
                     {/* Stats de coleta (scraping) */}
                     {!step.isAudit && (step.stats || step.totalColetados > 0) && (
-                      <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-1">
-                        <span>{step.stats?.totalBruto || step.totalColetados || 0} coletados</span>
-                        <span className="text-[var(--border)]">→</span>
-                        <span>{step.stats?.vagasUx || step.vagasEncontradas || 0} vagas UX</span>
-                        <span className="text-[var(--border)]">→</span>
-                        <span className="text-accent-success font-medium">{step.stats?.novas || 0} novas</span>
-                        {step.stats?.taxa && (
-                          <span className="text-xs text-[var(--text-muted)]">({step.stats.taxa})</span>
-                        )}
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-3 bg-black/[0.02] p-2 rounded-xl">
+                        <span>{step.stats?.totalBruto || step.totalColetados || 0} extraídos</span>
+                        <span className="text-gray-300">→</span>
+                        <span>{step.stats?.vagasUx || step.vagasEncontradas || 0} ux</span>
+                        <span className="text-gray-300">→</span>
+                        <span className="text-emerald-500">{step.stats?.novas || 0} final</span>
                       </div>
                     )}
                     {/* Stats de auditoria */}
                     {step.isAudit && step.stats && (
-                      <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-1">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-3 bg-black/[0.02] p-2 rounded-xl">
                         {step.id === 'auditoria_gabarito' && (
-                          <><span>{step.stats.total_registros || 0} vagas</span><span className="text-[var(--border)]">→</span><span className="text-accent-success font-medium">{step.stats.inseridos_banco || 0} novas</span></>
+                          <><span>{step.stats.total_registros || 0} doc</span><span className="text-gray-300">→</span><span className="text-emerald-500">{step.stats.inseridos_banco || 0} banco</span></>
                         )}
                         {step.id === 'auditoria_processamento' && (
-                          <><span>{step.stats.processados || 0} processadas</span><span className="text-[var(--border)]">·</span><span>{step.stats.descartados || 0} descartadas</span></>
+                          <><span>{step.stats.processados || 0} analisados</span><span className="text-gray-300">·</span><span className="text-red-400">{step.stats.descartados || 0} lixo</span></>
                         )}
                         {step.id === 'auditoria_validacao' && (
-                          <><span>{step.stats.total_amostras || 0} amostras</span><span className="text-[var(--border)]">·</span><span className="text-emerald-500 font-medium">{Math.round((step.stats.taxa_acerto || 0) * 100)}% acerto</span></>
+                          <><span>{step.stats.total_amostras || 0} auditados</span><span className="text-gray-300">·</span><span className="text-emerald-500">{Math.round((step.stats.taxa_acerto || 0) * 100)}% validados</span></>
                         )}
                       </div>
                     )}
 
                     {step.status === 'error' && (
-                      <div className="text-xs text-accent-danger mt-1 bg-accent-danger/5 p-2 rounded">{step.message}</div>
+                      <div className="text-[11px] font-medium text-red-600 mt-2 bg-red-50 p-2 rounded-xl border border-red-100">{step.message}</div>
                     )}
                   </div>
                 ))}
               </div>
 
               {allDone && finalStats && (
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  <div className="p-4 rounded-xl bg-[var(--bg-tertiary)] text-center border border-[var(--border)]">
-                    <p className="text-3xl font-bold text-[var(--text-primary)]">{finalStats.total_bruto || 0}</p>
-                    <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold text-[var(--text-muted)] mt-1">Vagas que eu li</p>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="p-6 rounded-3xl bg-white text-center border border-black/5 shadow-soft">
+                    <p className="text-4xl font-light tracking-tighter text-[#2C2C2E]">{finalStats.total_bruto || 0}</p>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-gray-400 mt-2">Vagas extraídas</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-accent-success/10 text-center border border-accent-success/20">
-                    <p className="text-3xl font-bold text-accent-success">{finalStats.total_novas || 0}</p>
-                    <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold text-accent-success/70 mt-1">Vagas Nota 10 encontradas</p>
+                  <div className="p-6 rounded-3xl bg-emerald-50 text-center border border-emerald-100 shadow-soft">
+                    <p className="text-4xl font-light tracking-tighter text-emerald-600">{finalStats.total_novas || 0}</p>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-emerald-600/70 mt-2">Vagas exclusivas</p>
                   </div>
                 </div>
               )}
             </div>
 
-            <button
-              onClick={handleFechar}
-              className="w-full py-2.5 px-4 bg-accent-primary hover:bg-accent-primary/90 text-white font-medium rounded-lg transition-colors"
-            >
-              Ver minhas novas vagas!
-            </button>
+            <div className="p-6 bg-white rounded-b-[32px] border-t border-black/5">
+              <button
+                onClick={handleFechar}
+                disabled={!allDone && fase !== 'error'}
+                className={`
+                  w-full h-14 rounded-full font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all
+                  ${allDone || fase === 'error'
+                    ? 'bg-[#2C2C2E] hover:bg-black text-white shadow-lg shadow-black/20 active:scale-95'
+                    : 'bg-black/5 text-gray-400 cursor-not-allowed'
+                  }
+                `}
+              >
+                {allDone ? 'FECHAR E VER VAGAS' : fase === 'error' ? 'Fechar (Erro)' : 'PROCESSANDO...'}
+              </button>
+            </div>
 
             {/* Error state */}
             {error && (
-              <div className="p-4 border-t border-[var(--border)]">
-                <div className="p-3 bg-accent-danger/10 border border-accent-danger/20 rounded-lg text-accent-danger text-sm">
+              <div className="p-4 border-t border-red-100 bg-red-50 rounded-b-[32px]">
+                <div className="flex items-center gap-2 text-red-600 text-[11px] font-bold uppercase tracking-widest">
+                  <AlertTriangle className="w-4 h-4" />
                   {error}
                 </div>
               </div>

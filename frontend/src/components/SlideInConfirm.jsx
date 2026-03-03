@@ -19,13 +19,14 @@ export default function SlideInConfirm({
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
+        let timer;
         if (show) {
             // Pequeno delay para a animação de entrada
-            const timer = setTimeout(() => setVisible(true), 10);
-            return () => clearTimeout(timer);
+            timer = setTimeout(() => setVisible(true), 10);
         } else {
             setVisible(false);
         }
+        return () => clearTimeout(timer);
     }, [show]);
 
     if (!show && !visible) return null;
@@ -33,58 +34,58 @@ export default function SlideInConfirm({
     return (
         <div className={`
       fixed bottom-6 right-6 z-[100] w-full max-w-sm transition-all duration-500 ease-out transform
-      ${visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
+      ${visible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-12 opacity-0 scale-95'}
     `}>
             <div className={`
-        bg-[var(--bg-secondary)] border-2 rounded-2xl shadow-2xl overflow-hidden
-        ${type === 'danger' ? 'border-red-500/30' : 'border-accent-primary/30'}
+        bg-white/90 backdrop-blur-2xl border rounded-[24px] shadow-2xl overflow-hidden relative
+        ${type === 'danger' ? 'border-red-500/20' : 'border-white'}
       `}>
-                {/* Barra superior de cor */}
-                <div className={`h-1.5 w-full ${type === 'danger' ? 'bg-red-500' : 'bg-accent-primary'}`} />
+                {/* Linha superior luminosa */}
+                <div className={`absolute top-0 left-0 right-0 h-1.5 w-full ${type === 'danger' ? 'bg-gradient-to-r from-red-500 to-rose-400' : 'bg-gradient-to-r from-[#375DFB] to-[#5B7BFF]'}`} />
 
-                <div className="p-5">
-                    <div className="flex gap-4 mb-5">
+                <div className="p-6 pt-7">
+                    <div className="flex gap-4 mb-6">
                         <div className={`
-              w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0
-              ${type === 'danger' ? 'bg-red-500/10 text-red-500' : 'bg-accent-primary/10 text-accent-primary'}
+              w-12 h-12 rounded-[16px] flex items-center justify-center flex-shrink-0 shadow-sm
+              ${type === 'danger' ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-[#375DFB]/10 text-[#375DFB] border border-[#375DFB]/20'}
             `}>
                             <AlertCircle className="w-6 h-6" />
                         </div>
 
                         <div className="flex-1">
-                            <h3 className="text-base font-bold text-[var(--text-primary)] mb-1 leading-tight">
+                            <h3 className="text-sm font-bold text-[#2C2C2E] mb-1 leading-tight uppercase tracking-wide">
                                 {title}
                             </h3>
-                            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                            <p className="text-[12px] font-medium text-gray-500 leading-relaxed">
                                 {message}
                             </p>
                         </div>
 
                         <button
                             onClick={onCancel}
-                            className="p-1 hover:bg-[var(--bg-tertiary)] rounded-lg transition-colors h-fit"
+                            className="w-8 h-8 rounded-full hover:bg-black/5 text-gray-400 hover:text-[#2C2C2E] transition-colors flex items-center justify-center flex-shrink-0"
                         >
-                            <X className="w-4 h-4 text-[var(--text-muted)]" />
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
 
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
                         <button
                             onClick={onConfirm}
                             className={`
-                w-full py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all
+                w-full h-12 rounded-full text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-95
                 ${type === 'danger'
-                                    ? 'bg-red-500 text-white hover:bg-red-600'
-                                    : 'bg-accent-primary text-white hover:bg-accent-primary-dark'}
+                                    ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90 shadow-red-500/20'
+                                    : 'bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] text-white hover:opacity-90 shadow-[#375DFB]/30'}
               `}
                         >
                             <span>{confirmText}</span>
-                            <ChevronRight className="w-4 h-4" />
+                            <ChevronRight className="w-4 h-4 ml-1" />
                         </button>
 
                         <button
                             onClick={onCancel}
-                            className="w-full py-3 rounded-xl text-xs font-semibold text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                            className="w-full h-12 rounded-full text-[11px] font-bold uppercase tracking-widest text-gray-500 hover:bg-black/5 hover:text-[#2C2C2E] transition-colors"
                         >
                             {cancelText}
                         </button>
