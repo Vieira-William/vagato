@@ -369,7 +369,7 @@ export default function Analytics() {
   }
 
   return (
-    <div className="flex-1 flex flex-col pt-0 pb-4">
+    <div className="flex-1 flex flex-col pt-0 pb-12 overflow-hidden">
 
       {/* 1. HERO SECTION */}
       <header className="shrink-0 mb-3 flex justify-between items-end">
@@ -428,7 +428,7 @@ export default function Analytics() {
       </header>
 
       {/* 2. BENTO GRID */}
-      <main className="flex-1 min-h-0 grid grid-cols-4 grid-rows-[minmax(0,46%)_1fr] gap-3">
+      <main className="flex-1 min-h-0 grid grid-cols-4 grid-rows-[42%_1fr] gap-2 pb-2">
         <div className="row-span-1 overflow-hidden rounded-[32px] shadow-soft bg-card backdrop-blur-lg transition-all hover:bg-card/80 border border-border/10">
           <UserProfileCard user={{ nome: 'William Marangon', profissao: 'Senior UX/UI Specialist' }} />
         </div>
