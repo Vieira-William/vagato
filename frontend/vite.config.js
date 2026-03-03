@@ -14,11 +14,13 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
+    allowedHosts: true,
     hmr: {
       overlay: false
     },
     watch: {
-      usePolling: true
+      usePolling: true,
+      interval: 500,
     }
   },
   test: {

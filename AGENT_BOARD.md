@@ -15,8 +15,8 @@
 
 | Agente | Status Atual | Tarefa Ativa / Última Ação | Próximo Agente Esperado | Tarefa Sugerida (Próx Passo) | Última Atualização |
 |--------|--------------|----------------------------|-------------------------|------------------------------|--------------------|
-| **MacBook (Claude)** | 🟢 CONCLUÍDO | ✅ Bento Grid Zero-Scroll Dashboard entregue (Analytics.jsx reconstruído, 7 cards, h-screen). Corrigido: TopNav glassmorphism bg-white/70→/60, gap-4→3. Regra histórico 1-semana adicionada ao AGENT_BOARD. | **William** | Validar visual no browser. Próximo: QA completo e refinamentos finais. | 01/03/2026 (sessão atual) |
-| **MacBook (Antigravity)** | 🟢 CONCLUÍDO | ✅ Protocolo Wake-up finalizado. Radar e Memória sincronizados (SMB Persistente + Google Calendar Auth). Pronto para novas instruções. | **William** | Definir próxima prioridade. | 02/03/2026 22:42 |
+| **MacBook (Claude)** | 🟢 CONCLUÍDO | ✅ CalendarCard redesenhado com week view Soft UI (grade pontilhada, faixas all-day, overlay "Semana livre", navegação chevron). Push `789572d`. | **William** | Validar visual no browser. QA completo. | 02/03/2026 |
+| **MacBook (Antigravity)** | 🟢 PRONTO | ✅ Firefighting e infraestrutura concluídos. Regras AAA Nativas implementadas (.gemini/GEMINI.md), UI sincronizada e repositório blindado contra vazamentos. Sessão livre de bugs estabilizada. | **William** | Focar 100% no produto. Definir a próxima tela ou funcionalidade a ser construída. | 03/03/2026 02:18 |
 | **Mac Mini (Antigravity)** | 🟡 EM ANDAMENTO | Modernizando telas legadas para a Soft UI Premium (Sprint 2: LoadingScreen e Match). Removendo dark mode fixo. | - | Atualização visual `Match.jsx`. | 02/03/2026 |
 | **Mac Mini (Claude/SENTINELA)** | 🟢 CONCLUÍDO | ✅ **GOOGLE CALENDAR PKCE FIX.** Resolvido bug crítico de `InvalidGrantError` (google-auth-oauthlib 1.3+ usa PKCE automático; solução: `_pending_flows` dict para preservar Flow entre login→callback). Token salvo, `isConnected: true`. Post-mortem detalhado no AGENT_CHAT. Próximo: commit + push. | **William** | Validar se alguma feature nova está pendente. | 02/03/2026 |
 
@@ -47,3 +47,4 @@
 | 01/03/2026 | 🟢 CONCLUÍDO | Correções visuais: Sunbeam CSS puro, bg-white sólido, glassmorphism reduzido |
 | 01/03/2026 | 🟢 CONCLUÍDO | Bento Grid Zero-Scroll: Analytics.jsx reconstruído, 7 cards, grid-cols-4, h-screen |
 | 01/03/2026 | 🟢 CONCLUÍDO | Fix regressão TopNav: bg-white/70→/60 (5 pills), gap-4→3. Regra histórico AGENT_BOARD |
+| 02/03/2026 | 🟢 CONCLUÍDO | CalendarCard Week View Soft UI: grid 1fr, all-day strip, "Semana livre" overlay, navegação semanas, EVT_PALETTES + AVATAR_BG |
