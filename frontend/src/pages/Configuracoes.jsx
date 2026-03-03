@@ -28,7 +28,7 @@ import {
   Copy
 } from 'lucide-react';
 import SlideInConfirm from '../components/SlideInConfirm';
-import { searchUrlsService, configService } from '../services/api';
+import { searchUrlsService, configService, calendarService } from '../services/api';
 import { urlBuilder } from '../utils/urlBuilder';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -97,6 +97,9 @@ export default function Configuracoes() {
   const [recharging, setRecharging] = useState(false);
   const [newCredit, setNewCredit] = useState('');
   const [autoRefreshIA, setAutoRefreshIA] = useState(true);
+  // Google Calendar states
+  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [loadingCalendar, setLoadingCalendar] = useState(true);
 
   useEffect(() => {
     fetchConfigStatus();
@@ -104,6 +107,7 @@ export default function Configuracoes() {
     fetchFontes();
     fetchWeights();
     fetchIAStatus();
+    fetchCalendarStatus();
   }, []);
 
   useEffect(() => {
@@ -167,6 +171,33 @@ export default function Configuracoes() {
       console.error('Erro ao carregar status da IA:', error);
     } finally {
       setLoadingIA(false);
+    }
+  };
+
+  const fetchCalendarStatus = async () => {
+    try {
+      setLoadingCalendar(true);
+      const { data } = await calendarService.getEvents();
+      setCalendarConnected(data.isConnected);
+    } catch (error) {
+      console.error('Erro ao carregar status do calendário:', error);
+    } finally {
+      setLoadingCalendar(false);
+    }
+  };
+
+  const handleConnectCalendar = () => {
+    window.location.href = 'http://localhost:8000/api/calendar/login';
+  };
+
+  const handleDisconnectCalendar = async () => {
+    if (!confirm('Deseja realmente desconectar sua agenda Google?')) return;
+    try {
+      await calendarService.disconnect();
+      setCalendarConnected(false);
+      setMessage({ type: 'success', text: 'Agenda Google desconectada!' });
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao desconectar agenda.' });
     }
   };
 
@@ -445,6 +476,59 @@ export default function Configuracoes() {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        </Card>
+
+        {/* ILHA: INTEGRAÇÕES (Soft UI Premium) */}
+        <Card className="rounded-[32px] border-none shadow-soft bg-white/70 backdrop-blur-lg p-10 md:col-span-3 transition-all hover:bg-white/80">
+          <div className="flex flex-col lg:flex-row gap-12">
+            <div className="lg:w-1/3">
+              <div className="w-16 h-16 rounded-[22px] bg-[#F5F3EF] flex items-center justify-center mb-6 shadow-sm">
+                <Link2 className="w-8 h-8 text-[#2C2C2E]" strokeWidth={1.5} />
+              </div>
+              <h2 className="text-2xl font-semibold text-[#2C2C2E] mb-2 tracking-tight">Integrações</h2>
+              <p className="text-[#2C2C2E]/60 text-sm leading-relaxed font-medium">Conecte ferramentas externas para potencializar seu workflow.</p>
+            </div>
+
+            <div className="flex-1">
+              <div className="bg-white/50 rounded-[24px] border border-white/60 p-6 flex items-center justify-between group hover:bg-white transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#375DFB] flex items-center justify-center text-white shadow-lg shadow-[#375DFB]/10">
+                    <Calendar className="w-6 h-6" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#2C2C2E]">Google Calendar</h4>
+                    <p className="text-[11px] text-[#2C2C2E]/50 font-medium">Sincronize sua agenda de entrevistas.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f8f9fa] border border-gray-100">
+                    <div className={cn("w-2 h-2 rounded-full", calendarConnected ? "bg-green-500 animate-pulse" : "bg-gray-300")} />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                      {loadingCalendar ? '...' : calendarConnected ? 'Conectado' : 'Desconectado'}
+                    </span>
+                  </div>
+
+                  {calendarConnected ? (
+                    <Button
+                      variant="ghost"
+                      onClick={handleDisconnectCalendar}
+                      className="h-9 px-4 rounded-xl text-red-500 hover:bg-red-50 text-[11px] font-black uppercase tracking-tighter"
+                    >
+                      Desconectar
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleConnectCalendar}
+                      className="h-9 px-6 rounded-xl bg-[#2C2C2E] text-white hover:bg-black text-[11px] font-black uppercase tracking-tighter shadow-sm"
+                    >
+                      Conectar
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </Card>

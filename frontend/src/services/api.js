@@ -101,8 +101,9 @@ export const configService = {
 };
 
 export const calendarService = {
-  getAuthUrl: () => api.get('/calendar/auth'),
+  getLoginUrl: () => api.get('/calendar/login'),
   getEvents: () => api.get('/calendar/events'),
+  disconnect: () => api.delete('/calendar/disconnect'),
 };
 
 export default api;

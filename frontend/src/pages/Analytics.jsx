@@ -227,15 +227,9 @@ function CalendarCard() {
     }
   };
 
-  const handleConnect = async () => {
-    try {
-      const { data } = await calendarService.getAuthUrl();
-      if (data.auth_url) {
-        window.open(data.auth_url, '_blank');
-      }
-    } catch (err) {
-      console.error('Erro ao iniciar auth:', err);
-    }
+  const handleConnect = () => {
+    // Redirecionamento OBRIGATÓRIO para localhost conforme restrição do Google OAuth
+    window.location.href = 'http://localhost:8000/api/calendar/login';
   };
 
   return (
