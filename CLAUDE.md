@@ -27,6 +27,7 @@
 | **Neon PostgreSQL** | https://neon.tech |
 | **Anthropic Console** | https://console.anthropic.com |
 | **Figma — arquivo "Vagas"** | https://figma.com/design/46upQ0yYDHuJqssvTT4Pxp/Vagas |
+| **Figma — Material 3 Design Kit (Fonte Mestre Oficial)** | https://www.figma.com/design/IC9a5wdK1mIy6BRUw4uQb8/Material-3-Design-Kit--Community-?node-id=11-1833&m=dev |
 
 > ⚠️ O plano **gratuito do Render hiberna** servidores sem uso. Na 1ª visita leva ~60s para acordar.
 > O frontend tem uma LoadingScreen que lida com isso automaticamente (auto-retry, health checks).
@@ -35,15 +36,34 @@
 
 ## 💻 DISPOSITIVOS DE TRABALHO
 
-| Dispositivo | Hostname | Usuário | Papel |
-|-------------|----------|---------|-------|
-| **MacBook Air (notebook)** | MacBook-Air-de-William.local | williammarangon | Desenvolvimento principal |
-| **Mac Mini** | Williams-Mac-mini.local | mactrabalho | Trabalho paralelo |
+| Dispositivo | Hostname | Usuário | Papel | IP Atual |
+|-------------|----------|---------|-------|----------|
+| **MacBook Air (notebook)** | MacBook-Air-de-William.local | williammarangon | Desenvolvimento principal | 192.168.1.22 |
+| **Mac Mini** | Williams-Mac-mini.local | mactrabalho | Trabalho paralelo | 192.168.1.16 |
+
+- Recomendado: Usar sempre o **Hostname (.local)** para conexões SMB/SSH para evitar quebras por troca de IP.
 
 - Mesma conta Claude logada em ambos
 - Mesma rede local
 - Remote Login (SSH) ativado no Mac Mini
 - Senha do Mac Mini: `169004`
+
+### 🤖 Agentes de IA Ativos
+Temos diferentes "instâncias" de IA trabalhando neste projeto, distribuídos pelos seus dispositivos. Todos eles leem e escrevem **neste mesmo arquivo (CLAUDE.md)** para compartilhar contexto. Nós trabalhamos em equipe!
+- **Antigravity MacBook** (O Favorito): Assistente Antigravity rodando no MacBook Air.
+- **Orion Antigravity Mac Mini**: Assistente Antigravity rodando no Mac Mini (eu).
+- **Claude MacBook**: Interface Claude acessada via MacBook.
+- **Claude Mac Mini**: Interface Claude acessada via Mac Mini.
+
+> **Protocolo de Comunicação:** Qualquer agente que fizer mudanças de arquitetura, correções ou decisões importantes deve registrar o fato no `CLAUDE.md`.
+> 
+> **⚠️ REGRA DE OURO DA COMUNICAÇÃO (`AGENT_CHAT.md`)**
+> O usuário EXIGE que todo e qualquer processo complexo, nova feature solucionada, ou barreira encontrada, seja **profundamente explicada** no arquivo `AGENT_CHAT.md`.
+> **Nunca limite-se a dizer "Deu certo".** Explique o *Post-Mortem*. O seu trabalho no chat é deixar um legado técnico perfeitamente rastreável para que o seu "irmão de IA" da outra sessão não bata com a cabeça nos mesmos bugs. O `AGENT_CHAT.md` é o nosso diário de engenharia. E não esqueça de ser amigável!
+> 
+> **📡 A REGRA DO "RADAR SEMPRE LIGADO" (SITUATIONAL AWARENESS)**
+> Em QUALQUER instrução que você receba do usuário, **antes mesmo de começar a digitar comandos ou planejar soluções**, você deve OBRIGATORIAMENTE **ler a última atualização do `AGENT_BOARD.md` e o final do `AGENT_CHAT.md`**.
+> Isso não significa parar o que foi pedido para fazer o que está lá, nem significa que você precisa avisar o usuário que leu. Significa ter *Visão Sistêmica*. O "radar" deve estar sempre levantado para entender o que os seus "irmãos de IA" estão fazendo naquele milissegundo. Assim nós evitamos pisar no pé uns dos outros e tomamos decisões inteligentes e fluidas. Prioridade total na instrução do usuário, mas com contexto da rede.
 
 ### Workflow Git entre dispositivos
 ```bash
@@ -112,6 +132,9 @@ curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagas-ux-platform/ma
 vagas-ux-platform/
 │
 ├── CLAUDE.md                          ← ESTE ARQUIVO (ler sempre primeiro)
+├── AGENT_BOARD.md                     ← Quadro de Status (Memory Lock) em tempo real
+├── AGENT_CHAT.md                      ← Histórico e comunicação assíncrona entre agentes
+├── FIGMA_BRIDGE_CAPABILITIES.md       ← ⚠️ NOVO TETO ARQUITETURAL: Como usar a Figma API na prática
 ├── FIGMA_IMPLEMENTATION_GUIDE.md      ← Especificações completas do Design System
 ├── FIGMA_BUILD_CHECKLIST.md           ← Checklist passo a passo para criar no Figma
 ├── figma_setup_structure.json         ← Estrutura JSON das 31 frames / 6 páginas
@@ -230,9 +253,8 @@ vagas-ux-platform/
 
 **ConfiguracaoIA** — config e tracking de consumo
 - saldo_inicial_usd, gasto_acumulado_usd, alerta_limite_usd
-- haiku_calls, sonnet_calls, vision_calls
-- gasto_haiku_usd, gasto_sonnet_usd, gasto_vision_usd
-- Properties: saldo_disponivel, percentual_gasto, em_alerta
+- ultima_atualizacao
+- (Lógica centralizada em `ai_extractor.py` para débito automático em USD por modelo)
 
 **UserProfile** — perfil do usuário
 - nome, nivel, modalidade, tipo_contrato, nivel_ingles
@@ -261,11 +283,10 @@ postgresql://neondb_owner:npg_imcE8WQIJ5nd@ep-shiny-forest-aidp7er1-pooler.c-4.u
 | GET | `/api/stats/historico` | Histórico por período |
 | GET | `/api/scraper/stream/v3` | **SSE** — Coleta em tempo real |
 | GET | `/api/scraper/stream/auditoria` | **SSE** — Auditoria em tempo real |
-| GET/POST | `/api/config/` | Configurações gerais |
-| GET | `/api/config/ia/status` | Status tokens Claude em tempo real |
-| POST | `/api/config/ia/sincronizar` | Sincronizar saldo real Anthropic |
-| GET | `/api/config/agendamento` | Config agendamento |
 | POST | `/api/config/agendamento` | Salvar config agendamento |
+| GET | `/api/config/ia/status` | Status de créditos e gasto total em USD |
+| POST | `/api/config/ia/config` | Atualizar saldo ou limite de alerta (recarga) |
+| POST | `/api/config/recalcular-scores` | Força recalculação de scores com pesos atuais |
 | GET/POST | `/api/profile/` | Perfil do usuário |
 | POST | `/api/profile/upload-cv` | Upload de CV em PDF |
 | GET/POST | `/api/search-urls/` | URLs de busca configuráveis |
@@ -448,23 +469,38 @@ Os tools de Figma Dev Mode MCP disponíveis são **read-only** (leitura/inspeç�
 
 ---
 
-### 3. 🔧 Setup do Mac Mini — PARCIALMENTE FEITO
-**Status:** Script criado, não executado com sucesso ainda
-**O que foi feito:**
-- Script `setup_macmini.sh` criado e publicado no GitHub
-- Remote Login ativado no Mac Mini
-- Tentativa de conexão SSH falhou (stdin não é terminal)
+### 3. 🔧 Setup do Mac Mini — ✅ QUASE COMPLETO
+**Status:** Antigravity Mac Mini já fez o setup pesado! (26/02/2026 22:36)
 
-**O que falta:**
-- Usuário executar o script no Mac Mini via Terminal
-- Verificar se Node.js e Python3 estão instalados no Mac Mini
-- Clonar o repositório no Mac Mini
+**✅ O que foi feito pelo Antigravity:**
+- ✅ Homebrew instalado do zero
+- ✅ Python 3.11 instalado via Homebrew (paridade com Render)
+- ✅ Backend venv criado e `requirements.txt` instalado completamente
+- ✅ Node v22 instalado via Homebrew (PATH resolvido! npm funciona)
+- ✅ Frontend `node_modules` recriado (`npm install` completo)
+- ✅ Backend rodando na porta **8000** (uvicorn stable)
+- ✅ Frontend rodando na porta **5173** (vite stable)
+- ✅ Habilitado `usePolling: true` no vite.config.js para lag no /Volumes
 
-**Como resolver:**
+**✅ SINCRONIZAÇÃO AGORA IMPLEMENTADA (26/02 23:10):**
+
+**Solução: Watchdog + rsync (Tempo Real)**
+- ✅ Script Python criado: `backend/sync_watchdog.py`
+- ✅ Monitora mudanças no `vagas.db` e sincroniza instantaneamente
+- ✅ Latência < 2 segundos (vs 10 minutos com cron)
+- ✅ LaunchAgent configurado: `com.vagas.sync-watchdog` (roda automaticamente)
+- ✅ Logs em `/tmp/vagas_sync.log`
+- ✅ Cron job antigo removido do MacMini
+
+**Como funciona:**
 ```bash
-# No Terminal do Mac Mini:
-curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagas-ux-platform/main/setup_macmini.sh | bash
+# LaunchAgent roda: /usr/bin/python3 backend/sync_watchdog.py
+# Watchdog monitora: backend/data/vagas.db
+# Ao detectar mudança: rsync automático para mactrabalho@Williams-Mac-mini.local
+# Resultado: Sincronização em tempo real!
 ```
+
+**Nota:** As portas ficaram como 8000/5173 (padrão), não 8001/5174 como planejado inicialmente. Antigravity confirmou que estas portas estão livres e funcionando perfeitamente!
 
 ---
 
@@ -512,6 +548,8 @@ curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagas-ux-platform/ma
 | Fev/2026 | Schema DB com colunas faltando | Modelo alterado sem migração | Deletar DB e recriar via `create_all()` |
 | 26/02/2026 | Deploy falhando no Render | `pdfplumber` e `requests` fora do requirements.txt | Adicionar ao requirements.txt |
 | 26/02/2026 | Deploy falhando no Render | `python-multipart` faltando (necessário para UploadFile do FastAPI) | Adicionar ao requirements.txt |
+| 26/02/2026 | Erro "Verificando Banco" (Frontend) | Schema DB SQLite desalinhado com models.py | Script de migração (`ALTER TABLE`) para colunas faltantes |
+| 26/02/2026 | Timeout Browser Subagent | Instabilidade interna do tool | Verificação manual via `curl` no backend |
 
 ---
 
@@ -535,6 +573,9 @@ curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagas-ux-platform/ma
 | Fev/2026 | Figma Dev Mode MCP | Tentativa de criar Design System programaticamente |
 | 26/02/2026 | Mac Mini adicionado ao workflow | Trabalho paralelo em dois dispositivos |
 | 26/02/2026 | pdfplumber adicionado | Leitura de CV em PDF no perfil do usuário |
+| 26/02/2026 | Monitoramento de Créditos USD | Tracking real de custos por modelo Claude |
+| 26/02/2026 | Upgrade Pitch (Sonnet) | Redirecionamento da cold message para modelo premium |
+| 26/02/2026 | Migração manual SQLite | Adição de colunas `candidaturas_count` etc sem zerar DB |
 | 26/02/2026 | CLAUDE.md criado | Memória persistente entre sessões |
 
 ---
@@ -587,16 +628,31 @@ python3 fazer_login.py
 
 ---
 
-## 📝 REGRAS DO PROJETO
+# 📋 VAGAS UX PLATFORM — WORKSPACE RULES (NORMAS AAA)
 
-1. **Responder sempre em Português Brasileiro**
-2. **Ler este arquivo no início de toda sessão** — sem exceção
-3. **Atualizar este arquivo** a cada nova decisão, fix ou funcionalidade
-4. **Não commitar sem testar** o impacto no deploy do Render
-5. **Sempre fazer git pull antes** de trabalhar em qualquer dispositivo
-6. **Cookies do LinkedIn podem expirar** — rodar `fazer_login.py` quando necessário
-7. **Monitorar gastos da API Claude** via `/api/config/ia/status`
-8. **Verificar requirements.txt** sempre que adicionar um novo import Python
+## 1. COMUNICAÇÃO E POSTURA
+* **Protocolo Pt-Br:** Toda e qualquer resposta, log, walkthrough ou commit deve ser estritamente em Português Brasileiro (pt-BR). Explicações profundas de processos complexos no `AGENT_CHAT.md` são obrigatórias.
+* **Transparência Absoluta:** Fim das mudanças silenciosas. É estritamente proibido alterar o código sem documentar e justificar a ação no chat.
+* **Postura Operacional:** A execução deve ser analítica, cirúrgica e direta, sem floreios.
+
+## 2. RADAR E MEMÓRIA (PROTOCOLO WAKE-UP)
+* **Leitura Obrigatória Pré-Ação:** ANTES de qualquer ação ou de propor alterações, o agente DEVE ler: `CLAUDE.md` (inteiro), `AGENT_BOARD.md` (inteiro) e no minimo os ultimos 10% do `AGENT_CHAT.md`.
+* **Manutenção e Faxina do Kanban (Regra de Ouro):** O `AGENT_BOARD.md` deve manter rigorosamente APENAS os últimos 7 dias de atividades. Após passar 1 semana, o agente deve fazer a "faxina" do board, apagando as tarefas que ele próprio adicionou e que já tenham mais de 7 dias.
+* **Visão Sistêmica e Propriedade:** NENHUM irmão de IA pode alterar diretamente o que o outro escreveu. Caso precise mudar algo de outro agente, REPORTE no chat e PEÇA para o autor original realizar a alteração.
+
+## 3. DESIGN SYSTEM E IDENTIDADE VISUAL
+* **Fontes de Verdade de Design:** O design evolui rápido. Para QUALQUER alteração visual ou criação de componente, consulte OBRIGATORIAMENTE os seguintes arquivos em ordem:
+    1. `FIGMA_IMPLEMENTATION_GUIDE.md` (Especificações técnicas e tokens ativos)
+    2. `FIGMA_BUILD_CHECKLIST.md` (Fluxo de construção de componentes)
+    3. `frontend/src/index.css` (Variáveis e tokens implementados)
+
+## 4. INFRAESTRUTURA E STACK
+* **A Tríade (Stack Inegociável):** Backend: FastAPI (Python) | Frontend: React + Vite + TailwindCSS | DB: Neon PostgreSQL.
+* **Sincronização:** Siga rigorosamente os protocolos do `vagas_sentinel.sh` e `sync_watchdog.py` para paridade entre máquinas.
+
+## 5. OTIMIZAÇÃO E CUSTO
+* **Economia de Tokens:** Respostas e códigos devem ser enxutos e focados.
+* **Aprovação de Refatoração:** Refatorações pesadas que exijam alto consumo de tokens DEVEM ser alinhadas e aprovadas previamente pelo usuário.
 
 ---
 

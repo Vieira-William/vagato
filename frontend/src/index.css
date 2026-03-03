@@ -37,6 +37,31 @@
     --ring: 226 96% 60%;
 
     --radius: 1.5rem;
+
+    /* ── Legacy Compatibility Vars (Soft UI palette — Light) ──────────────── */
+    --bg-primary: #f5f3ef;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f0f0f5;
+    --text-primary: #1b1b20;
+    --text-secondary: #6b6b7a;
+    --text-muted: #9a9aab;
+    --border-legacy: #e3e3eb;
+
+    /* ── Radius Scale ─────────────────────────────────────────────────────── */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-pill: 9999px;
+
+    /* ── Shadow Scale (Light) ─────────────────────────────────────────────── */
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    --soft-card: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 2px 16px rgba(0, 0, 0, 0.06);
+
+    /* ── Accent Extended ──────────────────────────────────────────────────── */
+    --accent-color: hsl(226, 96%, 60%);
+    --accent-soft: hsl(226, 96%, 95%);
   }
 
   .dark {
@@ -67,6 +92,23 @@
     --border: 240 10% 18%;
     --input: 240 10% 18%;
     --ring: 226 96% 60%;
+
+    /* ── Legacy Compatibility Vars (Soft UI palette — Dark) ──────────────── */
+    --bg-primary: #090912;
+    --bg-secondary: #0e0e18;
+    --bg-tertiary: #1a1a25;
+    --text-primary: #fafafa;
+    --text-secondary: #9a9aab;
+    --text-muted: #6b6b7a;
+    --border-legacy: #27273a;
+
+    /* ── Shadow Scale (Dark) ─────────────────────────────────────────────── */
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --soft-card: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 16px rgba(0, 0, 0, 0.3);
+
+    /* ── Accent Extended (Dark) ───────────────────────────────────────────── */
+    --accent-soft: hsl(226, 96%, 20%);
   }
 }
 
