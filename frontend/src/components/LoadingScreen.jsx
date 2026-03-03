@@ -143,10 +143,10 @@ export default function LoadingScreen({ onComplete, onError }) {
 
   const getIcon = (s) => {
     switch (s) {
-      case 'pending': return <div className="w-4 h-4 rounded-full border border-[#2C2C2E]/20" />;
-      case 'loading': return <Loader2 className="w-4 h-4 text-[#375DFB] animate-spin" />;
-      case 'success': return <CheckCircle className="w-5 h-5 text-emerald-500 bg-white rounded-full shadow-sm" />;
-      case 'error': return <XCircle className="w-5 h-5 text-red-500 bg-white rounded-full shadow-sm" />;
+      case 'pending': return <div className="w-4 h-4 rounded-full border border-black/10" />;
+      case 'loading': return <Loader2 className="w-5 h-5 text-[#375DFB] animate-spin" />;
+      case 'success': return <div className="w-6 h-6 bg-[#375DFB] rounded-[8px] flex items-center justify-center text-white shadow-lg shadow-[#375DFB]/20"><CheckCircle className="w-4 h-4" strokeWidth={2.5} /></div>;
+      case 'error': return <div className="w-6 h-6 bg-red-500 rounded-[8px] flex items-center justify-center text-white shadow-lg shadow-red-500/20"><XCircle className="w-4 h-4" strokeWidth={2.5} /></div>;
       default: return null;
     }
   };
@@ -175,8 +175,8 @@ export default function LoadingScreen({ onComplete, onError }) {
           </p>
         </div>
 
-        {/* Card Principal - Estilo Ilhas Flutuantes (Bento) */}
-        <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white transition-all duration-300">
+        {/* Card Principal - Estilo Ilhas Flutuantes (Bento Zero) */}
+        <div className="bg-white/80 backdrop-blur-2xl rounded-[32px] p-8 shadow-soft transition-all duration-300">
           {/* Banner de Hibernação */}
           {isWaking && (
             <div className="mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100/50 flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
@@ -196,16 +196,16 @@ export default function LoadingScreen({ onComplete, onError }) {
             </div>
           )}
 
-          {/* A lista de status limpa */}
+          {/* A lista de status limpa e Premium */}
           <div className="space-y-4">
             {CHECKS.map((check, i) => (
               <div
                 key={check.id}
                 className={cn(
-                  "flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 border",
-                  statuses[i] === 'loading' ? 'bg-[#375DFB]/[0.03] border-[#375DFB]/10 scale-[1.02] shadow-sm' :
-                    statuses[i] === 'error' ? 'bg-red-50 border-red-100' :
-                      statuses[i] === 'success' ? 'bg-emerald-50/50 border-emerald-100/30' :
+                  "flex items-center gap-4 p-4 rounded-2xl transition-all duration-300",
+                  statuses[i] === 'loading' ? 'bg-white shadow-md shadow-black/5 scale-[1.02] border border-white' :
+                    statuses[i] === 'error' ? 'bg-red-50 border border-red-100/50' :
+                      statuses[i] === 'success' ? 'bg-white/90 border border-transparent shadow-sm' :
                         'bg-black/5 border-transparent opacity-60'
                 )}
               >
@@ -213,13 +213,13 @@ export default function LoadingScreen({ onComplete, onError }) {
                   {getIcon(statuses[i])}
                 </div>
                 <span className={cn(
-                  "flex-1 text-[13px] font-bold tracking-tight transition-colors",
+                  "flex-1 text-[11px] font-black uppercase tracking-widest transition-colors",
                   statuses[i] === 'loading' ? 'text-[#375DFB]' :
                     statuses[i] === 'error' ? 'text-red-600' :
-                      statuses[i] === 'success' ? 'text-emerald-700' :
-                        'text-[#2C2C2E]/60 font-medium'
+                      statuses[i] === 'success' ? 'text-[#2C2C2E]' :
+                        'text-gray-400'
                 )}>
-                  {statuses[i] === 'loading' ? 'Aguarde... ' + check.label.toLowerCase() : check.label}
+                  {statuses[i] === 'loading' ? 'Aguarde: ' + check.label.toLowerCase() : check.label}
                 </span>
               </div>
             ))}
@@ -239,20 +239,21 @@ export default function LoadingScreen({ onComplete, onError }) {
 
           {/* Retorno de Erro Bruto */}
           {error && (
-            <div className="mt-8 text-center animate-in slide-in-from-bottom-2 fade-in">
-              <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-5 h-5" strokeWidth={2} />
+            <div className="mt-8 text-center animate-in slide-in-from-bottom-2 fade-in bg-white/50 rounded-2xl p-6 border border-red-100/50">
+              <div className="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 relative">
+                <div className="absolute inset-0 rounded-full border border-red-200 animate-ping opacity-20" />
+                <AlertTriangle className="w-6 h-6" strokeWidth={2} />
               </div>
-              <h3 className="text-[#2C2C2E] font-bold text-lg leading-tight mb-2">Falhamos e fomos sinceros.</h3>
-              <p className="text-[13px] text-[#2C2C2E]/60 mb-6">{error.message}</p>
+              <h3 className="text-[#2C2C2E] font-extrabold text-[15px] uppercase tracking-wider mb-2">Falhamos e fomos sinceros</h3>
+              <p className="text-[12px] text-gray-500 font-medium mb-6 leading-relaxed">{error.message}</p>
               <button
                 onClick={retry}
-                className="bg-[#375DFB] hover:bg-[#284BDE] text-white w-full h-12 rounded-full font-bold text-sm transition-transform active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                className="bg-[#2C2C2E] hover:bg-black text-white w-full h-12 rounded-full font-black text-[11px] uppercase tracking-widest transition-transform active:scale-95 shadow-lg flex items-center justify-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Tentar reconexão
+                Tentar Reconexão
               </button>
-              <p className="text-[10px] text-[#2C2C2E]/40 mt-4 uppercase font-bold tracking-widest">{error.suggestion}</p>
+              <p className="text-[9px] text-[#2C2C2E]/40 mt-5 uppercase font-bold tracking-widest">{error.suggestion}</p>
             </div>
           )}
         </div>

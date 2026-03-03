@@ -312,12 +312,12 @@ export default function VagasPage() {
                                 ))}
                             </div>
                             {totalPaginas > 1 && (
-                                <div className="flex items-center justify-center gap-2 pt-8 pb-12">
-                                    <Button variant="ghost" size="icon" onClick={() => setPagina(1)} disabled={pagina === 1} className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm border border-white/60 hover:bg-white/80 shadow-sm"><ChevronsLeft className="w-4 h-4" strokeWidth={1.5} /></Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setPagina(p => p - 1)} disabled={pagina === 1} className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm border border-white/60 hover:bg-white/80 shadow-sm"><ChevronLeft className="w-4 h-4" strokeWidth={1.5} /></Button>
-                                    <span className="text-[11px] font-black uppercase tracking-widest px-6 h-10 flex items-center bg-white/40 border border-white/60 rounded-full">{pagina} / {totalPaginas}</span>
-                                    <Button variant="ghost" size="icon" onClick={() => setPagina(p => p + 1)} disabled={pagina === totalPaginas} className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm border border-white/60 hover:bg-white/80 shadow-sm"><ChevronRight className="w-4 h-4" strokeWidth={1.5} /></Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setPagina(totalPaginas)} disabled={pagina === totalPaginas} className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm border border-white/60 hover:bg-white/80 shadow-sm"><ChevronsRight className="w-4 h-4" strokeWidth={1.5} /></Button>
+                                <div className="flex items-center justify-center gap-3 pt-8 pb-12">
+                                    <Button variant="ghost" size="icon" onClick={() => setPagina(1)} disabled={pagina === 1} className="w-11 h-11 rounded-full bg-white/60 backdrop-blur-md border border-white hover:bg-white hover:scale-105 transition-all shadow-sm"><ChevronsLeft className="w-4 h-4 text-[#2C2C2E]" strokeWidth={2} /></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => setPagina(p => p - 1)} disabled={pagina === 1} className="w-11 h-11 rounded-full bg-white/60 backdrop-blur-md border border-white hover:bg-white hover:scale-105 transition-all shadow-sm"><ChevronLeft className="w-4 h-4 text-[#2C2C2E]" strokeWidth={2} /></Button>
+                                    <span className="text-[11px] font-black uppercase tracking-widest px-8 h-11 flex items-center bg-white border border-white/60 rounded-full shadow-sm text-[#2C2C2E] mx-1">{pagina} / {totalPaginas}</span>
+                                    <Button variant="ghost" size="icon" onClick={() => setPagina(p => p + 1)} disabled={pagina === totalPaginas} className="w-11 h-11 rounded-full bg-white/60 backdrop-blur-md border border-white hover:bg-white hover:scale-105 transition-all shadow-sm"><ChevronRight className="w-4 h-4 text-[#2C2C2E]" strokeWidth={2} /></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => setPagina(totalPaginas)} disabled={pagina === totalPaginas} className="w-11 h-11 rounded-full bg-white/60 backdrop-blur-md border border-white hover:bg-white hover:scale-105 transition-all shadow-sm"><ChevronsRight className="w-4 h-4 text-[#2C2C2E]" strokeWidth={2} /></Button>
                                 </div>
                             )}
                         </div>

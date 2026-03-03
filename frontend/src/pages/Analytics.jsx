@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { BarChart, Bar, Cell, ResponsiveContainer } from 'recharts';
 import {
   Star, Briefcase, CheckCircle, Users, Calendar,
-  Play, Pause, Check, ChevronDown, ChevronRight,
-  Monitor, LogIn
+  Play, Pause, Check, ChevronDown, ChevronRight, ChevronLeft,
+  Monitor, LogIn, RefreshCw
 } from 'lucide-react';
 import UserProfileCard from '../components/analytics/UserProfileCard';
 import TopNav from '../components/layout/TopNav';
 import { statsService, calendarService } from '../services/api';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 
 // ─── Dados Mock para os Cards Bento ─────────────────────────────────────────
 
@@ -201,28 +204,63 @@ function AccordionCard() {
   );
 }
 
+// ── Helpers do CalendarCard ──────────────────────────────────────────────────
+const DAYS_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const MONTHS_FULL = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MONTHS_ABR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+// Paleta de cores das bolhas de evento (warm cream → branco → azul claro → lilás → verde claro)
+const EVT_PALETTES = [
+  { bg: '#EDE9E3', text: '#2C2C2E', dot: '#8B7355' },
+  { bg: '#FFFFFF', text: '#2C2C2E', dot: '#375DFB', border: '1px solid #e5e7eb' },
+  { bg: '#E9EFFE', text: '#1B3A8F', dot: '#375DFB' },
+  { bg: '#F0EDF8', text: '#4B2E8A', dot: '#7B4FBB' },
+  { bg: '#E9F5EF', text: '#1B5E3A', dot: '#2E9E5B' },
+];
+
+// Cores dos avatares fictícios (derivadas do índice para serem determinísticas)
+const AVATAR_BG = ['#375DFB', '#E85D04', '#7B2D8B', '#0B7B3E', '#C13333', '#B07A00'];
+
+function getWeekStart(offsetWeeks = 0) {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Dom
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1) + offsetWeeks * 7);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+}
+
+// Retorna HH:MM a partir de um ISO string
+function fmtTime(isoStr) {
+  const d = new Date(isoStr);
+  return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ── CalendarCard (Soft Cream UI / Shadcn) ───────────────────────────────────
 function CalendarCard() {
   const [events, setEvents] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState(null);
+  const [weekOffset, setWeekOffset] = useState(0);
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  useEffect(() => { fetchEvents(); }, []);
 
   const fetchEvents = async () => {
+    setLoading(true);
     try {
       const { data } = await calendarService.getEvents();
-      if (data.isConnected) {
-        setIsConnected(true);
-        setEvents(data.events || []);
-      } else {
-        setIsConnected(false);
-      }
-    } catch (err) {
-      console.error('Erro ao buscar eventos:', err);
+      setIsConnected(!!data.isConnected);
+      setEvents(data.events || []);
+    } catch {
       setIsConnected(false);
     } finally {
       setLoading(false);
@@ -234,85 +272,192 @@ function CalendarCard() {
     setConnectError(null);
     try {
       const { data } = await calendarService.getLoginUrl();
-      if (data.auth_url) {
-        window.location.href = data.auth_url;
-      } else {
-        setConnectError('URL de autenticação não retornada pelo servidor.');
-      }
+      if (data.auth_url) window.location.href = data.auth_url;
+      else setConnectError('URL não retornada.');
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Erro ao iniciar autenticação Google.';
-      setConnectError(msg);
-      console.error('Erro calendar login:', err);
+      setConnectError(err.response?.data?.detail || 'Erro ao conectar.');
     } finally {
       setConnecting(false);
     }
   };
 
+  const SLOT_START = 8;
+  const SLOT_COUNT = 4; // 8:00am, 9:00am, 10:00am, 11:00am
+
+  const weekStart = getWeekStart(weekOffset);
+  const weekDates = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+
+  const refDate = weekDates[2];
+  const monthLabel = MONTHS_FULL[refDate.getMonth()];
+  const yearLabel = refDate.getFullYear();
+  const prevMLabel = MONTHS_FULL[(refDate.getMonth() - 1 + 12) % 12];
+  const nextMLabel = MONTHS_FULL[(refDate.getMonth() + 1) % 12];
+
+  // Agrupamento Visuais em Blocos Pílula Absolutos (conforme Screenshot)
+  const visualEvents = events.reduce((acc, evt, i) => {
+    const evtDate = new Date(evt.start);
+    if (isNaN(evtDate.getTime())) return acc;
+
+    const dayIdx = weekDates.findIndex(d => isSameDay(d, evtDate));
+    if (dayIdx < 0) return acc;
+
+    const hour = evtDate.getHours();
+    const minutes = evtDate.getMinutes();
+
+    // Filtro para mostrar apenas eventos na janela visível de slot (ex: 8 as 11)
+    if (hour < SLOT_START || hour >= SLOT_START + SLOT_COUNT) return acc;
+
+    // Para design: alternância visual se é dark card ou light card
+    const isDark = (i % 2 === 0);
+
+    acc.push({
+      dayIdx,
+      topRatio: ((hour - SLOT_START) + (minutes / 60)) / SLOT_COUNT,
+      isDark,
+      evt,
+      idx: i
+    });
+    return acc;
+  }, []);
+
+  const ENG_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
-    <div className="bg-white/70 backdrop-blur-lg rounded-[32px] shadow-soft border-none p-5 flex flex-col overflow-hidden col-span-2 transition-all hover:bg-white/80 h-full">
-      <div className="flex justify-between items-center mb-3 shrink-0">
-        <button className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors">Calendar</button>
-        <span className="text-sm font-semibold text-[#2C2C2E]">Schedule</span>
-        <button onClick={fetchEvents} className="text-[10px] text-gray-400 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors">Refresh</button>
-      </div>
+    <Card className="col-span-2 h-full flex flex-col overflow-hidden rounded-[32px] p-6 border-none transition-all shadow-none"
+      style={{ background: '#FBF8F1' }}>
+      <CardContent className="p-0 flex flex-col h-full bg-transparent border-none">
 
-      <div className="grid grid-cols-6 gap-2 mb-3 shrink-0">
-        {CALENDAR_DAYS.map(day => (
-          <div key={day.date} className="text-center">
-            <p className="text-[9px] text-gray-400 mb-1">{day.label}</p>
-            <p className={`text-xs font-semibold ${day.isToday ? 'text-[#375DFB]' : 'text-[#2C2C2E]'}`}>{day.date}</p>
-          </div>
-        ))}
-      </div>
+        {/* Header de Navegação (Mês) */}
+        <div className="flex items-center justify-between mb-8 shrink-0 z-10 px-2 lg:px-4">
+          <Button
+            variant="secondary"
+            onClick={() => setWeekOffset(o => o - 1)}
+            className="bg-white hover:bg-white/80 active:scale-95 text-[#2C2C2E] rounded-full px-6 h-10 font-medium text-[13px] border-none shadow-sm transition-all"
+          >
+            {prevMLabel}
+          </Button>
 
-      <div className="flex-1 min-h-0 overflow-hidden space-y-2">
+          <span className="text-[20px] font-medium text-[#2C2C2E] tracking-tight">
+            {monthLabel} {yearLabel}
+          </span>
+
+          <Button
+            variant="secondary"
+            onClick={() => setWeekOffset(o => o + 1)}
+            className="bg-white hover:bg-white/80 active:scale-95 text-[#2C2C2E] rounded-full px-6 h-10 font-medium text-[13px] border-none shadow-sm transition-all"
+          >
+            {nextMLabel}
+          </Button>
+        </div>
+
+        {/* States de Loading / Auth Workspace */}
         {loading ? (
-          <div className="space-y-3 animate-pulse">
-            <div className="h-12 bg-gray-100 rounded-2xl w-full" />
-            <div className="h-12 bg-gray-100 rounded-2xl w-full" />
-            <div className="h-12 bg-gray-100 rounded-2xl w-full" />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-[#2C2C2E] border-t-transparent animate-spin" />
           </div>
         ) : !isConnected ? (
-          <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-12 h-12 bg-[#F5F3EF] rounded-2xl flex items-center justify-center mb-3">
-              <Calendar className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
+          <div className="flex-1 flex flex-col items-center justify-center gap-3">
+            <div className="w-14 h-14 rounded-[20px] flex items-center justify-center bg-white shadow-sm border border-black/5">
+              <Calendar className="w-6 h-6 text-[#2C2C2E]" strokeWidth={1.5} />
             </div>
-            <p className="text-xs font-medium text-[#2C2C2E] mb-4">Agenda não conectada</p>
-            <button
+            <p className="text-[13px] font-bold text-[#2C2C2E]">Agenda não conectada</p>
+            <p className="text-[11px] font-medium text-gray-500 max-w-[200px] text-center mb-1">
+              Conecte seu Google Calendar para montar o board de entrevistas.
+            </p>
+            <Button
               onClick={handleConnect}
               disabled={connecting}
-              className="flex items-center gap-2 bg-[#2C2C2E] text-white text-[11px] font-medium rounded-xl h-10 px-6 shadow-sm hover:bg-black transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#2C2C2E] hover:bg-black text-white rounded-full px-8 h-10 font-bold text-[11px] uppercase tracking-widest transition-all shadow-lg shadow-black/10"
             >
-              <LogIn className="w-3.5 h-3.5" />
-              {connecting ? 'Conectando...' : 'Conectar Google Agenda'}
-            </button>
+              {connecting ? 'Conectando...' : 'Conectar Google'}
+            </Button>
             {connectError && (
-              <p className="text-[10px] text-red-500 mt-2 text-center max-w-[180px]">{connectError}</p>
+              <p className="text-[10px] text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 text-center max-w-[220px] mt-2">
+                {connectError}
+              </p>
             )}
           </div>
-        ) : events.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-400 text-xs italic">
-            Nenhum evento próximo.
-          </div>
         ) : (
-          events.map((event, i) => (
-            <div key={i} className={`flex items-center gap-3 bg-white/50 border border-white/60 rounded-2xl px-4 py-2 hover:bg-white/80 transition-all`}>
-              <div className="flex -space-x-1.5 shrink-0">
-                <div className="w-6 h-6 rounded-full bg-[#375DFB] border-2 border-white flex items-center justify-center">
-                  <span className="text-[8px] text-white font-bold">G</span>
-                </div>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-[#2C2C2E] truncate">{event.title}</p>
-                <p className="text-[9px] text-gray-400 truncate">
-                  {new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {event.desc || 'No description'}
-                </p>
-              </div>
+          <div className="flex-1 min-h-0 flex pb-4 relative pr-2">
+
+            {/* Coluna de Horas Fixas, distribuídas uniformemente */}
+            <div className="w-16 shrink-0 flex flex-col text-[12px] font-medium text-gray-400 mt-[65px] z-10" style={{ justifyContent: 'space-between', height: 'calc(100% - 65px)' }}>
+              {Array.from({ length: SLOT_COUNT }).map((_, r) => (
+                <span key={r} className="leading-none">{SLOT_START + r}:00 am</span>
+              ))}
             </div>
-          ))
+
+            {/* Container do Grid (Grade com linhas verticais tracejadas isolando os dias) */}
+            <div className="flex-1 grid grid-cols-6 relative">
+              {weekDates.map((d, i) => {
+                const isToday = isSameDay(d, todayMidnight);
+                return (
+                  <div key={i} className="flex flex-col items-center border-l border-dashed border-[#2C2C2E]/20 relative">
+                    <span className="text-[14px] font-medium text-gray-400 mb-1">{ENG_DAYS[i]}</span>
+                    <span className={`text-[15px] font-medium mb-4 ${isToday ? 'text-[#2C2C2E] font-bold' : 'text-gray-400'}`}>
+                      {d.getDate().toString().padStart(2, '0')}
+                    </span>
+                    <div className="flex-1 w-full relative" />
+                  </div>
+                );
+              })}
+
+              {/* Renderização de Eventos (Blocos Pílula) */}
+              {visualEvents.map(({ dayIdx, topRatio, isDark, evt, idx }) => {
+                const avatarsNum = (idx % 3) + 1;
+                const topPx = `calc(65px + ${topRatio} * (100% - 65px))`;
+
+                return (
+                  <div key={idx}
+                    className={`absolute flex flex-col justify-center rounded-[24px] px-5 py-3 shadow-md z-20 cursor-pointer transition-transform hover:scale-[1.02] active:scale-95 ${isDark ? 'bg-[#2C2C2E] text-white shadow-black/10 border border-black/5' : 'bg-white text-[#2C2C2E] shadow-black/5 border border-white'
+                      }`}
+                    style={{
+                      top: topPx,
+                      left: `calc(${(dayIdx / 6) * 100}% + 12px)`,
+                      width: 'calc(33.333% - 24px)',
+                      minWidth: '220px',
+                      minHeight: '64px'
+                    }}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold tracking-tight truncate">{evt.title}</p>
+                        {evt.desc && evt.desc !== 'Sem descrição' && (
+                          <p className={`text-[10px] mt-0.5 truncate font-medium ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>{evt.desc}</p>
+                        )}
+                      </div>
+                      <div className="flex -space-x-2 shrink-0">
+                        {Array.from({ length: avatarsNum }).map((_, ai) => (
+                          <Avatar key={ai} className={`w-7 h-7 ring-[3px] shadow-sm ${isDark ? 'ring-[#2C2C2E]' : 'ring-white'}`}>
+                            <AvatarFallback className="text-[9px] bg-[#fca311] text-white font-black">
+                              {(evt.title[ai * 2] || 'A').toUpperCase()}
+                            </AvatarFallback>
+                            <AvatarImage src={`https://i.pravatar.cc/150?u=${idx + ai}`} />
+                          </Avatar>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* State Vazio da Semana */}
+              {visualEvents.length === 0 && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center mt-12 bg-gradient-to-t from-[#FBF8F1] via-transparent to-transparent z-10 pointer-events-none">
+                  <p className="text-[12px] font-medium text-gray-400">Nenhum evento detectado neste bloco de horas.</p>
+                </div>
+              )}
+            </div>
+          </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

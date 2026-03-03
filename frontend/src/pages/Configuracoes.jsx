@@ -383,7 +383,7 @@ export default function Configuracoes() {
                 placeholder="USD Amount"
                 className="bg-white/5 border-none text-white placeholder:text-gray-600 h-10 rounded-xl px-4 text-sm"
               />
-              <Button className="w-full bg-[#375DFB] text-white rounded-full font-black text-[11px] uppercase tracking-widest h-11 shadow-lg shadow-[#375DFB]/30 hover:scale-105 transition-all">
+              <Button className="w-full bg-[#375DFB] text-white rounded-full font-black text-[11px] uppercase tracking-widest h-12 shadow-lg shadow-[#375DFB]/30 hover:bg-[#5B7BFF] hover:scale-[1.02] transition-all">
                 Atualizar Saldo
               </Button>
             </form>
@@ -431,9 +431,9 @@ export default function Configuracoes() {
                 </div>
               ))}
             </div>
-            <div className="pt-6 flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleSaveWeights} className="h-11 rounded-full px-10 bg-[#2C2C2E] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg hover:bg-black transition-all">Salvar Pesos</Button>
-              <Button onClick={handleRecalcularScores} variant="secondary" className="h-11 rounded-full px-8 bg-white/50 border border-white/60 text-[#2C2C2E] font-bold text-[11px] uppercase tracking-widest hover:bg-white transition-all">Recalcular Tudo</Button>
+            <div className="pt-6 flex flex-col sm:flex-row gap-4">
+              <Button onClick={handleSaveWeights} className="h-12 rounded-full px-10 bg-[#2C2C2E] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg shadow-black/10 hover:bg-black transition-all hover:scale-[1.02] active:scale-95">Salvar Pesos</Button>
+              <Button onClick={handleRecalcularScores} variant="secondary" className="h-12 rounded-full px-8 bg-white/50 border border-white hover:border-black/5 text-[#2C2C2E] font-bold text-[11px] uppercase tracking-widest hover:bg-white shadow-sm transition-all active:scale-95">Recalcular Tudo</Button>
             </div>
           </CardContent>
         </Card>
@@ -471,8 +471,8 @@ export default function Configuracoes() {
                   />
                 </div>
                 <div className="sm:col-span-2 flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button type="submit" className="h-11 rounded-full px-10 bg-[#375DFB] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg shadow-[#375DFB]/20 hover:scale-[1.02] transition-all">Configurar Acesso</Button>
-                  <Button type="button" onClick={handleTestLinkedIn} variant="secondary" className="h-11 rounded-full px-8 bg-white/50 border border-white/60 text-[#2C2C2E] font-bold text-[11px] uppercase tracking-widest gap-2 hover:bg-white transition-all">
+                  <Button type="submit" className="h-12 rounded-full px-10 bg-[#375DFB] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg shadow-[#375DFB]/20 hover:scale-[1.02] transition-all active:scale-95">Configurar Acesso</Button>
+                  <Button type="button" onClick={handleTestLinkedIn} variant="secondary" className="h-12 rounded-full px-8 bg-white/50 border border-white hover:border-black/5 text-[#2C2C2E] font-bold text-[11px] uppercase tracking-widest gap-2 hover:bg-white transition-all shadow-sm active:scale-95">
                     <Play className="w-3.5 h-3.5" strokeWidth={2.5} /> Testar Conexão
                   </Button>
                 </div>
