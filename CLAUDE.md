@@ -239,6 +239,32 @@ vagas-ux-platform/
 
 ---
 
+## 🎨 PASTA DE INSPIRAÇÕES — CONSULTA OBRIGATÓRIA
+
+> ⚠️ **REGRA DE OURO:** Antes de qualquer decisão visual (layout, espaçamento, hierarquia, contraste, composição de cards), os agentes DEVEM consultar a pasta `inspiracoes/`.
+
+**Caminho:** `/inspiracoes/`
+
+### Estrutura
+```
+inspiracoes/
+├── light_mode/    ← Referências de UI para o tema claro (modo padrão da plataforma)
+│   ├── inspiracao_1.png
+│   ├── inspiracao_3.png
+│   ├── image.png / image copy*.png
+│   └── ...
+└── dark_mode/     ← Referências de UI para o tema escuro (adicionar conforme necessário)
+```
+
+### Regras de uso
+- **Consultar ANTES** de propor qualquer mudança de layout ou visual
+- Basear-se **apenas no layout, distribuição de conteúdo e espaçamento** — não copiar cores ou identidade visual alheia
+- As imagens são referências de padrões como: card-in-card, bento grid, hierarquia tipográfica, density de informação, pills funcionais
+- Ao adicionar novas referências, colocar em `light_mode/` ou `dark_mode/` conforme o tema da imagem
+- **Nunca deletar** esta pasta nem seu conteúdo — é ativo do projeto
+
+---
+
 ## 🗄️ BANCO DE DADOS
 
 ### Models (SQLAlchemy)
