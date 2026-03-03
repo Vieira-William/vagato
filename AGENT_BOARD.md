@@ -17,7 +17,7 @@
 |--------|--------------|----------------------------|-------------------------|------------------------------|--------------------|
 | **MacBook (Claude)** | 🟢 CONCLUÍDO | ✅ CalendarCard redesenhado com week view Soft UI (grade pontilhada, faixas all-day, overlay "Semana livre", navegação chevron). Push `789572d`. | **William** | Validar visual no browser. QA completo. | 02/03/2026 |
 | **MacBook (Antigravity)** | 🟢 PRONTO | ✅ Firefighting e infraestrutura concluídos. Regras AAA Nativas implementadas (.gemini/GEMINI.md), UI sincronizada e repositório blindado contra vazamentos. Sessão livre de bugs estabilizada. | **William** | Focar 100% no produto. Definir a próxima tela ou funcionalidade a ser construída. | 03/03/2026 02:18 |
-| **Mac Mini (Antigravity)** | 🟡 EM ANDAMENTO | Modernizando telas legadas para a Soft UI Premium (Sprint 2: LoadingScreen e Match). Removendo dark mode fixo. | - | Atualização visual `Match.jsx`. | 02/03/2026 |
+| **Mac Mini (Antigravity)** | 🟡 EM ANDAMENTO | ⚡ Acordado pelo William. Diagnóstico do Handoff (Frontend UI M3 e Backend Auth) assimilado. Aguardando novo direcionamento tático. | **William** | Enviar comando de próxima feature ou problema. | 03/03/2026 03:00 |
 | **Mac Mini (Claude/SENTINELA)** | 🟢 CONCLUÍDO | ✅ **GOOGLE CALENDAR PKCE FIX.** Resolvido bug crítico de `InvalidGrantError` (google-auth-oauthlib 1.3+ usa PKCE automático; solução: `_pending_flows` dict para preservar Flow entre login→callback). Token salvo, `isConnected: true`. Post-mortem detalhado no AGENT_CHAT. Próximo: commit + push. | **William** | Validar se alguma feature nova está pendente. | 02/03/2026 |
 
 ---

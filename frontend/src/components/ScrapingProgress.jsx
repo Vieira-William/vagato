@@ -20,6 +20,9 @@ import {
   Bot,
 } from 'lucide-react';
 import SlideInConfirm from './SlideInConfirm';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const STEPS_BASE = [
   { id: 'indeed', label: 'Indeed', icon: Search, color: '#2164f3' },
@@ -474,42 +477,44 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
   const allDone = isComplete || steps.every(s => s.status === 'complete' || s.status === 'error');
   const STEPS_COUNT = steps.length;
 
-  return (
-    <div className="fixed inset-0 bg-[#F8F9FE]/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-      <div className="bg-white/90 backdrop-blur-2xl rounded-[32px] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl border border-white">
+  const handleCloseRequest = (open) => {
+    if (!open) {
+      if (fase === 'idle' || allDone) onClose();
+      else setConfirmarFechar(true);
+    }
+  };
 
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-black/5">
+  return (
+    <Dialog open={true} onOpenChange={handleCloseRequest}>
+      <DialogContent className="max-w-2xl p-0 gap-0 flex flex-col max-h-[85vh] overflow-hidden bg-card border-none shadow-elevated">
+
+        <DialogHeader className="flex flex-row justify-between items-center p-6 border-b border-border/10 space-y-0 text-left">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-[20px] bg-[#375DFB]/10 flex items-center justify-center">
               <Terminal className="w-6 h-6 text-[#375DFB]" />
             </div>
-            <div>
-              <h2 className="text-xl font-light tracking-tight text-[#2C2C2E]">
+            <div className="text-left">
+              <DialogTitle className="text-xl font-light tracking-tight text-foreground">
                 {fase === 'idle' ? 'Nova Busca de Vagas' : 'Buscando Vagas agora...'}
-              </h2>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-1">
+              </DialogTitle>
+              <DialogDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-1">
                 {fase === 'idle'
                   ? 'Escolha onde quer procurar hoje'
                   : isComplete
                     ? 'Tudo pronto! Terminei a busca.'
                     : 'Avaliando dados em tempo real'}
-              </p>
+              </DialogDescription>
             </div>
           </div>
-          <button
-            onClick={() => {
-              if (fase === 'idle' || allDone) {
-                onClose();
-              } else {
-                setConfirmarFechar(true);
-              }
-            }}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2C2C2E] hover:bg-black/5 transition-colors"
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleCloseRequest(false)}
+            className="w-10 h-10 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
           >
             <X className="w-5 h-5" />
-          </button>
-        </div>
+          </Button>
+        </DialogHeader>
 
         {/* ── FASE IDLE: tela de configuração antes de iniciar ── */}
         {fase === 'idle' && (
@@ -562,7 +567,7 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                       const IconType = busca.fonte === 'indeed' ? Search : (busca.fonte === 'linkedin_posts' ? FileText : Briefcase);
 
                       return (
-                        <button
+                        <div
                           key={busca.id}
                           onClick={() => {
                             setSelecionados(prev =>
@@ -572,39 +577,36 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                             );
                           }}
                           className={`
-                          flex items-center gap-4 p-4 rounded-2xl border transition-all text-left group
+                          flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer select-none
                           ${isSelected
-                              ? 'bg-white border-[#375DFB] shadow-md scale-[1.02]'
-                              : 'bg-black/5 border-transparent hover:border-black/10 hover:bg-white'}
+                              ? 'bg-card border-primary shadow-soft scale-[1.02]'
+                              : 'bg-muted/20 border-border/50 hover:border-border hover:bg-card'}
                         `}
                         >
                           <div className={`
                           w-10 h-10 rounded-[14px] flex items-center justify-center transition-colors
-                          ${isSelected ? 'bg-[#375DFB] text-white shadow-lg shadow-[#375DFB]/20' : 'bg-white text-gray-400 shadow-sm'}
+                          ${isSelected ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'bg-card text-muted-foreground shadow-sm border border-border/50'}
                         `}>
                             <IconType className="w-5 h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-[13px] font-bold truncate transition-colors ${isSelected ? 'text-[#375DFB]' : 'text-[#2C2C2E]'}`}>
+                            <p className={`text-[13px] font-bold truncate transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                               {busca.nome}
                             </p>
-                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5">
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
                               {busca.fonte.replace('_', ' ')}
                             </p>
                           </div>
-                          <div className={`
-                          w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0
-                          ${isSelected ? 'bg-[#375DFB] border-[#375DFB]' : 'bg-transparent border-gray-300'}
-                        `}>
-                            {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
+                          <div className="flex-shrink-0 flex items-center pr-2">
+                            <Checkbox checked={isSelected} className="pointer-events-none" />
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
 
                     {disponiveis.length === 0 && (
-                      <div className="col-span-full border-2 border-dashed border-gray-200 bg-gray-50 rounded-[20px] p-8 flex items-center justify-center">
-                        <p className="text-[13px] font-semibold text-gray-500 text-center uppercase tracking-widest">
+                      <div className="col-span-full border-2 border-dashed border-border/20 bg-muted/10 rounded-[20px] p-8 flex items-center justify-center">
+                        <p className="text-[13px] font-semibold text-muted-foreground text-center uppercase tracking-widest">
                           Nenhuma rotina configurada. Verifique as configurações. ⚙️
                         </p>
                       </div>
@@ -619,21 +621,21 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                     className={`
                     flex items-center gap-5 w-full p-5 rounded-2xl border transition-all text-left group
                     ${auditoria
-                        ? 'bg-emerald-50 border-emerald-500 shadow-md'
-                        : 'bg-black/5 border-transparent hover:border-black/10'}
+                        ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500 shadow-md'
+                        : 'bg-muted/20 border-transparent hover:border-border/30'}
                   `}
                   >
                     <div className={`
                     w-12 h-12 rounded-[16px] flex items-center justify-center transition-colors
-                    ${auditoria ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white text-gray-400 shadow-sm'}
+                    ${auditoria ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-card text-muted-foreground shadow-sm border border-border/10'}
                   `}>
                       <Shield className="w-6 h-6" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className={`text-sm font-bold truncate transition-colors ${auditoria ? 'text-emerald-700' : 'text-[#2C2C2E]'}`}>
+                      <p className={`text-sm font-bold truncate transition-colors ${auditoria ? 'text-emerald-700 dark:text-emerald-400' : 'text-foreground'}`}>
                         Filtro de Qualidade Inteligente
                       </p>
-                      <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                      <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">
                         Refina os resultados eliminando descartes usando IA
                       </p>
                     </div>
@@ -651,21 +653,16 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
               </>
             )}
 
-            {/* Botão de Iniciar */}
             <div className="mt-auto pt-4">
-              <button
+              <Button
+                size="lg"
                 onClick={iniciarColeta}
                 disabled={selecionados.length === 0 || loadingInitial}
-                className={`
-                w-full h-14 rounded-full font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all
-                ${selecionados.length > 0 && !loadingInitial
-                    ? 'bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] text-white hover:opacity-90 active:scale-95 shadow-lg shadow-[#375DFB]/30'
-                    : 'bg-black/5 text-gray-400 cursor-not-allowed'}
-              `}
+                className="w-full h-14 rounded-full font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all"
               >
                 <Database className="w-5 h-5" strokeWidth={2.5} />
                 <span>INICIAR COLETA GLOBAL</span>
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -675,10 +672,10 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
           <>
             {/* Progress Bar Global (Soft UI style) */}
             {!allDone && (
-              <div className="px-6 py-4 border-b border-black/5 bg-white/50 backdrop-blur-sm">
-                <div className="h-2 bg-black/5 rounded-full overflow-hidden shadow-inner">
+              <div className="px-6 py-4 border-b border-border/10 bg-card/50 backdrop-blur-sm">
+                <div className="h-2 bg-muted/40 rounded-full overflow-hidden shadow-inner flex items-center">
                   <div
-                    className="h-full bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] transition-all duration-700 ease-out rounded-full shadow-[0_0_10px_rgba(55,93,251,0.5)]"
+                    className="h-full bg-primary transition-all duration-700 ease-out rounded-full shadow-[0_0_10px_rgba(55,93,251,0.5)]"
                     style={{
                       width: `${steps.reduce((acc, step) => {
                         const weight = 100 / steps.length;
@@ -695,22 +692,22 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
             )}
 
             {/* Area Principal - Resumo Consolidado Contínuo */}
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 bg-black/[0.02]">
-              <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Execução em tempo real</h3>
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 bg-muted/10">
+              <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Execução em tempo real</h3>
 
               <div className="space-y-3">
                 {steps.map(step => (
-                  <div key={step.id} className="p-4 rounded-2xl bg-white shadow-sm border border-black/5 transition-all">
+                  <div key={step.id} className="p-4 rounded-2xl bg-card shadow-soft border border-border/10 transition-all">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-black/5 flex items-center justify-center">
-                        <step.icon size={16} style={{ color: step.status === 'complete' ? '#10b981' : step.color }} />
+                      <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center">
+                        <step.icon size={16} className={step.status === 'complete' ? 'text-emerald-500' : 'text-primary'} />
                       </div>
-                      <span className="text-[13px] text-[#2C2C2E] font-bold">{step.label}</span>
+                      <span className="text-[13px] text-foreground font-bold">{step.label}</span>
 
-                      <span className={`ml-auto text-[9px] px-2.5 py-1 rounded-full uppercase tracking-widest font-black ${step.status === 'complete' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                        step.status === 'error' ? 'bg-red-50 text-red-600 border border-red-100' :
-                          step.status === 'processing' || step.status === 'loading' ? 'bg-[#375DFB]/10 text-[#375DFB] border border-[#375DFB]/20 animate-pulse' :
-                            'bg-gray-100 text-gray-500 border border-gray-200'
+                      <span className={`ml-auto text-[9px] px-2.5 py-1 rounded-full uppercase tracking-widest font-black ${step.status === 'complete' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/30' :
+                        step.status === 'error' ? 'bg-red-50 text-red-600 border border-red-100 dark:bg-red-950/30' :
+                          step.status === 'processing' || step.status === 'loading' ? 'bg-primary/10 text-primary border border-primary/20 animate-pulse' :
+                            'bg-muted/30 text-muted-foreground border border-border/20'
                         }`}>
                         {step.status === 'complete' ? 'concluído' : step.status === 'error' ? 'falha' : step.status === 'pending' ? 'aguarda' : 'executando'}
                       </span>
@@ -719,10 +716,10 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                     {/* Progress minificado do Step (apenas se estiver processando ativamente) */}
                     {(step.status === 'loading' || step.status === 'processing') && (
                       <div className="mb-2 mt-3">
-                        <div className="h-1.5 bg-black/5 rounded-full overflow-hidden mb-2">
-                          <div className="h-full bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] transition-all duration-300 rounded-full" style={{ width: `${step.progress || 0}%` }} />
+                        <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden mb-2">
+                          <div className="h-full bg-primary transition-all duration-300 rounded-full" style={{ width: `${step.progress || 0}%` }} />
                         </div>
-                        <p className="text-[11px] font-semibold text-[#375DFB] truncate">
+                        <p className="text-[11px] font-semibold text-primary truncate">
                           {step.message || '...'} {step.ultimaVaga && `| + ${step.ultimaVaga.titulo}`}
                         </p>
                       </div>
@@ -762,32 +759,27 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
 
               {allDone && finalStats && (
                 <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="p-6 rounded-3xl bg-white text-center border border-black/5 shadow-soft">
-                    <p className="text-4xl font-light tracking-tighter text-[#2C2C2E]">{finalStats.total_bruto || 0}</p>
-                    <p className="text-[10px] uppercase tracking-widest font-black text-gray-400 mt-2">Vagas extraídas</p>
+                  <div className="p-6 rounded-3xl bg-card text-center border border-border/10 shadow-soft">
+                    <p className="text-4xl font-light tracking-tighter text-foreground">{finalStats.total_bruto || 0}</p>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground mt-2">Vagas extraídas</p>
                   </div>
-                  <div className="p-6 rounded-3xl bg-emerald-50 text-center border border-emerald-100 shadow-soft">
-                    <p className="text-4xl font-light tracking-tighter text-emerald-600">{finalStats.total_novas || 0}</p>
-                    <p className="text-[10px] uppercase tracking-widest font-black text-emerald-600/70 mt-2">Vagas exclusivas</p>
+                  <div className="p-6 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 text-center border border-emerald-100 dark:border-emerald-900/50 shadow-soft">
+                    <p className="text-4xl font-light tracking-tighter text-emerald-600 dark:text-emerald-400">{finalStats.total_novas || 0}</p>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-emerald-600/70 dark:text-emerald-400/70 mt-2">Vagas exclusivas</p>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="p-6 bg-white rounded-b-[32px] border-t border-black/5">
-              <button
+            <div className="p-6 bg-card border-t border-border/10">
+              <Button
                 onClick={handleFechar}
                 disabled={!allDone && fase !== 'error'}
-                className={`
-                  w-full h-14 rounded-full font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all
-                  ${allDone || fase === 'error'
-                    ? 'bg-[#2C2C2E] hover:bg-black text-white shadow-lg shadow-black/20 active:scale-95'
-                    : 'bg-black/5 text-gray-400 cursor-not-allowed'
-                  }
-                `}
+                className="w-full h-14 rounded-full font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+                variant={allDone || fase === 'error' ? 'default' : 'secondary'}
               >
                 {allDone ? 'FECHAR E VER VAGAS' : fase === 'error' ? 'Fechar (Erro)' : 'PROCESSANDO...'}
-              </button>
+              </Button>
             </div>
 
             {/* Error state */}
@@ -813,7 +805,7 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
           cancelText="Não, quero continuar!"
           type="warning"
         />
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
