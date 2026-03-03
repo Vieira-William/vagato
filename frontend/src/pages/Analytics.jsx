@@ -319,20 +319,20 @@ function CalendarCard() {
 function DarkTasksCard() {
   const doneTasks = ONBOARD_TASKS.filter(t => t.done).length;
   return (
-    <div className="bg-primary/5 rounded-[32px] shadow-soft border border-primary/10 p-5 flex flex-col overflow-hidden">
+    <div className="bg-[#2C2C2E] rounded-[32px] shadow-soft border border-white/5 p-5 flex flex-col overflow-hidden">
       <div className="flex justify-between items-start mb-3 shrink-0">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Onboarding Task</span>
-        <span className="text-2xl font-light text-foreground">{doneTasks}/{ONBOARD_TASKS.length}</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">Onboarding Task</span>
+        <span className="text-2xl font-light text-white">{doneTasks}/{ONBOARD_TASKS.length}</span>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden space-y-1">
         {ONBOARD_TASKS.map((task, i) => (
-          <div key={i} className="flex items-center gap-2.5 py-2 border-b border-border/10 last:border-0">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${task.done ? 'bg-primary' : 'border border-primary/20 bg-background/50'}`}>
-              {task.done ? <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2.5} /> : <task.icon className="w-3.5 h-3.5 text-primary/40" strokeWidth={1.5} />}
+          <div key={i} className="flex items-center gap-2.5 py-2 border-b border-white/[0.06] last:border-0">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${task.done ? 'bg-[#375DFB]' : 'border border-white/20 bg-white/5'}`}>
+              {task.done ? <Check className="w-3.5 h-3.5 text-white" strokeWidth={2.5} /> : <task.icon className="w-3.5 h-3.5 text-white/30" strokeWidth={1.5} />}
             </div>
             <div className="min-w-0">
-              <p className={`text-xs font-medium truncate ${task.done ? 'text-primary/60 line-through' : 'text-primary'}`}>{task.title}</p>
-              <p className="text-[9px] text-primary/40">{task.date}</p>
+              <p className={`text-xs font-medium truncate ${task.done ? 'text-white/40 line-through' : 'text-white/90'}`}>{task.title}</p>
+              <p className="text-[9px] text-white/25">{task.date}</p>
             </div>
           </div>
         ))}
