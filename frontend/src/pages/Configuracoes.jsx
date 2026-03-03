@@ -323,13 +323,13 @@ export default function Configuracoes() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
       {/* Header — Estilo Ilha Flutuante (Gabarito) */}
-      <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-10 shadow-soft flex flex-col md:flex-row items-center justify-between gap-6 border border-white/40 transition-all">
+      <div className="bg-card backdrop-blur-lg rounded-[32px] p-10 shadow-soft flex flex-col md:flex-row items-center justify-between gap-6 border border-border/10 transition-all">
         <div>
-          <h1 className="text-4xl font-light text-[#2C2C2E] tracking-tighter mb-2">Ajustes</h1>
-          <p className="text-[#2C2C2E]/60 text-sm font-medium">Configure a inteligência por trás da plataforma. ⚡</p>
+          <h1 className="text-4xl font-light text-foreground tracking-tighter mb-2">Ajustes</h1>
+          <p className="text-muted-foreground text-sm font-medium">Configure a inteligência por trás da plataforma. ⚡</p>
         </div>
-        <div className="w-12 h-12 bg-white/50 backdrop-blur-lg rounded-2xl flex items-center justify-center border border-white/60">
-          <Settings className="w-6 h-6 text-[#2C2C2E]" strokeWidth={1.5} />
+        <div className="w-12 h-12 bg-muted/30 backdrop-blur-lg rounded-2xl flex items-center justify-center border border-border/20">
+          <Settings className="w-6 h-6 text-foreground" strokeWidth={1.5} />
         </div>
       </div>
 
@@ -346,63 +346,63 @@ export default function Configuracoes() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        {/* ILHA: IA CONSUMPTION (Dark Premium Azure) */}
-        <Card className="rounded-[32px] border-none shadow-soft bg-[#2C2C2E] text-white p-8 md:col-span-1 flex flex-col justify-between overflow-hidden relative group">
+        {/* ILHA: IA CONSUMPTION (Soft UI) */}
+        <Card className="rounded-[32px] border-border/10 shadow-soft bg-primary/5 text-foreground p-8 md:col-span-1 flex flex-col justify-between overflow-hidden relative group">
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-10">
-              <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
-                <Zap className="w-5 h-5 text-[#375DFB] fill-[#375DFB]" strokeWidth={1.5} />
+              <div className="p-3 bg-background/50 rounded-2xl backdrop-blur-md">
+                <Zap className="w-5 h-5 text-primary fill-primary" strokeWidth={1.5} />
               </div>
-              <Badge className="bg-[#375DFB] text-white border-none rounded-full px-4 py-1 text-[10px] font-black tracking-widest">IA ONLINE</Badge>
+              <Badge className="bg-primary text-primary-foreground border-none rounded-full px-4 py-1 text-[10px] font-black tracking-widest">IA ONLINE</Badge>
             </div>
 
             <div className="space-y-1 mb-8">
-              <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">Créditos API</p>
+              <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em]">Créditos API</p>
               <h3 className="text-4xl font-light tracking-tight">${iaStatus?.saldo_disponivel_usd?.toFixed(2)}</h3>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{iaStatus?.saldo_percentual_restante?.toFixed(0)}% Restante</span>
+                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{iaStatus?.saldo_percentual_restante?.toFixed(0)}% Restante</span>
               </div>
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#375DFB] transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(55,93,251,0.5)]"
+                  className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(55,93,251,0.5)]"
                   style={{ width: `${iaStatus?.saldo_percentual_restante || 0}%` }}
                 />
               </div>
             </div>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-white/5 relative z-10">
+          <div className="mt-10 pt-6 border-t border-border/10 relative z-10">
             <form onSubmit={handleUpdateIAConfig} className="space-y-4">
               <Input
                 type="number"
                 value={newCredit}
                 onChange={(e) => setNewCredit(e.target.value)}
                 placeholder="USD Amount"
-                className="bg-white/5 border-none text-white placeholder:text-gray-600 h-10 rounded-xl px-4 text-sm"
+                className="bg-background/50 border-none text-foreground placeholder:text-muted-foreground h-10 rounded-xl px-4 text-sm"
               />
-              <Button className="w-full bg-[#375DFB] text-white rounded-full font-black text-[11px] uppercase tracking-widest h-11 shadow-lg shadow-[#375DFB]/30 hover:scale-105 transition-all">
+              <Button className="w-full bg-primary text-primary-foreground rounded-full font-black text-[11px] uppercase tracking-widest h-11 shadow-lg shadow-primary/30 hover:scale-[1.02] transition-all">
                 Atualizar Saldo
               </Button>
             </form>
           </div>
 
-          {/* Azure Glow */}
-          <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-[#375DFB]/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-[#375DFB]/20 transition-all duration-700" />
+          {/* Glow */}
+          <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-primary/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-primary/20 transition-all duration-700" />
         </Card>
 
         {/* ILHA: PESOS DO MATCH */}
-        <Card className="rounded-[32px] border-none shadow-soft bg-white/70 backdrop-blur-lg p-10 md:col-span-2 transition-all hover:bg-white/80">
+        <Card className="rounded-[32px] border-border/10 shadow-soft bg-card p-10 md:col-span-2 transition-all hover:bg-card/80">
           <CardHeader className="p-0 mb-8 flex flex-row items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-[#2C2C2E] tracking-tight">O que priorizar?</h2>
-              <p className="text-sm text-[#2C2C2E]/60 font-medium">Ajuste os pesos para o cálculo de Match.</p>
+              <h2 className="text-2xl font-semibold text-foreground tracking-tight">O que priorizar?</h2>
+              <p className="text-sm text-muted-foreground font-medium">Ajuste os pesos para o cálculo de Match.</p>
             </div>
             <div className={cn(
               "px-4 py-2 rounded-full text-[10px] font-black tracking-widest border transition-all",
-              weightsValid ? "bg-green-50 text-green-600 border-green-200 shadow-sm" : "bg-red-50 text-red-600 border-red-200"
+              weightsValid ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900 shadow-sm" : "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30 dark:border-red-900"
             )}>
               PESO: {Math.round(totalWeights * 100)}%
             </div>
@@ -410,69 +410,69 @@ export default function Configuracoes() {
           <CardContent className="p-0 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
               {[
-                { key: 'skills', label: 'Habilidades', color: 'bg-indigo-500' },
-                { key: 'nivel', label: 'Nível Exp.', color: 'bg-slate-700' },
-                { key: 'modalidade', label: 'Modalidade', color: 'bg-emerald-500' },
-                { key: 'salario', label: 'Remuneração', color: 'bg-[#375DFB]' },
-                { key: 'ingles', label: 'Idioma Inglês', color: 'bg-violet-500' },
-                { key: 'tipo_contrato', label: 'Tipo Contrato', color: 'bg-sky-500' }
+                { key: 'skills', label: 'Habilidades' },
+                { key: 'nivel', label: 'Nível Exp.' },
+                { key: 'modalidade', label: 'Modalidade' },
+                { key: 'salario', label: 'Remuneração' },
+                { key: 'ingles', label: 'Idioma Inglês' },
+                { key: 'tipo_contrato', label: 'Tipo Contrato' }
               ].map(w => (
                 <div key={w.key} className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{w.label}</span>
-                    <span className="text-[12px] font-black text-[#2C2C2E]">{Math.round(weights[w.key] * 100)}%</span>
+                    <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">{w.label}</span>
+                    <span className="text-[12px] font-black text-foreground">{Math.round(weights[w.key] * 100)}%</span>
                   </div>
                   <input
                     type="range" min="0" max="100"
                     value={Math.round(weights[w.key] * 100)}
                     onChange={(e) => handleWeightChange(w.key, e.target.value / 100)}
-                    className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#375DFB] transition-all"
+                    className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary transition-all"
                   />
                 </div>
               ))}
             </div>
             <div className="pt-6 flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleSaveWeights} className="h-11 rounded-full px-10 bg-[#2C2C2E] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg hover:bg-black transition-all">Salvar Pesos</Button>
-              <Button onClick={handleRecalcularScores} variant="secondary" className="h-11 rounded-full px-8 bg-white/50 border border-white/60 text-[#2C2C2E] font-bold text-[11px] uppercase tracking-widest hover:bg-white transition-all">Recalcular Tudo</Button>
+              <Button onClick={handleSaveWeights} className="h-11 rounded-full px-10 bg-foreground text-background font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg hover:opacity-90 transition-all">Salvar Pesos</Button>
+              <Button onClick={handleRecalcularScores} variant="secondary" className="h-11 rounded-full px-8 bg-background border border-border/50 text-foreground font-bold text-[11px] uppercase tracking-widest hover:bg-muted/50 transition-all">Recalcular Tudo</Button>
             </div>
           </CardContent>
         </Card>
 
         {/* ILHA: CONTA LINKEDIN */}
-        <Card className="rounded-[32px] border-none shadow-soft bg-white/70 backdrop-blur-lg p-10 md:col-span-3 transition-all hover:bg-white/80">
+        <Card className="rounded-[32px] border-border/10 shadow-soft bg-card p-10 md:col-span-3 transition-all hover:bg-card/80">
           <div className="flex flex-col lg:flex-row gap-12">
             <div className="lg:w-1/3">
               <div className="w-16 h-16 rounded-[22px] bg-[#0A66C2] flex items-center justify-center mb-6 shadow-xl shadow-[#0A66C2]/10">
                 <Linkedin className="w-8 h-8 text-white" strokeWidth={1.5} />
               </div>
-              <h2 className="text-2xl font-semibold text-[#2C2C2E] mb-2 tracking-tight">LinkedIn Sync</h2>
-              <p className="text-[#2C2C2E]/60 text-sm leading-relaxed font-medium">Conecte sua conta para automatizar a varredura de vagas em tempo real.</p>
+              <h2 className="text-2xl font-semibold text-foreground mb-2 tracking-tight">LinkedIn Sync</h2>
+              <p className="text-muted-foreground text-sm leading-relaxed font-medium">Conecte sua conta para automatizar a varredura de vagas em tempo real.</p>
             </div>
 
             <div className="flex-1 space-y-6">
               <form onSubmit={handleSaveLinkedIn} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Usuário / Email</label>
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Usuário / Email</label>
                   <Input
                     value={linkedinEmail}
                     onChange={(e) => setLinkedinEmail(e.target.value)}
                     placeholder="Seu email principal"
-                    className="rounded-2xl bg-white/50 border-white/60 h-11"
+                    className="rounded-2xl bg-background/50 border-border/50 h-11"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Senha LinkedIn</label>
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Senha LinkedIn</label>
                   <Input
                     type="password"
                     value={linkedinPassword}
                     onChange={(e) => setLinkedinPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="rounded-2xl bg-white/50 border-white/60 h-11"
+                    className="rounded-2xl bg-background/50 border-border/50 h-11"
                   />
                 </div>
                 <div className="sm:col-span-2 flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button type="submit" className="h-11 rounded-full px-10 bg-[#375DFB] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg shadow-[#375DFB]/20 hover:scale-[1.02] transition-all">Configurar Acesso</Button>
-                  <Button type="button" onClick={handleTestLinkedIn} variant="secondary" className="h-11 rounded-full px-8 bg-white/50 border border-white/60 text-[#2C2C2E] font-bold text-[11px] uppercase tracking-widest gap-2 hover:bg-white transition-all">
+                  <Button type="submit" className="h-11 rounded-full px-10 bg-[#0A66C2] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg shadow-[#0A66C2]/20 hover:scale-[1.02] transition-all">Configurar Acesso</Button>
+                  <Button type="button" onClick={handleTestLinkedIn} variant="secondary" className="h-11 rounded-full px-8 bg-background border border-border/50 text-foreground font-bold text-[11px] uppercase tracking-widest gap-2 hover:bg-muted/50 transition-all">
                     <Play className="w-3.5 h-3.5" strokeWidth={2.5} /> Testar Conexão
                   </Button>
                 </div>
@@ -482,33 +482,33 @@ export default function Configuracoes() {
         </Card>
 
         {/* ILHA: INTEGRAÇÕES (Soft UI Premium) */}
-        <Card className="rounded-[32px] border-none shadow-soft bg-white/70 backdrop-blur-lg p-10 md:col-span-3 transition-all hover:bg-white/80">
+        <Card className="rounded-[32px] border-border/10 shadow-soft bg-card p-10 md:col-span-3 transition-all hover:bg-card/80">
           <div className="flex flex-col lg:flex-row gap-12">
             <div className="lg:w-1/3">
-              <div className="w-16 h-16 rounded-[22px] bg-[#F8F9FE] border border-black/5 flex items-center justify-center mb-6 shadow-sm">
-                <Link2 className="w-8 h-8 text-[#2C2C2E]" strokeWidth={1.5} />
+              <div className="w-16 h-16 rounded-[22px] bg-muted/50 border border-border/20 flex items-center justify-center mb-6 shadow-sm">
+                <Link2 className="w-8 h-8 text-foreground" strokeWidth={1.5} />
               </div>
-              <h2 className="text-2xl font-semibold text-[#2C2C2E] mb-2 tracking-tight">Integrações</h2>
-              <p className="text-[#2C2C2E]/60 text-sm leading-relaxed font-medium">Conecte ferramentas externas para potencializar seu workflow.</p>
+              <h2 className="text-2xl font-semibold text-foreground mb-2 tracking-tight">Integrações</h2>
+              <p className="text-muted-foreground text-sm leading-relaxed font-medium">Conecte ferramentas externas para potencializar seu workflow.</p>
             </div>
 
             <div className="flex-1 space-y-4">
-              <div className="bg-white/50 rounded-[24px] border border-white p-6 flex items-center justify-between group hover:bg-white transition-all shadow-sm">
+              <div className="bg-background/40 rounded-[24px] border border-border/10 p-6 flex items-center justify-between group hover:bg-background transition-all shadow-sm">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-6 w-full">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 rounded-[16px] bg-gradient-to-r from-[#375DFB] to-[#5B7BFF] flex items-center justify-center text-white shadow-lg shadow-[#375DFB]/20">
+                    <div className="w-12 h-12 rounded-[16px] bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
                       <Calendar className="w-6 h-6" strokeWidth={1.5} />
                     </div>
                     <div>
-                      <h4 className="text-[15px] font-bold text-[#2C2C2E]">Google Calendar</h4>
-                      <p className="text-[12px] text-gray-400 font-semibold mt-0.5">Sincronize sua agenda de entrevistas</p>
+                      <h4 className="text-[15px] font-bold text-foreground">Google Calendar</h4>
+                      <p className="text-[12px] text-muted-foreground font-semibold mt-0.5">Sincronize sua agenda de entrevistas</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4 lg:justify-end">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-black/5 bg-black/5">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-border/20 bg-muted/20">
                       <div className={cn("w-2 h-2 rounded-full", calendarConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-gray-300")} />
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${calendarConnected ? 'text-emerald-600' : 'text-gray-400'}`}>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${calendarConnected ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                         {loadingCalendar ? '...' : calendarConnected ? 'Conectado' : 'Desconectado'}
                       </span>
                     </div>
@@ -517,14 +517,14 @@ export default function Configuracoes() {
                       <Button
                         variant="ghost"
                         onClick={handleDisconnectCalendar}
-                        className="h-10 px-6 rounded-full text-red-500 hover:bg-red-50 hover:text-red-600 text-[11px] font-black uppercase tracking-widest bg-transparent"
+                        className="h-10 px-6 rounded-full text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 text-[11px] font-black uppercase tracking-widest bg-transparent"
                       >
                         Desconectar
                       </Button>
                     ) : (
                       <Button
                         onClick={handleConnectCalendar}
-                        className="h-10 px-8 rounded-full bg-[#2C2C2E] hover:bg-black text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-black/10 transition-all active:scale-95"
+                        className="h-10 px-8 rounded-full bg-foreground hover:opacity-90 text-background text-[11px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95"
                       >
                         Conectar
                       </Button>
