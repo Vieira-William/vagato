@@ -82,6 +82,8 @@ Script automático disponível:
 curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagas-ux-platform/main/setup_macmini.sh | bash
 ```
 
+> **Git Push no Mac Mini:** `gh` CLI instalado em `/opt/homebrew/bin/gh` e autenticado (Vieira-William, token scope `repo`). Credential helper configurado via `gh auth setup-git`. Push funciona normalmente com `git push origin main` via HTTPS.
+
 ---
 
 ## 🛠️ STACK TECNOLÓGICA
