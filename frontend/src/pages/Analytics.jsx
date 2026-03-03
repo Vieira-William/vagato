@@ -327,7 +327,6 @@ function CalendarCard() {
     return acc;
   }, []);
 
-  const ENG_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <Card className="col-span-2 h-full flex flex-col overflow-hidden rounded-[32px] p-6 border-none transition-all shadow-none"
@@ -400,8 +399,9 @@ function CalendarCard() {
                 const isToday = isSameDay(d, todayMidnight);
                 return (
                   <div key={i} className="flex flex-col items-center border-l border-dashed border-[#2C2C2E]/20 relative">
-                    <span className="text-[14px] font-medium text-gray-400 mb-1">{ENG_DAYS[i]}</span>
-                    <span className={`text-[15px] font-medium mb-4 ${isToday ? 'text-[#2C2C2E] font-bold' : 'text-gray-400'}`}>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1">{DAYS_SHORT[i]}</span>
+                    <span className={`text-[15px] font-semibold mb-4 flex items-center justify-center w-8 h-8 rounded-full transition-all
+                      ${isToday ? 'bg-[#2C2C2E] text-white' : 'text-gray-400'}`}>
                       {d.getDate().toString().padStart(2, '0')}
                     </span>
                     <div className="flex-1 w-full relative" />
@@ -449,8 +449,21 @@ function CalendarCard() {
 
               {/* State Vazio da Semana */}
               {visualEvents.length === 0 && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center mt-12 bg-gradient-to-t from-[#FBF8F1] via-transparent to-transparent z-10 pointer-events-none">
-                  <p className="text-[12px] font-medium text-gray-400">Nenhum evento detectado neste bloco de horas.</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none z-10">
+                  <div className="w-10 h-10 rounded-[14px] flex items-center justify-center"
+                    style={{ background: 'rgba(44,44,46,.06)' }}>
+                    <Check className="w-5 h-5" style={{ color: 'rgba(44,44,46,.22)' }} strokeWidth={1.5} />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-widest"
+                    style={{ color: 'rgba(44,44,46,.22)' }}>Semana livre</p>
+                  {events.length > 0 && (
+                    <button onClick={() => setWeekOffset(o => o + 1)}
+                      className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest mt-1 pointer-events-auto transition-colors"
+                      style={{ color: '#375DFB' }}>
+                      Próximos eventos
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>
