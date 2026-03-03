@@ -18,8 +18,8 @@ export default function Layout({ children }) {
       <TopNav />
 
       {/* Spacer para o Header fragmentado */}
-      <div className="pt-20 flex-1 flex flex-col px-6 md:px-12 lg:px-20 pb-10 relative z-10 w-full xl:max-w-[1600px] mx-auto overflow-hidden">
-        <main className="flex-1 w-full flex flex-col">
+      <div className="pt-20 flex-1 flex flex-col px-8 xl:px-12 2xl:px-16 pb-8 relative z-10 w-full mx-auto min-h-0">
+        <main className="flex-1 w-full flex flex-col min-h-0">
           {children}
         </main>
       </div>
