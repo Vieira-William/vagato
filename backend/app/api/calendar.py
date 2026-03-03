@@ -31,8 +31,13 @@ async def google_auth_init():
     client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
     
-    if not client_id or not client_secret or not redirect_uri:
-        raise HTTPException(status_code=400, detail="Google Credentials incompletas no .env")
+    PLACEHOLDERS = {"SEU_CLIENT_ID_AQUI", "SEU_CLIENT_SECRET_AQUI", ""}
+    if not client_id or not client_secret or not redirect_uri or \
+       client_id in PLACEHOLDERS or client_secret in PLACEHOLDERS:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Calendar não configurado. Acesse console.cloud.google.com, crie um OAuth 2.0 Client ID e adicione as credenciais reais ao backend/.env"
+        )
 
     client_config = {
         "web": {
