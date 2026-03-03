@@ -205,6 +205,8 @@ function CalendarCard() {
   const [events, setEvents] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -227,9 +229,23 @@ function CalendarCard() {
     }
   };
 
-  const handleConnect = () => {
-    // Redirecionamento OBRIGATÓRIO para localhost conforme restrição do Google OAuth
-    window.location.href = 'http://localhost:8000/api/calendar/login';
+  const handleConnect = async () => {
+    setConnecting(true);
+    setConnectError(null);
+    try {
+      const { data } = await calendarService.getLoginUrl();
+      if (data.auth_url) {
+        window.location.href = data.auth_url;
+      } else {
+        setConnectError('URL de autenticação não retornada pelo servidor.');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Erro ao iniciar autenticação Google.';
+      setConnectError(msg);
+      console.error('Erro calendar login:', err);
+    } finally {
+      setConnecting(false);
+    }
   };
 
   return (
@@ -264,11 +280,15 @@ function CalendarCard() {
             <p className="text-xs font-medium text-[#2C2C2E] mb-4">Agenda não conectada</p>
             <button
               onClick={handleConnect}
-              className="flex items-center gap-2 bg-[#2C2C2E] text-white text-[11px] font-medium rounded-xl h-10 px-6 shadow-sm hover:bg-black transition-all active:scale-95"
+              disabled={connecting}
+              className="flex items-center gap-2 bg-[#2C2C2E] text-white text-[11px] font-medium rounded-xl h-10 px-6 shadow-sm hover:bg-black transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LogIn className="w-3.5 h-3.5" />
-              Conectar Google Agenda
+              {connecting ? 'Conectando...' : 'Conectar Google Agenda'}
             </button>
+            {connectError && (
+              <p className="text-[10px] text-red-500 mt-2 text-center max-w-[180px]">{connectError}</p>
+            )}
           </div>
         ) : events.length === 0 ? (
           <div className="h-full flex items-center justify-center text-gray-400 text-xs italic">
