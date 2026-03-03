@@ -48,3 +48,5 @@ htmlcov/
 chromedriver
 geckodriver
 chrome_profile/
+
+.claude/settings.local.json
