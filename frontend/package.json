@@ -19,6 +19,7 @@
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
+    "@sentry/react": "^10.42.0",
     "@supabase/supabase-js": "^2.98.0",
     "axios": "^1.13.4",
     "class-variance-authority": "^0.7.1",
@@ -27,6 +28,7 @@
     "dompurify": "^3.3.1",
     "framer-motion": "^12.34.4",
     "lucide-react": "^0.563.0",
+    "posthog-js": "^1.358.0",
     "puppeteer": "^24.37.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@sentry/vite-plugin": "^5.1.1",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^15.0.0",
     "@types/react": "^19.2.5",

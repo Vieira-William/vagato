@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Sentry from '@sentry/react';
 import { AlertCircle, RefreshCcw, Terminal, ChevronDown, ChevronRight, Bug } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
@@ -12,9 +13,10 @@ class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
-        // Você também pode registrar o erro em um serviço de relatórios de erro
         console.error("ErrorBoundary caught an error:", error, errorInfo);
         this.setState({ errorInfo });
+        // Enviar ao Sentry com contexto completo do componente
+        Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
     }
 
     render() {

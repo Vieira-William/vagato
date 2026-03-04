@@ -23,6 +23,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/posthog';
 
 const TABS = [
     { id: 'all', label: 'Todas', fonte: null },
@@ -102,6 +103,7 @@ export default function VagasPage() {
             ]);
             setVagas(vagasRes.data.vagas);
             setStatsData(statsRes.data);
+            trackEvent('vagas_carregadas', { total: vagasRes.data.vagas.length });
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
         } finally {
@@ -136,6 +138,7 @@ export default function VagasPage() {
     const coletarVagas = () => {
         setColetando(true);
         setShowScrapingModal(true);
+        trackEvent('vagas_scraping_iniciado');
     };
 
     const handleScrapingComplete = (res) => {
@@ -145,6 +148,7 @@ export default function VagasPage() {
             tipo: res?.total_novas > 0 ? 'sucesso' : 'info',
             texto: res?.total_novas > 0 ? `${res.total_novas} novas vagas!` : 'Nenhuma nova vaga.'
         });
+        trackEvent('vagas_scraping_concluido', { total_novas: res?.total_novas || 0 });
         carregarVagas();
         setTimeout(() => setMensagem(null), 5000);
     };

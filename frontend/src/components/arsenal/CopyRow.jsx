@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Copy, Check, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { trackEvent } from '@/lib/posthog';
 
 export default function CopyRow({ icon: Icon, label, value, placeholder, isLink }) {
   const [copied, setCopied] = useState(false);
@@ -10,6 +11,7 @@ export default function CopyRow({ icon: Icon, label, value, placeholder, isLink 
   const handleCopy = useCallback(async (e) => {
     e.stopPropagation();
     if (empty) {
+      trackEvent('arsenal_campo_vazio_clicado', { campo: label });
       navigate('/perfil');
       return;
     }
@@ -17,13 +19,17 @@ export default function CopyRow({ icon: Icon, label, value, placeholder, isLink 
       await navigator.clipboard.writeText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      trackEvent('arsenal_campo_copiado', { campo: label });
     } catch { /* fallback silencioso */ }
-  }, [value, empty, navigate]);
+  }, [value, empty, navigate, label]);
 
   const handleOpen = useCallback((e) => {
     e.stopPropagation();
-    if (value && isLink) window.open(value.startsWith('http') ? value : `https://${value}`, '_blank');
-  }, [value, isLink]);
+    if (value && isLink) {
+      trackEvent('arsenal_link_aberto', { campo: label });
+      window.open(value.startsWith('http') ? value : `https://${value}`, '_blank');
+    }
+  }, [value, isLink, label]);
 
   return (
     <button

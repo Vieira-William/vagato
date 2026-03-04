@@ -1,20 +1,55 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timezone
 import os
 import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 from sqlalchemy import text, inspect
 
-from .database import engine, Base
+from .database import engine, Base, SessionLocal
 from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin
+from .middleware.sentry_middleware import SentryUserMiddleware
 
-# Init Sentry para observabilidade do Backend
+
+def _scrub_sensitive_headers(event, hint):
+    """Remove dados sensíveis (tokens, cookies) antes de enviar ao Sentry."""
+    try:
+        headers = event.get("request", {}).get("headers", {})
+        if isinstance(headers, dict):
+            if "authorization" in headers:
+                headers["authorization"] = "[FILTERED]"
+            if "cookie" in headers:
+                headers["cookie"] = "[FILTERED]"
+            if "x-api-key" in headers:
+                headers["x-api-key"] = "[FILTERED]"
+    except Exception:
+        pass
+    return event
+
+
+# ── Inicializar Sentry para observabilidade do Backend ──
 SENTRY_DSN = os.getenv("SENTRY_DSN")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+APP_VERSION = os.getenv("APP_VERSION", "0.1.0")
+
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
+        environment=ENVIRONMENT,
+        release=f"vagas-backend@{APP_VERSION}",
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            StarletteIntegration(transaction_style="endpoint"),
+        ],
+        # Performance: 20% em prod, 100% em dev
+        traces_sample_rate=0.2 if ENVIRONMENT == "production" else 1.0,
+        # Não enviar em desenvolvimento local
+        enabled=ENVIRONMENT != "development",
+        # Remover dados sensíveis antes de enviar
+        before_send=_scrub_sensitive_headers,
     )
+    print(f"[Sentry] Inicializado — env={ENVIRONMENT} release=vagas-backend@{APP_VERSION}")
 
 # Criar diretório data se não existir
 os.makedirs("data", exist_ok=True)
@@ -135,6 +170,9 @@ def shutdown_scheduler():
         sched.shutdown(wait=False)
         print("[Scheduler] Encerrado.")
 
+# SentryUserMiddleware ANTES do CORS (propaga identidade do usuário para eventos Sentry)
+app.add_middleware(SentryUserMiddleware)
+
 # CORS para permitir frontend local e produção
 app.add_middleware(
     CORSMiddleware,
@@ -186,5 +224,34 @@ def root():
 @app.get("/health")
 @app.get("/api/health")
 def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "version": APP_VERSION, "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@app.get("/health/deep")
+@app.get("/api/health/deep")
+def deep_health_check():
+    """Health check completo — testa conexão real com o banco de dados."""
+    db_status = "unknown"
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+
+    overall = "healthy" if db_status == "connected" else "degraded"
+    return {
+        "status": overall,
+        "database": db_status,
+        "version": APP_VERSION,
+        "environment": ENVIRONMENT,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/debug-sentry")
+def trigger_sentry_error():
+    """Endpoint temporário para testar integração Sentry. REMOVER APÓS CONFIRMAR."""
+    raise ZeroDivisionError("Sentry test error from vagas-backend — pode apagar este endpoint")
 

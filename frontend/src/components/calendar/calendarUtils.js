@@ -116,3 +116,33 @@ export function formatEventDate(dateStr) {
 export function isAllDayEvent(event) {
   return !event.start?.includes('T');
 }
+
+// ─── Posicionamento Horizontal (Gantt-style) ────────────────────────────────
+export function getHorizontalPosition(dateString, startHour = 8, endHour = 18) {
+  return getTimePosition(dateString, startHour, endHour);
+}
+
+export function getEventWidth(start, end, startHour = 8, endHour = 18) {
+  return getEventHeight(start, end, startHour, endHour);
+}
+
+// ─── Próximo Evento ──────────────────────────────────────────────────────────
+export function getNextEvent(events) {
+  const now = new Date();
+  const upcoming = events
+    .filter(e => {
+      if (isAllDayEvent(e)) return false;
+      try { return parseISO(e.start) > now; } catch { return false; }
+    })
+    .sort((a, b) => new Date(a.start) - new Date(b.start));
+  return upcoming[0] || null;
+}
+
+export function getMinutesUntil(dateStr) {
+  const diff = differenceInMinutes(parseISO(dateStr), new Date());
+  if (diff < 1) return 'agora';
+  if (diff < 60) return `em ${diff}min`;
+  const h = Math.floor(diff / 60);
+  const m = diff % 60;
+  return m > 0 ? `em ${h}h${m}min` : `em ${h}h`;
+}

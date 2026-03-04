@@ -1,10 +1,29 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { fileURLToPath, URL } from 'url'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  build: {
+    // Source maps são obrigatórios para o Sentry mapear erros de produção
+    sourcemap: true,
+  },
+  plugins: [
+    react(),
+    // Sentry plugin: faz upload de source maps no build (só funciona com SENTRY_AUTH_TOKEN)
+    sentryVitePlugin({
+      org: process.env.SENTRY_ORG || 'vagas-ux',
+      project: process.env.SENTRY_PROJECT || 'vagas-frontend',
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Deletar .map files após upload para não expô-los em produção
+      sourcemaps: {
+        filesToDeleteAfterUpload: ['./dist/**/*.map'],
+      },
+      // Não interromper o build se não tiver auth token (ex: em dev)
+      silent: true,
+    }),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL('./src', import.meta.url)),

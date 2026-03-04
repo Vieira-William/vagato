@@ -1,15 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { format, parseISO, isToday } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { calendarService } from '../../services/api';
-import { isAllDayEvent } from './calendarUtils';
 
 import CalendarEmpty from './CalendarEmpty';
-import DayTimeline from './DayTimeline';
-import UpcomingEvents from './UpcomingEvents';
-import WeekGrid from './WeekGrid';
+import TimetableGrid from './TimetableGrid';
+import DayFocusView from './DayFocusView';
+import NextEventBar from './NextEventBar';
 import EventTooltip from './EventTooltip';
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 min
@@ -19,7 +18,7 @@ export default function DashboardCalendar() {
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [view, setView] = useState('hoje'); // 'hoje' | 'semana'
+  const [view, setView] = useState('semana'); // 'hoje' | 'semana'
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -49,14 +48,6 @@ export default function DashboardCalendar() {
     const interval = setInterval(() => fetchEvents(true), POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchEvents]);
-
-  // Eventos de hoje (excluindo all-day)
-  const todayEvents = useMemo(() => {
-    return events.filter(e => {
-      if (isAllDayEvent(e)) return false;
-      try { return isToday(parseISO(e.start)); } catch { return false; }
-    });
-  }, [events]);
 
   // Data de hoje formatada
   const todayLabel = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
@@ -132,13 +123,15 @@ export default function DashboardCalendar() {
 
       {/* Data de hoje */}
       {isConnected && view === 'hoje' && (
-        <p className="text-[11px] text-muted-foreground capitalize mb-3 shrink-0">{todayLabel}</p>
+        <p className="text-[11px] text-muted-foreground capitalize mb-2 shrink-0">{todayLabel}</p>
       )}
 
-      {/* ─── CONTEÚDO ───────────────────────────────────────────────── */}
+      {/* ─── CONTEUDO ───────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {!isConnected ? (
           <CalendarEmpty isConnected={false} />
+        ) : events.length === 0 ? (
+          <CalendarEmpty isConnected={true} />
         ) : (
           <AnimatePresence mode="wait">
             {view === 'hoje' ? (
@@ -148,27 +141,9 @@ export default function DashboardCalendar() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="h-full flex gap-3"
+                className="h-full"
               >
-                {todayEvents.length === 0 && events.filter(e => !isAllDayEvent(e)).length === 0 ? (
-                  <CalendarEmpty isConnected={true} />
-                ) : (
-                  <>
-                    {/* Timeline - esquerda 60% */}
-                    <div className="flex-[3] min-w-0 flex flex-col">
-                      {todayEvents.length === 0 ? (
-                        <CalendarEmpty isConnected={true} />
-                      ) : (
-                        <DayTimeline events={todayEvents} onEventClick={handleEventClick} />
-                      )}
-                    </div>
-
-                    {/* Upcoming - direita 40% */}
-                    <div className="flex-[2] min-w-0 bg-muted/15 rounded-xl p-2">
-                      <UpcomingEvents events={events} onEventClick={handleEventClick} />
-                    </div>
-                  </>
-                )}
+                <DayFocusView events={events} onEventClick={handleEventClick} />
               </motion.div>
             ) : (
               <motion.div
@@ -179,7 +154,7 @@ export default function DashboardCalendar() {
                 transition={{ duration: 0.15 }}
                 className="h-full"
               >
-                <WeekGrid
+                <TimetableGrid
                   events={events}
                   weekOffset={weekOffset}
                   onWeekChange={setWeekOffset}
@@ -190,6 +165,13 @@ export default function DashboardCalendar() {
           </AnimatePresence>
         )}
       </div>
+
+      {/* ─── NEXT EVENT BAR ──────────────────────────────────────── */}
+      {isConnected && events.length > 0 && (
+        <div className="mt-2 shrink-0">
+          <NextEventBar events={events} />
+        </div>
+      )}
 
       {/* ─── EVENT TOOLTIP (Overlay) ──────────────────────────────── */}
       {selectedEvent && (

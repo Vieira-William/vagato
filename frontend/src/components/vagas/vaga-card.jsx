@@ -38,6 +38,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { vagasService, gmailService } from '@/services/api';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/posthog';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -182,6 +183,7 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
         setStatus(novoStatus);
         try {
             await vagasService.atualizarStatus(vaga.id, novoStatus);
+            trackEvent('vaga_status_alterado', { vaga_id: vaga.id, status_anterior: prev, novo_status: novoStatus });
             onStatusChange?.();
         } catch (e) {
             setStatus(prev);
@@ -195,6 +197,7 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
         try {
             const res = await vagasService.toggleFavorito(vaga.id);
             setIsFavorito(res.data.is_favorito);
+            trackEvent('vaga_favorito_alterado', { vaga_id: vaga.id, is_favorito: res.data.is_favorito });
             onFavoritoChange?.();
         } catch (e) {
             setIsFavorito(prev);
@@ -407,7 +410,12 @@ export default function VagaCard({ vaga, onStatusChange, onFavoritoChange, compa
                     </Button>
 
                     <Button size="sm" className="rounded-full h-7 px-3 text-[11px] font-semibold bg-[#375DFB] text-white shadow-sm hover:scale-105 active:scale-95 transition-all" asChild>
-                        <a href={vaga.link_vaga} target="_blank" rel="noreferrer">
+                        <a
+                            href={vaga.link_vaga}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={() => trackEvent('vaga_aplicar_clicado', { vaga_id: vaga.id, fonte: vaga.fonte, score: vaga.score_compatibilidade })}
+                        >
                             Aplicar <ExternalLink className="w-3 h-3 ml-1" strokeWidth={1.5} />
                         </a>
                     </Button>

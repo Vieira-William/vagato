@@ -23,11 +23,13 @@ import VerificarEmail from './pages/auth/VerificarEmail';
 import RecuperarSenha from './pages/auth/RecuperarSenha';
 import NovaSenha from './pages/auth/NovaSenha';
 
+const DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true';
+
 function AppContent() {
   const { session, loading } = useAuth();
-  const [systemReady, setSystemReady] = useState(false);
+  const [systemReady, setSystemReady] = useState(DEV_MODE); // pula LoadingScreen em dev
 
-  // Se o usuário já está logado e o sistema da Vagas (Back-ends, Estatísticas) 
+  // Se o usuário já está logado e o sistema da Vagas (Back-ends, Estatísticas)
   // ainda não foi inicializado nesta sessão, mostramos a Tela de Status Inicial pós-login.
   if (session && !loading && !systemReady) {
     return (
