@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, LayoutGroup } from 'framer-motion';
-import { Settings, Bell, User, Sun, Moon, LayoutDashboard, Target, Briefcase, Calendar, LogOut } from 'lucide-react';
+import { Settings, Bell, BellOff, User, Sun, SunMoon, Moon, LayoutDashboard, Target, Briefcase, Calendar, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLayoutMode } from '../../contexts/LayoutModeContext';
@@ -45,6 +45,13 @@ export default function NavigationShell() {
   const { width: vw, height: vh } = useViewportSize();
 
   const isTop = mode === 'topnav';
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+
+  // Dropdown position helper (TopNav: below, Sidebar: above)
+  const dropdownBase = `absolute left-1/2 -translate-x-1/2 z-50 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-300 ease-out`;
+  const dropdownPos = isTop
+    ? `${dropdownBase} top-full pt-2 translate-y-1 group-hover:translate-y-0`
+    : `${dropdownBase} bottom-full pb-2 -translate-y-1 group-hover:translate-y-0`;
 
   // TopNav: full-width transparent container (pills float independently)
   // Sidebar: glass card at top-left
@@ -59,8 +66,10 @@ export default function NavigationShell() {
   return (
     <LayoutGroup>
       <motion.nav
+        onMouseEnter={() => { if (!isTop) setSidebarHovered(true); }}
+        onMouseLeave={() => { if (!isTop) setSidebarHovered(false); }}
         className={`
-          fixed z-50 flex overflow-hidden
+          fixed z-50 flex overflow-visible
           ${isTop ? 'flex-row items-center pointer-events-none gap-2' : 'flex-col pointer-events-auto'}
         `}
         style={{
@@ -83,7 +92,7 @@ export default function NavigationShell() {
       >
         {/* === LOGO ZONE === */}
         <div className={`shrink-0 pointer-events-auto ${isTop ? 'flex items-center' : 'flex items-center justify-start px-4 pt-5 pb-5'}`}>
-          <LogoPill />
+          <LogoPill showToggle={!isTop && sidebarHovered} />
         </div>
 
         {/* === SPACER (TopNav: pushes nav + actions to the right) === */}
@@ -165,32 +174,75 @@ export default function NavigationShell() {
           </NavLink>
 
           <div className={`flex items-center gap-1.5 ${!isTop ? 'px-1 pt-1' : ''}`}>
-            <button
-              onClick={toggleTheme}
-              className={`${baseIconBtn} w-10 h-10 ${inactiveIcon}`}
-            >
-              {theme === 'dark' ? <Sun className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} /> : <Moon className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />}
-            </button>
 
-            <button className={`${baseIconBtn} w-10 h-10 ${inactiveIcon}`}>
-              <Bell className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
-            </button>
+            {/* ── Theme Toggle + Slider dropdown ──────────────────── */}
+            <div className="relative group">
+              <button
+                onClick={toggleTheme}
+                className={`${baseIconBtn} w-10 h-10 ${inactiveIcon}`}
+              >
+                {theme === 'dark' ? <Sun className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} /> : <Moon className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />}
+              </button>
+              <div className={dropdownPos}>
+                <div className="flex items-center gap-0.5 bg-white/90 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-full p-1 border border-white/50 dark:border-white/10 shadow-lg">
+                  <button
+                    onClick={() => { if (theme === 'dark') toggleTheme(); }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme !== 'dark' ? 'bg-[#375DFB] text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`}
+                    title="Modo Diurno"
+                  >
+                    <Sun className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                  <button
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 dark:text-white/20 cursor-not-allowed"
+                    title="Modo Automático (em breve)"
+                    disabled
+                  >
+                    <SunMoon className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => { if (theme !== 'dark') toggleTheme(); }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme === 'dark' ? 'bg-[#375DFB] text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`}
+                    title="Modo Noturno"
+                  >
+                    <Moon className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+            </div>
 
-            <NavLink
-              to="/perfil"
-              className={({ isActive }) => `${baseIconBtn} w-10 h-10 ${isActive ? activeIcon : inactiveIcon}`}
-            >
-              <User className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
-            </NavLink>
+            {/* ── Notificações + Silenciar dropdown ───────────────── */}
+            <div className="relative group">
+              <button className={`${baseIconBtn} w-10 h-10 ${inactiveIcon}`}>
+                <Bell className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
+              </button>
+              <div className={dropdownPos}>
+                <button className="flex items-center gap-1.5 px-3 py-2 bg-white/90 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-full shadow-lg border border-white/50 dark:border-white/10 text-[11px] font-medium text-gray-600 dark:text-white/70 hover:bg-white hover:text-[#2C2C2E] dark:hover:bg-[#3C3C3E] dark:hover:text-white whitespace-nowrap transition-all duration-200">
+                  <BellOff className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  Silenciar
+                </button>
+              </div>
+            </div>
 
-            {/* Logout Supabase via AuthContext */}
-            <button
-              onClick={() => signOut()}
-              title="Sair da plataforma"
-              className={`${baseIconBtn} w-10 h-10 bg-red-500/10 border-red-500/20 text-red-600 hover:bg-red-500 hover:text-white dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white`}
-            >
-              <LogOut className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
-            </button>
+            {/* ── Perfil + Logout dropdown ─────────────────────────── */}
+            <div className="relative group">
+              <NavLink
+                to="/perfil"
+                className={({ isActive }) => `${baseIconBtn} w-10 h-10 ${isActive ? activeIcon : inactiveIcon}`}
+              >
+                <User className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
+              </NavLink>
+              <div className={dropdownPos}>
+                <button
+                  onClick={() => signOut()}
+                  title="Sair da plataforma"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-red-50/90 dark:bg-red-500/10 backdrop-blur-xl rounded-full shadow-lg border border-red-200/50 dark:border-red-500/20 text-[11px] font-medium text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white whitespace-nowrap transition-all duration-200"
+                >
+                  <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  Sair
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </motion.nav>

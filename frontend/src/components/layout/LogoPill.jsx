@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PanelLeft, PanelTop } from 'lucide-react';
 import { useLayoutMode } from '../../contexts/LayoutModeContext';
 
-export default function LogoPill() {
+export default function LogoPill({ showToggle = false }) {
   const { mode, toggleMode, isMobile } = useLayoutMode();
   const [hovered, setHovered] = useState(false);
 
@@ -12,6 +12,9 @@ export default function LogoPill() {
 
   const isTop = mode === 'topnav';
   const ToggleIcon = isTop ? PanelLeft : PanelTop;
+
+  // TopNav: self-hover shows icon | Sidebar: parent hover (showToggle) shows icon
+  const showIcon = isTop ? (hovered && !isMobile) : showToggle;
 
   return (
     <motion.button
@@ -24,7 +27,7 @@ export default function LogoPill() {
       className={`relative flex items-center gap-2 cursor-pointer transition-all ${
         isTop
           ? 'px-4 h-10 bg-white/40 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-full shadow-sm hover:bg-white/60 dark:hover:bg-white/15'
-          : 'justify-start h-9'
+          : 'w-full justify-between h-9'
       }`}
       whileHover={!isMobile ? { scale: 1.02 } : undefined}
       whileTap={!isMobile ? { scale: 0.95 } : undefined}
@@ -37,18 +40,18 @@ export default function LogoPill() {
         className={`object-contain select-none pointer-events-none ${isTop ? 'h-[20px]' : 'h-9 max-w-[140px]'}`}
       />
 
-      {/* Ícone toggle — aparece ao lado direito da logo no hover */}
+      {/* Ícone toggle — aparece ao lado direito da logo */}
       <AnimatePresence>
-        {hovered && !isMobile && (
+        {showIcon && (
           <motion.div
             key="toggle-icon"
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 0.5, width: 'auto' }}
-            exit={{ opacity: 0, width: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            initial={{ opacity: 0, scale: 0.8, width: 0 }}
+            animate={{ opacity: 0.5, scale: 1, width: 'auto' }}
+            exit={{ opacity: 0, scale: 0.8, width: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
             className="flex items-center overflow-hidden shrink-0"
           >
-            <ToggleIcon className="w-4 h-4 text-[#2C2C2E] dark:text-white/80" strokeWidth={1.5} />
+            <ToggleIcon className={`${isTop ? 'w-4 h-4' : 'w-5 h-5'} text-[#2C2C2E] dark:text-white/80`} strokeWidth={1.5} />
           </motion.div>
         )}
       </AnimatePresence>
