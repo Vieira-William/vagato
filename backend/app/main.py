@@ -1,10 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import sentry_sdk
 from sqlalchemy import text, inspect
 
 from .database import engine, Base
 from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin
+
+# Init Sentry para observabilidade do Backend
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )
 
 # Criar diretório data se não existir
 os.makedirs("data", exist_ok=True)

@@ -127,6 +127,13 @@ class UserProfile(Base):
     # Idiomas
     nivel_ingles = Column(String(20))  # nenhum, basico, intermediario, fluente
 
+    # Quick Access (Meu Arsenal)
+    telefone = Column(String(20), nullable=True)
+    linkedin_url = Column(String(255), nullable=True)
+    portfolio_url = Column(String(255), nullable=True)
+    github_url = Column(String(255), nullable=True)
+    profissao = Column(String(100), nullable=True)
+
     # Salario
     salario_minimo = Column(Float, nullable=True)
     salario_maximo = Column(Float, nullable=True)

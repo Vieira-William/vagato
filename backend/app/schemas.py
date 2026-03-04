@@ -303,6 +303,11 @@ class UserProfileBase(BaseModel):
     salario_minimo: Optional[float] = None
     salario_maximo: Optional[float] = None
     arquivos_curriculo: Optional[List[dict]] = []
+    telefone: Optional[str] = Field(None, max_length=20)
+    linkedin_url: Optional[str] = Field(None, max_length=255)
+    portfolio_url: Optional[str] = Field(None, max_length=255)
+    github_url: Optional[str] = Field(None, max_length=255)
+    profissao: Optional[str] = Field(None, max_length=100)
 
 
 class UserProfileCreate(UserProfileBase):
@@ -445,3 +450,8 @@ class UserProfileUpdate(BaseModel):
     salario_minimo: Optional[float] = None
     salario_maximo: Optional[float] = None
     arquivos_curriculo: Optional[List[dict]] = None
+    telefone: Optional[str] = Field(None, max_length=20)
+    linkedin_url: Optional[str] = Field(None, max_length=255)
+    portfolio_url: Optional[str] = Field(None, max_length=255)
+    github_url: Optional[str] = Field(None, max_length=255)
+    profissao: Optional[str] = Field(None, max_length=100)

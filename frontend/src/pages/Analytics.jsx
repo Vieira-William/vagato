@@ -6,6 +6,7 @@ import {
   Monitor, LogIn
 } from 'lucide-react';
 import UserProfileCard from '../components/analytics/UserProfileCard';
+import QuickAccessCard from '../components/arsenal/QuickAccessCard';
 import { statsService, calendarService } from '../services/api';
 
 // ─── Dados Mock para os Cards Bento ─────────────────────────────────────────
@@ -434,7 +435,7 @@ export default function Analytics() {
         <ProgressCard stats={stats} />
         <TimeTrackerCard />
         <OnboardingCard />
-        <AccordionCard />
+        <QuickAccessCard />
         <CalendarCard />
         <DarkTasksCard />
       </main>
