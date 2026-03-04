@@ -99,46 +99,46 @@ SIGNATURE_MARKERS = [
 
 CLASSIFICATION_SYSTEM_PROMPT = """Você é um assistente especializado em triagem de e-mails para candidatos a vagas de emprego.
 
-Sua tarefa: Analisar e-mails e identificar quais são RELEVANTES para processos seletivos de emprego.
+Sua tarefa: Identificar e-mails que EXIGEM ATENÇÃO ou AÇÃO do candidato. Emails de baixo sinal (confirmações automáticas, newsletters, informativos) devem ser descartados como NOT_RELEVANT.
 
-Para cada e-mail relevante, você deve:
-1. CLASSIFICAR a categoria
-2. DETERMINAR a prioridade/urgência
-3. EXTRAIR informações-chave
-4. GERAR um resumo acionável
+## CATEGORIAS VÁLIDAS (is_relevant: true)
 
-## CATEGORIAS DE E-MAIL
+| Categoria | Código | Exemplos |
+|-----------|--------|---------|
+| Entrevista agendada/confirmada | INTERVIEW_SCHEDULED | "Confirme sua entrevista", "Você foi selecionado para entrevista", convite de reunião |
+| Aprovação de fase | STAGE_APPROVED | "Você avançou", "Parabéns, próxima etapa", "Selecionado para fase final" |
+| Proposta/Oferta | OFFER | "Carta proposta", "Job offer", "Oferta de emprego", salário, benefícios |
+| Feedback positivo relevante | POSITIVE_FEEDBACK | Retorno positivo com próximos passos concretos |
+| Teste/Desafio técnico | TECHNICAL_CHALLENGE | "Case enviado", "Desafio técnico", "Take-home assignment", prazo para entrega |
+| Solicitação de documentos | DOCUMENTS_REQUEST | "Precisamos dos seus documentos", "Envie seu CPF/RG/certidões" |
+| Rejeição | REJECTION | "Não avançará", "Perfil não se encaixa", "Unfortunately", "Regret to inform" |
+| Follow-up necessário | FOLLOW_UP_NEEDED | Recrutador pediu resposta, prazo vencendo, precisa confirmar algo |
 
-| Categoria | Código |
-|-----------|--------|
-| Entrevista agendada | INTERVIEW_SCHEDULED |
-| Aprovação de fase | STAGE_APPROVED |
-| Proposta/Oferta | OFFER |
-| Feedback positivo | POSITIVE_FEEDBACK |
-| Teste/Desafio técnico | TECHNICAL_CHALLENGE |
-| Solicitação de documentos | DOCUMENTS_REQUEST |
-| Confirmação de candidatura | APPLICATION_CONFIRMED |
-| Rejeição | REJECTION |
-| Follow-up necessário | FOLLOW_UP_NEEDED |
-| Informativo | INFORMATIVE |
-| NÃO RELEVANTE | NOT_RELEVANT |
+## NÃO RELEVANTE (is_relevant: false)
+
+Marque como NOT_RELEVANT qualquer e-mail que seja:
+- **Confirmação automática de candidatura**: "Recebemos seu currículo", "Sua candidatura foi registrada", "Application received", "We got your application" → DESCARTAR
+- **Newsletter / marketing**: Vagas da semana, dicas de carreira, email de plataforma de vagas
+- **Informativos sem ação**: Atualizações de plataforma, avisos genéricos, emails de sistema
+- **Convites genéricos**: "Conheça nossa empresa", "Veja vagas em aberto"
+- Qualquer email que o candidato possa ignorar sem consequência
 
 ## REGRAS DE PRIORIDADE
 
 | Prioridade | Critérios |
 |------------|-----------|
 | urgent | Entrevista em <48h, proposta com prazo, resposta exigida HOJE |
-| high | Aprovação de fase, teste técnico com prazo, entrevista em <7 dias |
-| medium | Confirmação de candidatura, feedback, documentos solicitados |
-| low | Rejeição, informativos, confirmações sem ação necessária |
+| high | Aprovação de fase, teste técnico com prazo, entrevista em <7 dias, oferta |
+| medium | Documentos solicitados, feedback positivo com próximos passos |
+| low | Rejeição, follow-ups sem prazo imediato |
 
 ## REGRAS ESPECIAIS
 
+- "Recebemos sua candidatura" / "Application received" → SEMPRE NOT_RELEVANT (is_relevant: false)
 - Se menciona DATA/HORÁRIO de entrevista → SEMPRE urgent
 - Se menciona PRAZO para entregar algo → urgência proporcional ao prazo
-- Se é REJEIÇÃO → prioridade low (mas relevante)
 - Se contém "parabéns"/"congratulations" → provavelmente OFFER ou STAGE_APPROVED
-- Se NÃO for sobre processo seletivo → NOT_RELEVANT
+- Em caso de dúvida → NOT_RELEVANT (prefira falso negativo a mostrar ruído)
 
 ## FORMATO DE RESPOSTA
 
@@ -241,8 +241,7 @@ def _keyword_fallback(emails: List[Dict]) -> List[Dict]:
             cat, priority = "REJECTION", "low"
         elif any(kw in searchable for kw in ['teste técnico', 'technical challenge', 'take-home', 'assessment', 'case']):
             cat, priority = "TECHNICAL_CHALLENGE", "high"
-        elif any(kw in searchable for kw in ['candidatura', 'application', 'recebemos', 'confirmação']):
-            cat, priority = "APPLICATION_CONFIRMED", "medium"
+        # APPLICATION_CONFIRMED (confirmações automáticas) são baixo sinal → não mostrar
 
         if cat:
             classified.append({
