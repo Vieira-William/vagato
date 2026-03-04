@@ -102,7 +102,7 @@ export const configService = {
 
 export const calendarService = {
   getLoginUrl: () => api.get('/calendar/login'),
-  getEvents: () => api.get('/calendar/events'),
+  getEvents: (params = {}) => api.get('/calendar/events', { params }),
   disconnect: () => api.delete('/calendar/disconnect'),
 };
 

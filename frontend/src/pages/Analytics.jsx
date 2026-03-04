@@ -3,11 +3,12 @@ import { BarChart, Bar, Cell, ResponsiveContainer } from 'recharts';
 import {
   Star, Briefcase, CheckCircle, Users, Calendar,
   Play, Pause, Check, ChevronDown, ChevronRight,
-  Monitor, LogIn
+  Monitor
 } from 'lucide-react';
 import UserProfileCard from '../components/analytics/UserProfileCard';
 import QuickAccessCard from '../components/arsenal/QuickAccessCard';
-import { statsService, calendarService } from '../services/api';
+import DashboardCalendar from '../components/calendar/DashboardCalendar';
+import { statsService } from '../services/api';
 
 // ─── Dados Mock para os Cards Bento ─────────────────────────────────────────
 
@@ -36,16 +37,7 @@ const ACCORDION_ITEMS = [
   { label: 'Employee Benefits', icon: null },
 ];
 
-const CALENDAR_DAYS = [
-  { label: 'Mon', date: '22' }, { label: 'Tue', date: '23' },
-  { label: 'Wed', date: '24', isToday: true }, { label: 'Thu', date: '25' },
-  { label: 'Fri', date: '26' }, { label: 'Sat', date: '27' },
-];
-
-const CALENDAR_EVENTS = [
-  { title: 'Weekly Team Sync', desc: 'Discuss progress on projects', avatars: 3, bg: 'bg-[#f0ede9]' },
-  { title: 'Onboarding Session', desc: 'Introduction for new hires', avatars: 2, bg: 'bg-white border border-gray-100' },
-];
+// (Calendar mocks removidos — DashboardCalendar puxa do Google Calendar API)
 
 const ONBOARD_BARS = [
   { label: '30%', color: '#375DFB', width: '30%' },
@@ -201,121 +193,6 @@ function AccordionCard() {
   );
 }
 
-function CalendarCard() {
-  const [events, setEvents] = useState([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [connecting, setConnecting] = useState(false);
-  const [connectError, setConnectError] = useState(null);
-
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
-    try {
-      const { data } = await calendarService.getEvents();
-      if (data.isConnected) {
-        setIsConnected(true);
-        setEvents(data.events || []);
-      } else {
-        setIsConnected(false);
-      }
-    } catch (err) {
-      console.error('Erro ao buscar eventos:', err);
-      setIsConnected(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConnect = async () => {
-    setConnecting(true);
-    setConnectError(null);
-    try {
-      const { data } = await calendarService.getLoginUrl();
-      if (data.auth_url) {
-        window.location.href = data.auth_url;
-      } else {
-        setConnectError('URL de autenticação não retornada pelo servidor.');
-      }
-    } catch (err) {
-      const msg = err.response?.data?.detail || 'Erro ao iniciar autenticação Google.';
-      setConnectError(msg);
-      console.error('Erro calendar login:', err);
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  return (
-    <div className="bg-card backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden col-span-2 transition-all hover:bg-card/80 h-full">
-      <div className="flex justify-between items-center mb-3 shrink-0">
-        <button className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-3 py-1 rounded-full hover:bg-muted/50 transition-colors">Calendar</button>
-        <span className="text-sm font-semibold text-foreground">Schedule</span>
-        <button onClick={fetchEvents} className="text-[10px] text-muted-foreground px-3 py-1 rounded-full hover:bg-muted/50 transition-colors">Refresh</button>
-      </div>
-
-      <div className="grid grid-cols-6 gap-2 mb-3 shrink-0">
-        {CALENDAR_DAYS.map(day => (
-          <div key={day.date} className="text-center">
-            <p className="text-[9px] text-muted-foreground mb-1">{day.label}</p>
-            <p className={`text-xs font-semibold ${day.isToday ? 'text-primary' : 'text-foreground'}`}>{day.date}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 min-h-0 overflow-hidden space-y-2">
-        {loading ? (
-          <div className="space-y-3 animate-pulse">
-            <div className="h-12 bg-gray-100 rounded-2xl w-full" />
-            <div className="h-12 bg-gray-100 rounded-2xl w-full" />
-            <div className="h-12 bg-gray-100 rounded-2xl w-full" />
-          </div>
-        ) : !isConnected ? (
-          <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-12 h-12 bg-muted/30 rounded-2xl flex items-center justify-center mb-3">
-              <Calendar className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
-            </div>
-            <p className="text-xs font-medium text-foreground mb-4">Agenda não conectada</p>
-            <button
-              onClick={handleConnect}
-              disabled={connecting}
-              className="flex items-center gap-2 bg-foreground text-background text-[11px] font-medium rounded-xl h-10 px-6 shadow-sm hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              {connecting ? 'Conectando...' : 'Conectar Google Agenda'}
-            </button>
-            {connectError && (
-              <p className="text-[10px] text-red-500 mt-2 text-center max-w-[180px]">{connectError}</p>
-            )}
-          </div>
-        ) : events.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-400 text-xs italic">
-            Nenhum evento próximo.
-          </div>
-        ) : (
-          events.map((event, i) => (
-            <div key={i} className={`flex items-center gap-3 bg-card/50 border border-border/20 rounded-2xl px-4 py-2 hover:bg-card/80 transition-all`}>
-              <div className="flex -space-x-1.5 shrink-0">
-                <div className="w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
-                  <span className="text-[8px] text-primary-foreground font-bold">G</span>
-                </div>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-foreground truncate">{event.title}</p>
-                <p className="text-[9px] text-muted-foreground truncate">
-                  {new Date(event.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {event.desc || 'No description'}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
 function DarkTasksCard() {
   const doneTasks = ONBOARD_TASKS.filter(t => t.done).length;
   return (
@@ -436,7 +313,7 @@ export default function Analytics() {
         <TimeTrackerCard />
         <OnboardingCard />
         <QuickAccessCard />
-        <CalendarCard />
+        <DashboardCalendar />
         <DarkTasksCard />
       </main>
     </div>

@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, Request, HTTPException, Depends, Query
 from fastapi.responses import RedirectResponse
 import os
 from pathlib import Path
+from typing import Optional
+from datetime import datetime, timedelta
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -94,8 +96,11 @@ async def google_auth_callback(code: str, state: str = None):
     return RedirectResponse(url=frontend_url)
 
 @router.get("/calendar/events")
-async def get_calendar_events():
-    """Busca os próximos 3 eventos da agenda."""
+async def get_calendar_events(
+    time_min: Optional[str] = Query(None, description="ISO datetime inicio"),
+    time_max: Optional[str] = Query(None, description="ISO datetime fim"),
+):
+    """Busca eventos da agenda para o range especificado (default: semana atual + 10 dias)."""
     if not os.path.exists(TOKEN_PATH):
         return {"isConnected": False, "events": []}
 
@@ -103,12 +108,23 @@ async def get_calendar_events():
         creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
         service = build('calendar', 'v3', credentials=creds)
 
-        from datetime import datetime
-        now = datetime.utcnow().isoformat() + 'Z'
+        now = datetime.utcnow()
+
+        if not time_min:
+            monday = now - timedelta(days=now.weekday())
+            time_min = monday.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + 'Z'
+
+        if not time_max:
+            monday = now - timedelta(days=now.weekday())
+            end = monday + timedelta(days=10)
+            time_max = end.replace(hour=23, minute=59, second=59, microsecond=0).isoformat() + 'Z'
 
         events_result = service.events().list(
-            calendarId='primary', timeMin=now,
-            maxResults=3, singleEvents=True,
+            calendarId='primary',
+            timeMin=time_min,
+            timeMax=time_max,
+            maxResults=50,
+            singleEvents=True,
             orderBy='startTime'
         ).execute()
 
@@ -117,10 +133,17 @@ async def get_calendar_events():
         formatted_events = []
         for event in events:
             start = event['start'].get('dateTime', event['start'].get('date'))
+            end = event['end'].get('dateTime', event['end'].get('date'))
             formatted_events.append({
+                "id": event.get('id'),
                 "title": event.get('summary', 'Sem Título'),
-                "desc": event.get('description', 'Sem descrição'),
-                "start": start
+                "desc": event.get('description', ''),
+                "start": start,
+                "end": end,
+                "hangoutLink": event.get('hangoutLink'),
+                "htmlLink": event.get('htmlLink'),
+                "colorId": event.get('colorId'),
+                "location": event.get('location'),
             })
 
         return {"isConnected": True, "events": formatted_events}
