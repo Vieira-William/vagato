@@ -44,8 +44,6 @@ if SENTRY_DSN:
         ],
         # Performance: 20% em prod, 100% em dev
         traces_sample_rate=0.2 if ENVIRONMENT == "production" else 1.0,
-        # Não enviar em desenvolvimento local
-        enabled=ENVIRONMENT != "development",
         # Remover dados sensíveis antes de enviar
         before_send=_scrub_sensitive_headers,
     )
