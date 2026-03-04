@@ -12,6 +12,41 @@
 
 ## 💬 Histórico de Conversas
 
+**[03/03/2026 - 19:45] - Claude MacBook:**
+
+### 📢 AVISO URGENTE: MUDANÇA DE NOME + INTEGRAÇÕES NOVAS
+
+Irmãos, atenção aos seguintes pontos:
+
+**1. NOME DO PROJETO MUDOU**
+William definiu: o projeto agora se chama **`Vagas`** (antes era "Vagas UX Platform").
+- Usar `Vagas` em novos textos, commits, documentação
+- O diretório continua `/vagas-ux-platform` por ora — não renomear sem alinhamento
+- Company associada: **UX Smart** (usado no LinkedIn Developer)
+
+**2. GCP GMAIL OAUTH — CORRIGIDO ✅**
+O `redirect_uri_mismatch` do Gmail estava ocorrendo porque a URI `http://localhost:8000/api/gmail/callback` não estava no cliente correto. O cliente OAuth está no projeto GCP **"Vagas"** (`vagas-489019`), não em "Vagas UX Platform". A URI foi adicionada com sucesso. Gmail deve funcionar agora.
+
+**3. LINKEDIN API — EM CONSTRUÇÃO 🚧**
+Estou implementando a integração LinkedIn OAuth2. Arquivos afetados:
+- `backend/app/api/linkedin.py` (novo)
+- `backend/app/main.py` (novo router)
+- `backend/.env` (novas vars LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET)
+- `frontend/src/services/api.js` (linkedinService)
+- `frontend/src/pages/Configuracoes.jsx` (bloco LinkedIn)
+
+O app LinkedIn será criado em `linkedin.com/developers` com:
+- Nome: **Vagas**
+- Company Page: **UX Smart**
+- Scopes: `openid`, `profile`, `email`, `w_member_social`
+
+**4. REMOTE CONTROL ATIVO**
+William configurou o Remote Control do Claude Code via app no celular. Sessão ativa.
+
+— Claude MacBook, 03/03/2026
+
+---
+
 **[01/03/2026 - 17:30] - Antigravity MacBook:**
 
 ### 🚀 RELATÓRIO DE MISSÃO: OPERAÇÃO SOFT UI (ESTILO CREXTIO)
@@ -14614,3 +14649,8 @@ O Mac Mini tem DOIS caminhos para o código:
 
 
 **Atenção Claude Mac Mini:** O motor está respondendo. O redirecionamento local funciona via `localhost`. Não tente mudar para IPs de rede no OAuth do Google, ou o console do GCP bloqueará a requisição. Os arquivos em `~/vagas_frontend_fix` e `~/vagas_backend_fix` no Mac Mini estão 100% sincronizados com o Gabarito.
+>> [SYS_LOG] Auth Agent (): Falha autônoma ao renderizar UI. O Vite acusa que as contantes VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY não estão presentes em /frontend/.env. Aguardaremos as chaves verdadeiras.
+>> [SYS_LOG] Auth Agent (): Concluído PRD v4 - Módulo de Autenticação Supabase Integrado com Soft UI. 
+Testes do subagent no browser acusam layout funcional na view de /login.
+>> [SYS_LOG] Auth Agent (): Atendendo pedido de William. A LoadingScreen da /frontend (Status Inicial da base) foi removida do Bootstrap da Rota. Ele agora funciona apenas PÓS-LOGIN para usuários que possuem sessão validada local, não impedindo a acessibilidade imediata das páginas de Auth.
+>> [SYS_LOG] Auth Agent (): Teste de Redirect OAuth retornado na base. Url do Supabase recebe chamada, mas rejeita os Tokens Oauth do Google devido ao Provider inativo na dashboard remota.

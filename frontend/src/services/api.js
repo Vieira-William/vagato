@@ -27,23 +27,23 @@ export const scraperService = {
   coletarPosts: () => api.post('/scraper/posts'),
   // Streaming endpoint - retorna URL para EventSource
   getStreamUrl: (usarIa = true) => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    return `${baseUrl}/api/scraper/stream?usar_ia=${usarIa}`;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+    return `${baseUrl}/scraper/stream?usar_ia=${usarIa}`;
   },
   // Streaming V2 - com progresso em tempo real
   getStreamUrlV2: (usarIa = true) => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    return `${baseUrl}/api/scraper/stream/v2?usar_ia=${usarIa}`;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+    return `${baseUrl}/scraper/stream/v2?usar_ia=${usarIa}`;
   },
   // Streaming V3 - Arquitetura de 2 etapas (coleta bruta → análise)
   getStreamUrlV3: () => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    return `${baseUrl}/api/scraper/stream/v3`;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+    return `${baseUrl}/scraper/stream/v3`;
   },
   // Streaming de Auditoria — 3 etapas reais: gabarito → processamento → validação com IA
   getAuditoriaStreamUrl: () => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    return `${baseUrl}/api/scraper/stream/auditoria`;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+    return `${baseUrl}/scraper/stream/auditoria`;
   },
 };
 
@@ -104,6 +104,23 @@ export const calendarService = {
   getLoginUrl: () => api.get('/calendar/login'),
   getEvents: () => api.get('/calendar/events'),
   disconnect: () => api.delete('/calendar/disconnect'),
+};
+
+export const gmailService = {
+  getLoginUrl: () => api.get('/gmail/login'),
+  getStatus: () => api.get('/gmail/status'),
+  getEmails: (params = {}) => api.get('/gmail/emails', { params }),
+  getEmailsDaVaga: (empresa, maxResults = 10) =>
+    api.get(`/gmail/emails/vaga/${encodeURIComponent(empresa)}`, { params: { max_results: maxResults } }),
+  disconnect: () => api.delete('/gmail/disconnect'),
+};
+
+export const linkedinService = {
+  getLoginUrl: () => api.get('/linkedin/login'),
+  getStatus: () => api.get('/linkedin/status'),
+  getProfile: () => api.get('/linkedin/profile'),
+  share: (text) => api.post('/linkedin/share', { text }),
+  disconnect: () => api.delete('/linkedin/disconnect'),
 };
 
 export default api;

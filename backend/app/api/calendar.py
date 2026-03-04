@@ -50,12 +50,13 @@ async def google_auth_init():
             detail="Google Calendar não configurado. Acesse console.cloud.google.com, crie um OAuth 2.0 Client ID e adicione as credenciais reais ao backend/.env"
         )
 
-    flow = Flow.from_client_config(client_config, scopes=SCOPES)
+    flow = Flow.from_client_config(client_config, scopes=SCOPES, autogenerate_code_verifier=False)
     flow.redirect_uri = redirect_uri
 
     authorization_url, state = flow.authorization_url(
         access_type='offline',
-        include_granted_scopes='true'
+        include_granted_scopes='true',
+        prompt='consent'
     )
 
     # Preserva o flow original (contém code_verifier do PKCE gerado pela lib)
@@ -72,7 +73,7 @@ async def google_auth_callback(code: str, state: str = None):
     if flow is None:
         # Fallback sem PKCE — pode falhar se a lib gerou code_challenge
         _, _, redirect_uri, client_config = _make_client_config()
-        flow = Flow.from_client_config(client_config, scopes=SCOPES)
+        flow = Flow.from_client_config(client_config, scopes=SCOPES, autogenerate_code_verifier=False)
         flow.redirect_uri = redirect_uri
 
     try:

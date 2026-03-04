@@ -188,6 +188,12 @@ export default function VagasPage() {
     const totalPaginas = Math.ceil(vagasOrdenadas.length / porPagina) || 1;
     const vagasPaginadas = vagasOrdenadas.slice((pagina - 1) * porPagina, pagina * porPagina);
 
+    const ultimas24h = useMemo(() => {
+        if (statsData?.ultimas_24h != null) return statsData.ultimas_24h;
+        const agora = new Date();
+        const limite = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
+        return vagas.filter(v => new Date(v.data_coleta) >= limite).length;
+    }, [vagas, statsData]);
 
     const ultimaColetaFormatada = statsData?.ultima_coleta
         ? formatDistanceToNow(new Date(statsData.ultima_coleta), { addSuffix: true, locale: ptBR })
@@ -196,67 +202,51 @@ export default function VagasPage() {
     return (
         <div className="flex flex-col w-full h-full relative overflow-hidden">
             {showScrapingModal && (
-                <ScrapingProgress onComplete={handleScrapingComplete} onError={() => setColetando(false)} onClose={() => setShowScrapingModal(false)} />
+                <ScrapingProgress
+                    onComplete={handleScrapingComplete}
+                    onError={() => {
+                        setColetando(false);
+                        setShowScrapingModal(false);
+                    }}
+                    onClose={() => {
+                        setColetando(false);
+                        setShowScrapingModal(false);
+                    }}
+                />
             )}
 
-            {/* ── GRANDES INDICADORES (Anatomia Crextio) ── */}
-            <div className="flex items-center justify-end gap-10 px-8 py-4 shrink-0">
-
-                {/* Indicador 1: Total Vagas */}
-                <div className="flex flex-col items-start translate-y-2">
-                    <div className="flex items-end gap-2">
-                        <div className="flex items-center justify-center w-8 h-8 bg-black/5 rounded-[10px] mb-2.5">
-                            <Briefcase className="w-4 h-4 text-[#2C2C2E]" strokeWidth={1.5} />
-                        </div>
-                        <span className="text-[56px] leading-[0.8] font-light tracking-tighter text-[#2C2C2E]">
-                            {statsData?.total_vagas || 0}
-                        </span>
-                    </div>
-                    <span className="text-[11px] text-[#2C2C2E] font-medium mt-1 capitalize opacity-60">Total Vagas</span>
+            {/* Título + Métricas */}
+            <div className="flex items-end justify-between pt-3 pb-2 shrink-0">
+                <div className="flex flex-col min-w-0">
+                    <h1 className="text-3xl font-light tracking-tight text-foreground whitespace-nowrap">Match</h1>
+                    <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">Encontre as vagas que combinam com seu perfil.</p>
                 </div>
 
-                {/* Indicador 2: Pendentes */}
-                <div className="flex flex-col items-start translate-y-2">
-                    <div className="flex items-end gap-2">
-                        <div className="flex items-center justify-center w-8 h-8 bg-black/5 rounded-[10px] mb-2.5">
-                            <Clock className="w-4 h-4 text-[#2C2C2E]" strokeWidth={1.5} />
+                <div className="flex items-center gap-5 shrink-0">
+                    {[
+                        { icon: Briefcase, value: statsData?.total_vagas || 0, label: 'Total' },
+                        { icon: Clock, value: statsData?.por_status?.pendente || 0, label: 'Pendentes' },
+                        { icon: CheckCircle, value: statsData?.por_status?.aplicada || 0, label: 'Aplicadas' },
+                        { icon: TrendingUp, value: ultimas24h, label: '24h' },
+                        { icon: Star, value: statsData?.total_destaques || 0, label: 'Destaques' },
+                    ].map(({ icon: Icon, value, label }) => (
+                        <div key={label} className="flex flex-col items-start">
+                            <div className="flex items-end gap-1.5">
+                                <div className="flex items-center justify-center w-6 h-6 bg-muted/30 rounded-md mb-1">
+                                    <Icon className="w-3 h-3 text-foreground" strokeWidth={1.5} />
+                                </div>
+                                <span className="text-[32px] leading-[0.85] font-light tracking-tighter text-foreground">
+                                    {value}
+                                </span>
+                            </div>
+                            <span className="text-[9px] text-foreground font-medium mt-0.5 capitalize opacity-50">{label}</span>
                         </div>
-                        <span className="text-[56px] leading-[0.8] font-light tracking-tighter text-[#2C2C2E]">
-                            {statsData?.por_status?.pendente || 0}
-                        </span>
-                    </div>
-                    <span className="text-[11px] text-[#2C2C2E] font-medium mt-1 capitalize opacity-60">Pendentes</span>
+                    ))}
                 </div>
-
-                {/* Indicador 3: Aplicadas */}
-                <div className="flex flex-col items-start translate-y-2">
-                    <div className="flex items-end gap-2">
-                        <div className="flex items-center justify-center w-8 h-8 bg-black/5 rounded-[10px] mb-2.5">
-                            <CheckCircle className="w-4 h-4 text-[#2C2C2E]" strokeWidth={1.5} />
-                        </div>
-                        <span className="text-[56px] leading-[0.8] font-light tracking-tighter text-[#2C2C2E]">
-                            {statsData?.por_status?.aplicada || 0}
-                        </span>
-                    </div>
-                    <span className="text-[11px] text-[#2C2C2E] font-medium mt-1 capitalize opacity-60">Aplicadas</span>
-                </div>
-
-                {/* Indicador 4: Destaques */}
-                <div className="flex flex-col items-start translate-y-2">
-                    <div className="flex items-end gap-2">
-                        <div className="flex items-center justify-center w-8 h-8 bg-black/5 rounded-[10px] mb-2.5">
-                            <Star className="w-4 h-4 text-[#2C2C2E]" strokeWidth={1.5} />
-                        </div>
-                        <span className="text-[56px] leading-[0.8] font-light tracking-tighter text-[#2C2C2E]">
-                            {statsData?.total_destaques || 0}
-                        </span>
-                    </div>
-                    <span className="text-[11px] text-[#2C2C2E] font-medium mt-1 capitalize opacity-60">Destaques</span>
-                </div>
-
             </div>
 
-            <div className="px-4 py-6">
+            {/* Toolbar */}
+            <div className="py-1 shrink-0">
                 <VagasToolbar
                     searchValue={searchValue} setSearchValue={setSearchValue}
                     periodo={periodo} setPeriodo={setPeriodo}
@@ -270,59 +260,96 @@ export default function VagasPage() {
                 />
             </div>
 
-            <div className="px-4">
-                <VagasTabs activeTab={activeTab} setActiveTab={setActiveTab} TABS={TABS} getCountByTab={getCountByTab} />
-            </div>
+            {/* Main content panel — card-in-card pattern */}
+            <div className="flex-1 flex flex-col min-h-0 bg-white/50 backdrop-blur-sm rounded-t-2xl border border-white/60 border-b-0 overflow-hidden">
 
-            {iaStatus?.em_alerta && (
-                <div className="px-4 py-2">
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-[24px] p-4 flex items-center gap-3">
-                        <AlertCircle className="text-red-500 w-5 h-5" strokeWidth={1.5} />
-                        <p className="text-[11px] text-red-600 font-bold uppercase tracking-wider">Créditos de IA Baixos (${iaStatus.saldo_disponivel_usd?.toFixed(2)})</p>
-                    </div>
+                {/* Tabs bar inside the panel */}
+                <div className="flex items-center gap-2 px-4 pt-3 pb-2 shrink-0 border-b border-black/[0.04]">
+                    <button
+                        onClick={() => setSidebarAberta(prev => !prev)}
+                        className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center hover:bg-muted transition-all shrink-0"
+                    >
+                        <ChevronLeft className={cn("w-3.5 h-3.5 transition-transform text-muted-foreground", !sidebarAberta && "rotate-180")} />
+                    </button>
+                    <VagasTabs activeTab={activeTab} setActiveTab={setActiveTab} TABS={TABS} getCountByTab={getCountByTab} />
                 </div>
-            )}
 
-            {mensagem && (
-                <div className="px-4 py-2 animate-in fade-in duration-300">
-                    <div className={cn(
-                        "rounded-[24px] p-4 text-[11px] font-bold uppercase tracking-widest border shadow-sm",
-                        mensagem.tipo === 'sucesso' ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-[#375DFB]/10 text-[#375DFB] border-[#375DFB]/20"
-                    )}>
-                        {mensagem.texto}
+                {iaStatus?.em_alerta && (
+                    <div className="px-4 pt-2 shrink-0">
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-center gap-3">
+                            <AlertCircle className="text-red-500 w-4 h-4" strokeWidth={1.5} />
+                            <p className="text-[11px] text-red-600 font-bold uppercase tracking-wider">Créditos de IA Baixos (${iaStatus.saldo_disponivel_usd?.toFixed(2)})</p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <div className="flex-1 flex overflow-hidden p-4 pt-0 gap-6">
-                <aside className="w-80 flex-shrink-0 bg-white/40 backdrop-blur-lg border border-white/40 rounded-[32px] overflow-hidden shadow-soft flex flex-col">
-                    <VagasSidebarFilters filtros={filtros} setFiltros={setFiltros} hideFonte={!!activeTab && activeTab !== 'all'} />
-                </aside>
+                {mensagem && (
+                    <div className="px-4 pt-2 shrink-0 animate-in fade-in duration-300">
+                        <div className={cn(
+                            "rounded-xl p-3 text-[11px] font-bold uppercase tracking-widest border shadow-sm",
+                            mensagem.tipo === 'sucesso' ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-[#375DFB]/10 text-[#375DFB] border-[#375DFB]/20"
+                        )}>
+                            {mensagem.texto}
+                        </div>
+                    </div>
+                )}
 
-                <main className="flex-1 overflow-y-auto custom-scrollbar">
-                    {loading ? (
-                        <div className={cn("grid gap-6", modoExibicao === 'grid' ? "grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3" : "grid-cols-1")}>
-                            {Array.from({ length: 6 }).map((_, i) => <SkeletonVagaCard key={i} />)}
-                        </div>
-                    ) : (
-                        <div className="space-y-8">
-                            <div className={cn("grid gap-6", modoExibicao === 'grid' ? "grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3" : "grid-cols-1")}>
-                                {vagasPaginadas.map(v => (
-                                    <VagaCard key={v.id} vaga={v} compact={modoExibicao === 'list'} onStatusChange={carregarVagas} onFavoritoChange={carregarVagas} />
-                                ))}
-                            </div>
-                            {totalPaginas > 1 && (
-                                <div className="flex items-center justify-center gap-2 pt-8 pb-12">
-                                    <Button variant="ghost" size="icon" onClick={() => setPagina(1)} disabled={pagina === 1} className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm border border-white/60 hover:bg-white/80 shadow-sm"><ChevronsLeft className="w-4 h-4" strokeWidth={1.5} /></Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setPagina(p => p - 1)} disabled={pagina === 1} className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm border border-white/60 hover:bg-white/80 shadow-sm"><ChevronLeft className="w-4 h-4" strokeWidth={1.5} /></Button>
-                                    <span className="text-[11px] font-black uppercase tracking-widest px-6 h-10 flex items-center bg-white/40 border border-white/60 rounded-full">{pagina} / {totalPaginas}</span>
-                                    <Button variant="ghost" size="icon" onClick={() => setPagina(p => p + 1)} disabled={pagina === totalPaginas} className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm border border-white/60 hover:bg-white/80 shadow-sm"><ChevronRight className="w-4 h-4" strokeWidth={1.5} /></Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setPagina(totalPaginas)} disabled={pagina === totalPaginas} className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-sm border border-white/60 hover:bg-white/80 shadow-sm"><ChevronsRight className="w-4 h-4" strokeWidth={1.5} /></Button>
-                                </div>
-                            )}
-                        </div>
+                {/* Content: Sidebar + Grid */}
+                <div className="flex-1 flex min-h-0 gap-3 p-3 pt-2">
+                    {sidebarAberta && (
+                        <aside className="w-52 flex-shrink-0 bg-muted/40 rounded-xl overflow-hidden flex flex-col">
+                            <VagasSidebarFilters filtros={filtros} setFiltros={setFiltros} hideFonte={!!activeTab && activeTab !== 'all'} />
+                        </aside>
                     )}
-                </main>
+
+                    <main className="flex-1 overflow-y-auto custom-scrollbar -mr-1 pr-1">
+                        {loading ? (
+                            <div className={cn("grid gap-2.5", modoExibicao === 'grid'
+                                ? sidebarAberta
+                                    ? "grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
+                                    : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                : "grid-cols-1")}>
+                                {Array.from({ length: 6 }).map((_, i) => <SkeletonVagaCard key={i} />)}
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {vagasPaginadas.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center p-12 bg-muted/30 rounded-xl text-center mt-4">
+                                        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                                            <Briefcase className="w-7 h-7 text-primary" strokeWidth={1.5} />
+                                        </div>
+                                        <h3 className="text-lg font-medium text-foreground mb-1.5">Nenhuma vaga por aqui (ainda)</h3>
+                                        <p className="text-sm text-muted-foreground max-w-sm mb-5">
+                                            Seu banco de dados parece estar vazio. Inicie uma nova coleta ou mude os filtros para buscar oportunidades.
+                                        </p>
+                                        <Button onClick={coletarVagas} className="rounded-full shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[11px] h-10 px-6">
+                                            Iniciar Coleta
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className={cn("grid gap-2.5", modoExibicao === 'grid'
+                                        ? sidebarAberta
+                                            ? "grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
+                                            : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                        : "grid-cols-1")}>
+                                        {vagasPaginadas.map(v => (
+                                            <VagaCard key={v.id} vaga={v} compact={modoExibicao === 'list'} onStatusChange={carregarVagas} onFavoritoChange={carregarVagas} />
+                                        ))}
+                                    </div>
+                                )}
+                                {totalPaginas > 1 && (
+                                    <div className="flex items-center justify-center gap-1.5 pt-4 pb-6">
+                                        <Button variant="ghost" size="icon" onClick={() => setPagina(1)} disabled={pagina === 1} className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-muted"><ChevronsLeft className="w-3.5 h-3.5" strokeWidth={1.5} /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setPagina(p => p - 1)} disabled={pagina === 1} className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-muted"><ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.5} /></Button>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest px-4 h-8 flex items-center bg-muted/50 rounded-lg">{pagina} / {totalPaginas}</span>
+                                        <Button variant="ghost" size="icon" onClick={() => setPagina(p => p + 1)} disabled={pagina === totalPaginas} className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-muted"><ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setPagina(totalPaginas)} disabled={pagina === totalPaginas} className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-muted"><ChevronsRight className="w-3.5 h-3.5" strokeWidth={1.5} /></Button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+                </div>
             </div>
             {showScheduler && <SchedulerConfig onClose={() => setShowScheduler(false)} />}
         </div>

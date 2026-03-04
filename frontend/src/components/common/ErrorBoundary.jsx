@@ -23,96 +23,63 @@ class ErrorBoundary extends React.Component {
             const errorInfo = this.state.errorInfo;
 
             return (
-                <div className="min-h-screen bg-[#0f0f12] flex items-center justify-center p-6 font-sans">
-                    <div className="max-w-4xl w-full">
-                        {/* Card de Erro Principal - Visual Rosa Sirius */}
-                        <div className="bg-[#1a1a1f] border border-pink-500/30 rounded-3xl overflow-hidden shadow-2xl shadow-pink-500/10 animate-in zoom-in-95 duration-300">
+                <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
+                    {/* Elementos decorativos (Soft UI Glows) */}
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[120px] pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
 
-                            {/* Header: Visual Impactante */}
-                            <div className="bg-gradient-to-r from-pink-600 to-rose-700 p-8 text-white relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12">
-                                    <Bug className="w-32 h-32" />
+                    <div className="max-w-3xl w-full z-10">
+                        <div className="bg-card/60 backdrop-blur-xl border border-border/20 rounded-[32px] p-10 shadow-soft flex flex-col gap-8 transition-all relative overflow-hidden">
+
+                            {/* Header */}
+                            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center border-b border-border/10 pb-8">
+                                <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shrink-0">
+                                    <AlertCircle className="w-8 h-8 text-red-500" strokeWidth={1.5} />
                                 </div>
-                                <div className="relative z-10 flex items-center gap-5">
-                                    <div className="w-16 h-16 bg-white/20 backdrop-blur-lg rounded-2xl flex items-center justify-center border border-white/30 shadow-xl">
-                                        <AlertCircle className="w-8 h-8 text-white" />
-                                    </div>
-                                    <div>
-                                        <h1 className="text-3xl font-black tracking-tighter mb-1">Ops! O Sirius tropeçou.</h1>
-                                        <p className="text-pink-100 font-medium opacity-90">Algo inesperado aconteceu, mas não se preocupe, eu anotei tudo.</p>
-                                    </div>
+                                <div>
+                                    <h1 className="text-3xl font-semibold text-foreground tracking-tight mb-2">Algo deu errado</h1>
+                                    <p className="text-muted-foreground text-sm font-medium">
+                                        Encontramos um erro inesperado ao renderizar esta tela. Nossos logs já registraram o incidente.
+                                    </p>
                                 </div>
                             </div>
 
-                            {/* Conteúdo: Descrição Estruturada */}
-                            <div className="p-8 space-y-8">
-
-                                <div className="flex flex-col md:flex-row gap-6 items-start">
-                                    <div className="flex-1 space-y-4">
-                                        <div className="space-y-2">
-                                            <h3 className="text-[10px] uppercase tracking-widest font-black text-pink-500/80">O que aconteceu?</h3>
-                                            <div className="bg-[#252529] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] font-medium">
-                                                {error?.message || "Erro desconhecido na renderização."}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex gap-3">
-                                            <button
-                                                onClick={() => window.location.reload()}
-                                                className="flex-1 px-6 py-3 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-pink-600/20"
-                                            >
-                                                <RefreshCcw className="w-4 h-4" />
-                                                Tentar Novamente
-                                            </button>
-                                            <button
-                                                onClick={() => window.location.href = '/'}
-                                                className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all border border-white/10"
-                                            >
-                                                Início
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="w-full md:w-64 space-y-4">
-                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3">
-                                            <h4 className="text-[9px] uppercase tracking-widest font-black text-[var(--text-muted)]">Status do Sistema</h4>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
-                                                <span className="text-xs text-[var(--text-secondary)] font-medium">Monitoramento Ativo</span>
-                                            </div>
-                                            <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-                                                O erro foi capturado pelo sistema de segurança Sirius e já está disponível para depuração.
-                                            </p>
-                                        </div>
+                            {/* Detalhes do Erro */}
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Mensagem de Erro</h3>
+                                    <div className="bg-destructive/5 border border-destructive/10 rounded-2xl p-5">
+                                        <p className="text-sm font-medium text-destructive">
+                                            {error?.message || "Erro desconhecido na renderização."}
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* Seção Técnica: Detalhes do Desenvolvedor */}
-                                <div className="space-y-3 pt-4 border-t border-white/5">
-                                    <div className="flex items-center justify-between pointer-events-none">
-                                        <div className="flex items-center gap-2 text-pink-500/60">
-                                            <Terminal className="w-3.5 h-3.5" />
-                                            <span className="text-[10px] font-black uppercase tracking-tighter">Stack Reconstruction</span>
-                                        </div>
-                                        <span className="text-[10px] text-[var(--text-muted)] font-mono">DEBUG_MODE = {process.env.NODE_ENV}</span>
-                                    </div>
-
-                                    <div className="bg-black/40 rounded-2xl p-1 border border-white/5">
-                                        <div className="max-h-64 overflow-y-auto custom-scrollbar p-5 font-mono text-[11px] text-pink-100/70 leading-relaxed whitespace-pre-wrap">
-                                            <div className="mb-4 pb-4 border-b border-white/5 text-pink-400 font-bold italic">
-                                                {">>> Captured Stack Trace:"}
-                                            </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Stack Trace (Debug)</h3>
+                                    <div className="bg-muted/30 border border-border/20 rounded-2xl p-5 overflow-x-auto max-h-64 custom-scrollbar">
+                                        <pre className="text-[11px] font-mono text-muted-foreground whitespace-pre-wrap leading-relaxed">
                                             {errorInfo?.componentStack || "Nenhuma informação de stack disponível."}
-                                        </div>
+                                        </pre>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Rodapé Interno */}
-                            <div className="px-8 py-4 bg-white/5 flex items-center justify-center">
-                                <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-bold">
-                                    Sirius Platform — Debug Interface v2.0
-                                </p>
+                            {/* Ações */}
+                            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="h-11 rounded-full px-8 bg-foreground text-background font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-all flex-1 active:scale-95"
+                                >
+                                    <RefreshCcw className="w-4 h-4" strokeWidth={2.5} />
+                                    Tentar Novamente
+                                </button>
+                                <button
+                                    onClick={() => window.location.href = '/'}
+                                    className="h-11 rounded-full px-8 bg-background border border-border/50 text-foreground font-bold text-[11px] uppercase tracking-widest flex items-center justify-center hover:bg-muted/50 transition-all active:scale-95"
+                                >
+                                    Voltar ao Início
+                                </button>
                             </div>
                         </div>
                     </div>

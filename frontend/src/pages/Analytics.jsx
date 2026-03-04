@@ -6,7 +6,6 @@ import {
   Monitor, LogIn
 } from 'lucide-react';
 import UserProfileCard from '../components/analytics/UserProfileCard';
-import TopNav from '../components/layout/TopNav';
 import { statsService, calendarService } from '../services/api';
 
 // ─── Dados Mock para os Cards Bento ─────────────────────────────────────────

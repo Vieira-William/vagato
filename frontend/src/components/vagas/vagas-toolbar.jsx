@@ -32,7 +32,7 @@ export default function VagasToolbar({
     POR_PAGINA
 }) {
     return (
-        <div className="flex flex-wrap items-center gap-4 p-5 bg-white/70 backdrop-blur-lg rounded-[32px] shadow-soft mb-8 border-none transition-all">
+        <div className="flex flex-wrap items-center gap-3 shrink-0 transition-all">
 
             {/* Search - Ultra Soft */}
             <div className="relative flex-1 min-w-[300px]">
@@ -71,7 +71,7 @@ export default function VagasToolbar({
                 </SelectContent>
             </Select>
 
-            {/* View Contols */}
+            {/* View Controls */}
             <div className="flex items-center bg-muted p-1 rounded-full h-12">
                 <Button
                     variant="ghost"
@@ -95,6 +95,22 @@ export default function VagasToolbar({
                 >
                     <List className="w-4 h-4" strokeWidth={1.5} />
                 </Button>
+            </div>
+
+            {/* Por Página Selector */}
+            <div className="flex items-center bg-muted p-1 rounded-full h-12 gap-0.5">
+                {POR_PAGINA.map(n => (
+                    <button
+                        key={n.value}
+                        onClick={() => setPorPagina(n.value)}
+                        className={cn(
+                            "h-10 px-3.5 rounded-full text-[11px] font-bold transition-all",
+                            porPagina === n.value ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        {n.value}
+                    </button>
+                ))}
             </div>
 
             {/* Action Button */}

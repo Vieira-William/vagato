@@ -1,6 +1,10 @@
-import TopNav from './TopNav';
+import { useLayoutMode } from '../../contexts/LayoutModeContext';
+import NavigationShell from './NavigationShell';
 
 export default function Layout({ children }) {
+  const { mode } = useLayoutMode();
+  const isTop = mode === 'topnav';
+
   return (
     <div
       className="h-screen flex flex-col text-foreground relative overflow-hidden transition-colors duration-500 font-['Outfit']"
@@ -15,11 +19,20 @@ export default function Layout({ children }) {
       {/* Raio de Sol */}
       <div className="bg-sunbeam" />
 
-      <TopNav />
+      <NavigationShell />
 
-      {/* Spacer para o Header fragmentado */}
-      <div className="pt-20 flex-1 flex flex-col px-8 xl:px-12 2xl:px-16 pb-8 relative z-10 w-full mx-auto min-h-0">
-        <main className="flex-1 w-full flex flex-col min-h-0">
+      {/* Content area — animated padding based on layout mode */}
+      <div
+        className="flex-1 flex flex-col pb-8 relative z-10 w-full mx-auto min-h-0"
+        style={{
+          paddingTop: isTop ? 80 : 16,
+          paddingLeft: isTop ? 0 : 272,
+          paddingRight: isTop ? 0 : 32,
+          transition: 'padding 0.45s cubic-bezier(0.2, 0.8, 0.2, 1)',
+        }}
+      >
+        {/* Responsive horizontal padding in topnav mode via className */}
+        <main className={`flex-1 w-full flex flex-col min-h-0 ${isTop ? 'px-8' : ''}`}>
           {children}
         </main>
       </div>

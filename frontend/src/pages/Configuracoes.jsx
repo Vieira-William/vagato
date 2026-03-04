@@ -26,10 +26,11 @@ import {
   MapPin,
   ChevronLeft,
   Copy,
-  Calendar
+  Calendar,
+  Mail
 } from 'lucide-react';
 import SlideInConfirm from '../components/SlideInConfirm';
-import { searchUrlsService, configService, calendarService } from '../services/api';
+import { searchUrlsService, configService, calendarService, gmailService, linkedinService } from '../services/api';
 import { urlBuilder } from '../utils/urlBuilder';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -101,6 +102,13 @@ export default function Configuracoes() {
   // Google Calendar states
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [loadingCalendar, setLoadingCalendar] = useState(true);
+  // Gmail states
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [loadingGmail, setLoadingGmail] = useState(true);
+  // LinkedIn states
+  const [linkedinConnected, setLinkedinConnected] = useState(false);
+  const [loadingLinkedin, setLoadingLinkedin] = useState(true);
+  const [linkedinProfile, setLinkedinProfile] = useState(null);
 
   useEffect(() => {
     fetchConfigStatus();
@@ -109,6 +117,23 @@ export default function Configuracoes() {
     fetchWeights();
     fetchIAStatus();
     fetchCalendarStatus();
+    fetchGmailStatus();
+    fetchLinkedinStatus();
+
+    // Mensagem de retorno do OAuth
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmail') === 'conectado') {
+      setMessage({ type: 'success', text: 'Gmail conectado com sucesso!' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (params.get('calendar') === 'conectado') {
+      setMessage({ type: 'success', text: 'Google Calendar conectado com sucesso!' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (params.get('linkedin') === 'conectado') {
+      setMessage({ type: 'success', text: 'LinkedIn conectado com sucesso!' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   useEffect(() => {
@@ -156,7 +181,11 @@ export default function Configuracoes() {
     try {
       setLoadingWeights(true);
       const response = await configService.getMatchWeights();
-      setWeights(response.data);
+      const sanitized = {};
+      for (const [key, val] of Object.entries(response.data)) {
+        sanitized[key] = typeof val === 'number' && !isNaN(val) ? val : 0;
+      }
+      setWeights(sanitized);
     } catch (error) {
       console.error('Erro ao carregar pesos:', error);
     } finally {
@@ -181,14 +210,96 @@ export default function Configuracoes() {
       const { data } = await calendarService.getEvents();
       setCalendarConnected(data.isConnected);
     } catch (error) {
-      console.error('Erro ao carregar status do calendário:', error);
+      console.error('Erro ao carregar status do calendario:', error);
     } finally {
       setLoadingCalendar(false);
     }
   };
 
-  const handleConnectCalendar = () => {
-    window.location.href = 'http://localhost:8000/api/calendar/login';
+  const fetchGmailStatus = async () => {
+    try {
+      setLoadingGmail(true);
+      const { data } = await gmailService.getStatus();
+      setGmailConnected(data.isConnected);
+    } catch (error) {
+      console.error('Erro ao carregar status do Gmail:', error);
+    } finally {
+      setLoadingGmail(false);
+    }
+  };
+
+  const handleConnectGmail = async () => {
+    try {
+      const { data } = await gmailService.getLoginUrl();
+      if (data.auth_url) {
+        window.location.href = data.auth_url;
+      } else {
+        setMessage({ type: 'error', text: 'URL de autenticacao Gmail nao retornada.' });
+      }
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Erro ao iniciar autenticacao Gmail.';
+      setMessage({ type: 'error', text: msg });
+    }
+  };
+
+  const fetchLinkedinStatus = async () => {
+    try {
+      setLoadingLinkedin(true);
+      const { data } = await linkedinService.getStatus();
+      setLinkedinConnected(data.isConnected);
+      if (data.isConnected) setLinkedinProfile(data);
+    } catch {
+      setLinkedinConnected(false);
+    } finally {
+      setLoadingLinkedin(false);
+    }
+  };
+
+  const handleConnectLinkedin = async () => {
+    try {
+      const { data } = await linkedinService.getLoginUrl();
+      if (data.auth_url) window.location.href = data.auth_url;
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Erro ao iniciar autenticação LinkedIn.';
+      setMessage({ type: 'error', text: msg });
+    }
+  };
+
+  const handleDisconnectLinkedin = async () => {
+    if (!confirm('Deseja realmente desconectar o LinkedIn?')) return;
+    try {
+      await linkedinService.disconnect();
+      setLinkedinConnected(false);
+      setLinkedinProfile(null);
+      setMessage({ type: 'success', text: 'LinkedIn desconectado!' });
+    } catch {
+      setMessage({ type: 'error', text: 'Erro ao desconectar LinkedIn.' });
+    }
+  };
+
+  const handleDisconnectGmail = async () => {
+    if (!confirm('Deseja realmente desconectar o Gmail?')) return;
+    try {
+      await gmailService.disconnect();
+      setGmailConnected(false);
+      setMessage({ type: 'success', text: 'Gmail desconectado!' });
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao desconectar Gmail.' });
+    }
+  };
+
+  const handleConnectCalendar = async () => {
+    try {
+      const { data } = await calendarService.getLoginUrl();
+      if (data.auth_url) {
+        window.location.href = data.auth_url;
+      } else {
+        setMessage({ type: 'error', text: 'URL de autenticacao nao retornada pelo servidor.' });
+      }
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Erro ao iniciar autenticacao Google.';
+      setMessage({ type: 'error', text: msg });
+    }
   };
 
   const handleDisconnectCalendar = async () => {
@@ -225,7 +336,7 @@ export default function Configuracoes() {
         setMessage({ type: 'error', text: error.detail || 'Erro ao salvar' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Erro de conexão com o servidor' });
+      setMessage({ type: 'error', text: 'Erro de conexao com o servidor' });
     } finally {
       setSaving(false);
     }
@@ -243,7 +354,7 @@ export default function Configuracoes() {
         setMessage({ type: 'error', text: data.message || data.detail || 'Falha no teste' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Erro de conexão com o servidor' });
+      setMessage({ type: 'error', text: 'Erro de conexao com o servidor' });
     } finally {
       setTesting(false);
     }
@@ -321,221 +432,284 @@ export default function Configuracoes() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12">
-      {/* Header — Estilo Ilha Flutuante (Gabarito) */}
-      <div className="bg-card backdrop-blur-lg rounded-[32px] p-10 shadow-soft flex flex-col md:flex-row items-center justify-between gap-6 border border-border/10 transition-all">
-        <div>
-          <h1 className="text-4xl font-light text-foreground tracking-tighter mb-2">Ajustes</h1>
-          <p className="text-muted-foreground text-sm font-medium">Configure a inteligência por trás da plataforma. ⚡</p>
-        </div>
-        <div className="w-12 h-12 bg-muted/30 backdrop-blur-lg rounded-2xl flex items-center justify-center border border-border/20">
-          <Settings className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+    <div className="flex flex-col w-full h-full relative overflow-hidden">
+      {/* Title row */}
+      <div className="flex items-end justify-between pt-3 pb-2 shrink-0">
+        <div className="flex flex-col min-w-0">
+          <h1 className="text-3xl font-light tracking-tight text-foreground">Ajustes</h1>
+          <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">Configure a inteligencia por tras da plataforma.</p>
         </div>
       </div>
 
-      {/* Alerta de Feedback */}
+      {/* Alert */}
       {message && (
-        <div className={cn(
-          "p-6 rounded-[24px] flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500",
-          message.type === 'success' ? "bg-green-50 text-green-600 border border-green-100" : "bg-red-50 text-red-600 border border-red-100"
-        )}>
-          {message.type === 'success' ? <Check className="w-5 h-5" strokeWidth={2.5} /> : <AlertCircle className="w-5 h-5" strokeWidth={2} />}
-          <span className="text-sm font-bold">{message.text}</span>
+        <div className="py-1 shrink-0 animate-in fade-in duration-300">
+          <div className={cn(
+            "rounded-xl p-3 flex items-center gap-3 text-[11px] font-bold border",
+            message.type === 'success' ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"
+          )}>
+            {message.type === 'success' ? <Check className="w-4 h-4" strokeWidth={2.5} /> : <AlertCircle className="w-4 h-4" />}
+            {message.text}
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Card-in-card panel */}
+      <div className="flex-1 flex flex-col min-h-0 bg-white/50 backdrop-blur-sm rounded-t-2xl border border-white/60 border-b-0 overflow-hidden mt-1">
+        <div className="flex-1 overflow-y-auto custom-scrollbar -mr-1 pr-1 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl">
 
-        {/* ILHA: IA CONSUMPTION (Soft UI) */}
-        <Card className="rounded-[32px] border-border/10 shadow-soft bg-primary/5 text-foreground p-8 md:col-span-1 flex flex-col justify-between overflow-hidden relative group">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-10">
-              <div className="p-3 bg-background/50 rounded-2xl backdrop-blur-md">
-                <Zap className="w-5 h-5 text-primary fill-primary" strokeWidth={1.5} />
-              </div>
-              <Badge className="bg-primary text-primary-foreground border-none rounded-full px-4 py-1 text-[10px] font-black tracking-widest">IA ONLINE</Badge>
-            </div>
-
-            <div className="space-y-1 mb-8">
-              <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em]">Créditos API</p>
-              <h3 className="text-4xl font-light tracking-tight">${iaStatus?.saldo_disponivel_usd?.toFixed(2)}</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-end">
-                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{iaStatus?.saldo_percentual_restante?.toFixed(0)}% Restante</span>
-              </div>
-              <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(55,93,251,0.5)]"
-                  style={{ width: `${iaStatus?.saldo_percentual_restante || 0}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-10 pt-6 border-t border-border/10 relative z-10">
-            <form onSubmit={handleUpdateIAConfig} className="space-y-4">
-              <Input
-                type="number"
-                value={newCredit}
-                onChange={(e) => setNewCredit(e.target.value)}
-                placeholder="USD Amount"
-                className="bg-background/50 border-none text-foreground placeholder:text-muted-foreground h-10 rounded-xl px-4 text-sm"
-              />
-              <Button className="w-full bg-primary text-primary-foreground rounded-full font-black text-[11px] uppercase tracking-widest h-11 shadow-lg shadow-primary/30 hover:scale-[1.02] transition-all">
-                Atualizar Saldo
-              </Button>
-            </form>
-          </div>
-
-          {/* Glow */}
-          <div className="absolute -bottom-20 -right-20 w-60 h-60 bg-primary/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-primary/20 transition-all duration-700" />
-        </Card>
-
-        {/* ILHA: PESOS DO MATCH */}
-        <Card className="rounded-[32px] border-border/10 shadow-soft bg-card p-10 md:col-span-2 transition-all hover:bg-card/80">
-          <CardHeader className="p-0 mb-8 flex flex-row items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground tracking-tight">O que priorizar?</h2>
-              <p className="text-sm text-muted-foreground font-medium">Ajuste os pesos para o cálculo de Match.</p>
-            </div>
-            <div className={cn(
-              "px-4 py-2 rounded-full text-[10px] font-black tracking-widest border transition-all",
-              weightsValid ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900 shadow-sm" : "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30 dark:border-red-900"
-            )}>
-              PESO: {Math.round(totalWeights * 100)}%
-            </div>
-          </CardHeader>
-          <CardContent className="p-0 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
-              {[
-                { key: 'skills', label: 'Habilidades' },
-                { key: 'nivel', label: 'Nível Exp.' },
-                { key: 'modalidade', label: 'Modalidade' },
-                { key: 'salario', label: 'Remuneração' },
-                { key: 'ingles', label: 'Idioma Inglês' },
-                { key: 'tipo_contrato', label: 'Tipo Contrato' }
-              ].map(w => (
-                <div key={w.key} className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">{w.label}</span>
-                    <span className="text-[12px] font-black text-foreground">{Math.round(weights[w.key] * 100)}%</span>
+            {/* IA CONSUMPTION (Dark Card) */}
+            <div className="bg-[#2C2C2E] rounded-2xl shadow-soft p-6 md:col-span-1 flex flex-col justify-between overflow-hidden relative group transition-all">
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
+                    <Zap className="w-4 h-4 text-white fill-white" strokeWidth={1.5} />
                   </div>
-                  <input
-                    type="range" min="0" max="100"
-                    value={Math.round(weights[w.key] * 100)}
-                    onChange={(e) => handleWeightChange(w.key, e.target.value / 100)}
-                    className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary transition-all"
-                  />
+                  <Badge className="bg-white/10 text-white border-none rounded-full px-3 py-0.5 text-[9px] font-black tracking-widest uppercase">IA ONLINE</Badge>
                 </div>
-              ))}
-            </div>
-            <div className="pt-6 flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleSaveWeights} className="h-11 rounded-full px-10 bg-foreground text-background font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg hover:opacity-90 transition-all">Salvar Pesos</Button>
-              <Button onClick={handleRecalcularScores} variant="secondary" className="h-11 rounded-full px-8 bg-background border border-border/50 text-foreground font-bold text-[11px] uppercase tracking-widest hover:bg-muted/50 transition-all">Recalcular Tudo</Button>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* ILHA: CONTA LINKEDIN */}
-        <Card className="rounded-[32px] border-border/10 shadow-soft bg-card p-10 md:col-span-3 transition-all hover:bg-card/80">
-          <div className="flex flex-col lg:flex-row gap-12">
-            <div className="lg:w-1/3">
-              <div className="w-16 h-16 rounded-[22px] bg-[#0A66C2] flex items-center justify-center mb-6 shadow-xl shadow-[#0A66C2]/10">
-                <Linkedin className="w-8 h-8 text-white" strokeWidth={1.5} />
+                <div className="space-y-0.5 mb-6">
+                  <p className="text-white/50 text-[9px] font-black uppercase tracking-[0.2em]">Creditos API</p>
+                  <h3 className="text-3xl font-light tracking-tight text-white">${iaStatus?.saldo_disponivel_usd?.toFixed(2)}</h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[9px] text-white/50 font-bold uppercase tracking-wider">{iaStatus?.saldo_percentual_restante?.toFixed(0)}% Restante</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#375DFB] transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(55,93,251,0.5)]"
+                      style={{ width: `${iaStatus?.saldo_percentual_restante || 0}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-              <h2 className="text-2xl font-semibold text-foreground mb-2 tracking-tight">LinkedIn Sync</h2>
-              <p className="text-muted-foreground text-sm leading-relaxed font-medium">Conecte sua conta para automatizar a varredura de vagas em tempo real.</p>
-            </div>
 
-            <div className="flex-1 space-y-6">
-              <form onSubmit={handleSaveLinkedIn} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Usuário / Email</label>
+              <div className="mt-6 pt-4 border-t border-white/10 relative z-10">
+                <form onSubmit={handleUpdateIAConfig} className="space-y-3">
                   <Input
-                    value={linkedinEmail}
-                    onChange={(e) => setLinkedinEmail(e.target.value)}
-                    placeholder="Seu email principal"
-                    className="rounded-2xl bg-background/50 border-border/50 h-11"
+                    type="number"
+                    value={newCredit}
+                    onChange={(e) => setNewCredit(e.target.value)}
+                    placeholder="USD Amount"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 h-9 rounded-xl px-3 text-sm focus:ring-primary"
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Senha LinkedIn</label>
-                  <Input
-                    type="password"
-                    value={linkedinPassword}
-                    onChange={(e) => setLinkedinPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="rounded-2xl bg-background/50 border-border/50 h-11"
-                  />
-                </div>
-                <div className="sm:col-span-2 flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button type="submit" className="h-11 rounded-full px-10 bg-[#0A66C2] text-white font-black text-[11px] uppercase tracking-widest flex-1 shadow-lg shadow-[#0A66C2]/20 hover:scale-[1.02] transition-all">Configurar Acesso</Button>
-                  <Button type="button" onClick={handleTestLinkedIn} variant="secondary" className="h-11 rounded-full px-8 bg-background border border-border/50 text-foreground font-bold text-[11px] uppercase tracking-widest gap-2 hover:bg-muted/50 transition-all">
-                    <Play className="w-3.5 h-3.5" strokeWidth={2.5} /> Testar Conexão
+                  <Button className="w-full bg-[#375DFB] text-white rounded-full font-bold text-[10px] uppercase tracking-widest h-9 shadow-lg shadow-primary/30 hover:scale-[1.02] transition-all border-none">
+                    Atualizar Saldo
                   </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </Card>
-
-        {/* ILHA: INTEGRAÇÕES (Soft UI Premium) */}
-        <Card className="rounded-[32px] border-border/10 shadow-soft bg-card p-10 md:col-span-3 transition-all hover:bg-card/80">
-          <div className="flex flex-col lg:flex-row gap-12">
-            <div className="lg:w-1/3">
-              <div className="w-16 h-16 rounded-[22px] bg-muted/50 border border-border/20 flex items-center justify-center mb-6 shadow-sm">
-                <Link2 className="w-8 h-8 text-foreground" strokeWidth={1.5} />
+                </form>
               </div>
-              <h2 className="text-2xl font-semibold text-foreground mb-2 tracking-tight">Integrações</h2>
-              <p className="text-muted-foreground text-sm leading-relaxed font-medium">Conecte ferramentas externas para potencializar seu workflow.</p>
+
+              <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-[#375DFB]/20 rounded-full blur-[80px] pointer-events-none group-hover:bg-[#375DFB]/30 transition-all duration-700" />
             </div>
 
-            <div className="flex-1 space-y-4">
-              <div className="bg-background/40 rounded-[24px] border border-border/10 p-6 flex items-center justify-between group hover:bg-background transition-all shadow-sm">
-                <div className="flex flex-col lg:flex-row lg:items-center gap-6 w-full">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 rounded-[16px] bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
-                      <Calendar className="w-6 h-6" strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <h4 className="text-[15px] font-bold text-foreground">Google Calendar</h4>
-                      <p className="text-[12px] text-muted-foreground font-semibold mt-0.5">Sincronize sua agenda de entrevistas</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 lg:justify-end">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-border/20 bg-muted/20">
-                      <div className={cn("w-2 h-2 rounded-full", calendarConnected ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-gray-300")} />
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${calendarConnected ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                        {loadingCalendar ? '...' : calendarConnected ? 'Conectado' : 'Desconectado'}
-                      </span>
-                    </div>
-
-                    {calendarConnected ? (
-                      <Button
-                        variant="ghost"
-                        onClick={handleDisconnectCalendar}
-                        className="h-10 px-6 rounded-full text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 text-[11px] font-black uppercase tracking-widest bg-transparent"
-                      >
-                        Desconectar
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={handleConnectCalendar}
-                        className="h-10 px-8 rounded-full bg-foreground hover:opacity-90 text-background text-[11px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95"
-                      >
-                        Conectar
-                      </Button>
-                    )}
-                  </div>
+            {/* MATCH WEIGHTS */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 md:col-span-2 transition-all">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground tracking-tight">O que priorizar?</h2>
+                  <p className="text-[11px] text-muted-foreground font-medium">Ajuste os pesos para o calculo de Match.</p>
+                </div>
+                <div className={cn(
+                  "px-3 py-1 rounded-full text-[9px] font-black tracking-widest border transition-all",
+                  weightsValid ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+                )}>
+                  PESO: {isNaN(totalWeights) ? '0' : Math.round(totalWeights * 100)}%
                 </div>
               </div>
-            </div>
-          </div>
-        </Card>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-5">
+                {[
+                  { key: 'skills', label: 'Habilidades' },
+                  { key: 'nivel', label: 'Nivel Exp.' },
+                  { key: 'modalidade', label: 'Modalidade' },
+                  { key: 'salario', label: 'Remuneracao' },
+                  { key: 'ingles', label: 'Idioma Ingles' },
+                  { key: 'tipo_contrato', label: 'Tipo Contrato' },
+                  { key: 'localizacao', label: 'Localizacao' }
+                ].map(w => (
+                  <div key={w.key} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{w.label}</span>
+                      <span className="text-[11px] font-black text-foreground">{Math.round(weights[w.key] * 100)}%</span>
+                    </div>
+                    <input
+                      type="range" min="0" max="100"
+                      value={Math.round(weights[w.key] * 100)}
+                      onChange={(e) => handleWeightChange(w.key, e.target.value / 100)}
+                      className="w-full h-1 bg-muted rounded-full appearance-none cursor-pointer accent-[#375DFB] transition-all"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={handleSaveWeights} className="h-9 rounded-full px-6 bg-foreground text-background font-bold text-[10px] uppercase tracking-widest flex-1 shadow-md hover:opacity-90 transition-all">Salvar Pesos</Button>
+                <Button onClick={handleRecalcularScores} variant="secondary" className="h-9 rounded-full px-5 bg-muted/50 border border-black/5 text-foreground font-bold text-[10px] uppercase tracking-widest hover:bg-muted/80 transition-all">Recalcular</Button>
+              </div>
+            </div>
+
+            {/* LINKEDIN SYNC */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 md:col-span-3 transition-all">
+              <div className="flex flex-col lg:flex-row gap-8">
+                <div className="lg:w-1/4">
+                  <div className="w-12 h-12 rounded-xl bg-[#0A66C2] flex items-center justify-center mb-4 shadow-lg shadow-[#0A66C2]/10">
+                    <Linkedin className="w-6 h-6 text-white" strokeWidth={1.5} />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground mb-1 tracking-tight">LinkedIn Sync</h2>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed font-medium">Conecte sua conta para automatizar a varredura de vagas.</p>
+                </div>
+
+                <div className="flex-1 space-y-4">
+                  <form onSubmit={handleSaveLinkedIn} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Usuario / Email</label>
+                      <Input
+                        value={linkedinEmail}
+                        onChange={(e) => setLinkedinEmail(e.target.value)}
+                        placeholder="Seu email principal"
+                        className="rounded-xl bg-muted/30 border-black/5 h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Senha LinkedIn</label>
+                      <Input
+                        type="password"
+                        value={linkedinPassword}
+                        onChange={(e) => setLinkedinPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="rounded-xl bg-muted/30 border-black/5 h-9"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 flex gap-3 pt-2">
+                      <Button type="submit" className="h-9 rounded-full px-6 bg-[#0A66C2] text-white font-bold text-[10px] uppercase tracking-widest flex-1 shadow-md shadow-[#0A66C2]/20 hover:scale-[1.02] transition-all">Configurar Acesso</Button>
+                      <Button type="button" onClick={handleTestLinkedIn} variant="secondary" className="h-9 rounded-full px-5 bg-muted/50 border border-black/5 text-foreground font-bold text-[10px] uppercase tracking-widest gap-1.5 hover:bg-muted/80 transition-all">
+                        <Play className="w-3 h-3" strokeWidth={2.5} /> Testar
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            {/* INTEGRATIONS */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 md:col-span-3 transition-all">
+              <div className="flex flex-col lg:flex-row gap-8">
+                <div className="lg:w-1/4">
+                  <div className="w-12 h-12 rounded-xl bg-muted/50 border border-black/5 flex items-center justify-center mb-4">
+                    <Link2 className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground mb-1 tracking-tight">Integracoes</h2>
+                  <p className="text-muted-foreground text-[11px] leading-relaxed font-medium">Conecte ferramentas externas para potencializar seu workflow.</p>
+                </div>
+
+                <div className="flex-1">
+                  <div className="space-y-2">
+                    {/* Google Calendar */}
+                    <div className="bg-muted/20 rounded-xl border border-black/5 p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#375DFB] flex items-center justify-center text-white shadow-md shadow-primary/20">
+                          <Calendar className="w-5 h-5" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <h4 className="text-[13px] font-bold text-foreground">Google Calendar</h4>
+                          <p className="text-[10px] text-muted-foreground font-medium">Sincronize sua agenda de entrevistas</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/30 border border-black/5">
+                          <div className={cn("w-1.5 h-1.5 rounded-full", calendarConnected ? "bg-green-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" : "bg-muted-foreground/30")} />
+                          <span className={cn("text-[8px] font-black uppercase tracking-widest", calendarConnected ? 'text-green-500' : 'text-muted-foreground')}>
+                            {loadingCalendar ? '...' : calendarConnected ? 'Conectado' : 'Desconectado'}
+                          </span>
+                        </div>
+                        {calendarConnected ? (
+                          <Button variant="ghost" onClick={handleDisconnectCalendar} className="h-8 px-4 rounded-full text-red-500 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest">
+                            Desconectar
+                          </Button>
+                        ) : (
+                          <Button onClick={handleConnectCalendar} className="h-8 px-5 rounded-full bg-foreground hover:opacity-90 text-background text-[10px] font-bold uppercase tracking-widest shadow-md transition-all active:scale-95">
+                            Conectar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Gmail */}
+                    <div className="bg-muted/20 rounded-xl border border-black/5 p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#EA4335] flex items-center justify-center text-white shadow-md shadow-[#EA4335]/20">
+                          <Mail className="w-5 h-5" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <h4 className="text-[13px] font-bold text-foreground">Gmail</h4>
+                          <p className="text-[10px] text-muted-foreground font-medium">Veja emails das empresas direto nos cards de vaga</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/30 border border-black/5">
+                          <div className={cn("w-1.5 h-1.5 rounded-full", gmailConnected ? "bg-green-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" : "bg-muted-foreground/30")} />
+                          <span className={cn("text-[8px] font-black uppercase tracking-widest", gmailConnected ? 'text-green-500' : 'text-muted-foreground')}>
+                            {loadingGmail ? '...' : gmailConnected ? 'Conectado' : 'Desconectado'}
+                          </span>
+                        </div>
+                        {gmailConnected ? (
+                          <Button variant="ghost" onClick={handleDisconnectGmail} className="h-8 px-4 rounded-full text-red-500 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest">
+                            Desconectar
+                          </Button>
+                        ) : (
+                          <Button onClick={handleConnectGmail} className="h-8 px-5 rounded-full bg-[#EA4335] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-widest shadow-md shadow-[#EA4335]/20 transition-all active:scale-95">
+                            Conectar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* LinkedIn */}
+                    <div className="bg-muted/20 rounded-xl border border-black/5 p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white shadow-md shadow-[#0A66C2]/20">
+                          <Linkedin className="w-5 h-5" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <h4 className="text-[13px] font-bold text-foreground">LinkedIn</h4>
+                          <p className="text-[10px] text-muted-foreground font-medium">
+                            {linkedinConnected && linkedinProfile?.nome
+                              ? linkedinProfile.nome
+                              : 'Sincronize perfil e publique atualizações'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/30 border border-black/5">
+                          <div className={cn("w-1.5 h-1.5 rounded-full", linkedinConnected ? "bg-green-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" : "bg-muted-foreground/30")} />
+                          <span className={cn("text-[8px] font-black uppercase tracking-widest", linkedinConnected ? 'text-green-500' : 'text-muted-foreground')}>
+                            {loadingLinkedin ? '...' : linkedinConnected ? 'Conectado' : 'Desconectado'}
+                          </span>
+                        </div>
+                        {linkedinConnected ? (
+                          <Button variant="ghost" onClick={handleDisconnectLinkedin} className="h-8 px-4 rounded-full text-red-500 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest">
+                            Desconectar
+                          </Button>
+                        ) : (
+                          <Button onClick={handleConnectLinkedin} className="h-8 px-5 rounded-full bg-[#0A66C2] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-widest shadow-md shadow-[#0A66C2]/20 transition-all active:scale-95">
+                            Conectar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
     </div>
   );

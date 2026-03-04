@@ -8,15 +8,16 @@ import { TrendingUp, TrendingDown, Calendar, BarChart3, Building2, Globe, AlertT
 import { Link } from 'react-router-dom';
 import StatCard from '../components/ui/StatCard';
 import PeriodoSelector from '../components/ui/PeriodoSelector';
+import PageHeader from '@/components/ui/PageHeader';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#a855f7'];
 
-// Custom Tooltip component for light glass theme
+// Custom Tooltip — CSS variables for dark mode support
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white/90 backdrop-blur-xl border border-white rounded-[16px] p-4 shadow-xl">
-        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-2">{label}</p>
+      <div className="bg-card/90 backdrop-blur-xl border border-border/10 rounded-[16px] p-4 shadow-xl">
+        <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-2">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm font-bold" style={{ color: entry.color }}>
             {entry.name}: {entry.value}
@@ -61,10 +62,10 @@ export default function Match() {
 
   if (loading || !dados) {
     return (
-      <div className="min-h-[calc(100vh-80px)] bg-[#F8F9FE] flex items-center justify-center p-6">
-        <div className="text-center bg-white/70 backdrop-blur-lg rounded-[32px] p-12 shadow-soft border border-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#375DFB] border-t-transparent mx-auto"></div>
-          <p className="text-[#2C2C2E]/60 mt-6 font-medium text-sm">Carregando seus insights...</p>
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-6">
+        <div className="text-center bg-card/70 backdrop-blur-lg rounded-[32px] p-12 shadow-soft border border-border/10">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-muted-foreground mt-6 font-medium text-sm">Carregando seus insights...</p>
         </div>
       </div>
     );
@@ -90,40 +91,35 @@ export default function Match() {
   const crescimentoPositivo = dados.crescimento.vs_periodo_anterior >= 0;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FE] pb-12">
-      {/* Header Estilo Gabarito (TopNav ou equivalente em linha) */}
-      <div className="border-b border-white/20 bg-white/30 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-light text-[#2C2C2E] tracking-tighter">Insights do Match</h1>
-              <p className="text-xs font-semibold text-[#2C2C2E]/50 uppercase tracking-widest mt-1">
-                Visualização de dados do período
-              </p>
-            </div>
-            <PeriodoSelector value={periodo} onChange={setPeriodo} />
-          </div>
-        </div>
+    <div className="pb-12">
+      {/* Header — Título flutuante (PRD v2.0 A1) */}
+      <div className="max-w-7xl mx-auto px-6 pt-4">
+        <PageHeader
+          title="Insights do Match"
+          subtitle="Visualização de dados do período"
+        >
+          <PeriodoSelector value={periodo} onChange={setPeriodo} />
+        </PageHeader>
       </div>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* IA Credit Alert */}
         {iaStatus && iaStatus.saldo_atual_usd < iaStatus.alerta_limite_usd && (
-          <div className="mb-6 p-5 rounded-[24px] bg-red-500/10 border border-red-500/20 flex flex-col md:flex-row items-center justify-between gap-4 group transition-all">
+          <div className="mb-6 p-5 rounded-[24px] bg-accent-danger/10 border border-accent-danger/20 flex flex-col md:flex-row items-center justify-between gap-4 group transition-all">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-red-500" />
+              <div className="w-12 h-12 rounded-2xl bg-accent-danger/10 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-accent-danger" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-red-600">Créditos de Extrator (IA) baixos!</h4>
-                <p className="text-[13px] text-red-600/70 font-medium mt-0.5">
+                <h4 className="text-sm font-bold text-accent-danger">Créditos de Extrator (IA) baixos!</h4>
+                <p className="text-[13px] text-accent-danger/70 font-medium mt-0.5">
                   Saldo atual: <span className="font-bold">${iaStatus.saldo_atual_usd.toFixed(4)}</span>.
                 </p>
               </div>
             </div>
             <Link
               to="/configuracoes"
-              className="px-6 py-3 rounded-full bg-red-500 text-white text-[11px] font-black uppercase tracking-widest hover:bg-red-600 transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2"
+              className="px-6 py-3 rounded-full bg-accent-danger text-white text-[11px] font-black uppercase tracking-widest hover:bg-accent-danger/90 transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2"
             >
               Configurar Saldo
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -145,40 +141,40 @@ export default function Match() {
             icon={Calendar}
             color="info"
           />
-          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-white transition-transform hover:bg-white/90">
+          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-border/10 transition-transform hover:bg-card/80">
             <div className="flex items-center gap-3 mb-4">
-              <div className={`p-3 rounded-2xl ${crescimentoPositivo ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+              <div className={`p-3 rounded-2xl ${crescimentoPositivo ? 'bg-accent-success/10' : 'bg-accent-danger/10'}`}>
                 {crescimentoPositivo
-                  ? <TrendingUp className="w-5 h-5 text-emerald-500" strokeWidth={2.5} />
-                  : <TrendingDown className="w-5 h-5 text-red-500" strokeWidth={2.5} />
+                  ? <TrendingUp className="w-5 h-5 text-accent-success" strokeWidth={2.5} />
+                  : <TrendingDown className="w-5 h-5 text-accent-danger" strokeWidth={2.5} />
                 }
               </div>
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Crescimento</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Crescimento</span>
             </div>
-            <p className={`text-4xl font-light tracking-tighter ${crescimentoPositivo ? 'text-emerald-600' : 'text-red-600'}`}>
+            <p className={`text-4xl font-light tracking-tighter ${crescimentoPositivo ? 'text-accent-success' : 'text-accent-danger'}`}>
               {crescimentoPositivo ? '+' : ''}{dados.crescimento.vs_periodo_anterior}%
             </p>
-            <p className="text-[11px] text-gray-500 font-semibold mt-2">VS PERÍODO ANTERIOR</p>
+            <p className="text-[11px] text-muted-foreground font-semibold mt-2">VS PERÍODO ANTERIOR</p>
           </div>
-          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-white transition-transform hover:bg-white/90">
+          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-border/10 transition-transform hover:bg-card/80">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-2xl bg-purple-500/10">
-                <Calendar className="w-5 h-5 text-purple-500" strokeWidth={2.5} />
+              <div className="p-3 rounded-2xl bg-accent-purple/10">
+                <Calendar className="w-5 h-5 text-accent-purple" strokeWidth={2.5} />
               </div>
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Período Ativo</span>
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Período Ativo</span>
             </div>
-            <p className="text-xl font-bold text-[#2C2C2E] truncate">
+            <p className="text-xl font-bold text-foreground truncate">
               {dados.data_inicio}
             </p>
-            <p className="text-[11px] text-gray-500 font-semibold mt-2 truncate">ATÉ {dados.data_fim}</p>
+            <p className="text-[11px] text-muted-foreground font-semibold mt-2 truncate">ATÉ {dados.data_fim}</p>
           </div>
         </div>
 
         {/* Gráficos Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Vagas por dia - Area Chart com gradiente */}
-          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
-            <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest mb-6">Ritmo de Coleta</h3>
+          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-6">Ritmo de Coleta</h3>
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={porDiaReversed}>
                 <defs>
@@ -187,17 +183,17 @@ export default function Match() {
                     <stop offset="100%" stopColor="#375DFB" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border, rgba(0,0,0,0.05))" />
                 <XAxis
                   dataKey="data"
-                  tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
+                  tick={{ fontSize: 11, fill: 'var(--text-muted, #9CA3AF)', fontWeight: 600 }}
                   tickFormatter={d => d.slice(5)}
                   axisLine={false}
                   tickLine={false}
                   dy={10}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
+                  tick={{ fontSize: 11, fill: 'var(--text-muted, #9CA3AF)', fontWeight: 600 }}
                   axisLine={false}
                   tickLine={false}
                   dx={-10}
@@ -209,16 +205,16 @@ export default function Match() {
                   stroke="#375DFB"
                   strokeWidth={4}
                   fill="url(#colorTotal)"
-                  dot={{ r: 4, fill: '#fff', strokeWidth: 3, stroke: '#375DFB' }}
-                  activeDot={{ r: 7, fill: '#375DFB', stroke: '#fff', strokeWidth: 3 }}
+                  dot={{ r: 4, fill: 'var(--bg-secondary, #fff)', strokeWidth: 3, stroke: '#375DFB' }}
+                  activeDot={{ r: 7, fill: '#375DFB', stroke: 'var(--bg-secondary, #fff)', strokeWidth: 3 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
           {/* Distribuição por fonte - Donut Chart */}
-          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
-            <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest mb-6">Origem dos Matchs</h3>
+          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-6">Origem dos Matchs</h3>
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
@@ -242,7 +238,7 @@ export default function Match() {
                   iconType="circle"
                   iconSize={10}
                   wrapperStyle={{ paddingTop: '20px' }}
-                  formatter={(value) => <span className="text-[12px] font-bold text-[#2C2C2E] ml-1">{value}</span>}
+                  formatter={(value) => <span className="text-[12px] font-bold text-foreground ml-1">{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -252,12 +248,12 @@ export default function Match() {
         {/* Gráficos Row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Modalidade - Bar Chart */}
-          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
+          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-emerald-600" strokeWidth={1.5} />
+              <div className="w-10 h-10 rounded-2xl bg-accent-success/10 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-accent-success" strokeWidth={1.5} />
               </div>
-              <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest">Modalidades</h3>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Modalidades</h3>
             </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={modalidadeData} layout="vertical">
@@ -267,12 +263,12 @@ export default function Match() {
                     <stop offset="100%" stopColor="#15803d" stopOpacity={1} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.05)" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border, rgba(0,0,0,0.05))" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-muted, #9CA3AF)', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <YAxis
                   dataKey="name"
                   type="category"
-                  tick={{ fontSize: 12, fill: '#4B5563', fontWeight: 600 }}
+                  tick={{ fontSize: 12, fill: 'var(--text-secondary, #4B5563)', fontWeight: 600 }}
                   width={90}
                   axisLine={false}
                   tickLine={false}
@@ -284,32 +280,32 @@ export default function Match() {
           </div>
 
           {/* Top Empresas */}
-          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
+          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-2xl bg-[#375DFB]/10 flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-[#375DFB]" strokeWidth={1.5} />
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </div>
-              <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest">Líderes de Contratação</h3>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Líderes de Contratação</h3>
             </div>
             <div className="space-y-3 max-h-[220px] overflow-auto custom-scrollbar pr-2">
               {dados.top_empresas.slice(0, 8).map((e, i) => (
-                <div key={i} className="flex justify-between items-center p-3 rounded-2xl hover:bg-white/80 border border-transparent hover:border-black/5 transition-all group">
+                <div key={i} className="flex justify-between items-center p-3 rounded-2xl hover:bg-muted/30 border border-transparent hover:border-border/10 transition-all group">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-sm flex items-center justify-center border border-white group-hover:scale-105 transition-transform">
-                      <span className="text-sm font-black text-gray-500 uppercase">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-muted/50 to-muted shadow-sm flex items-center justify-center border border-border/10 group-hover:scale-105 transition-transform">
+                      <span className="text-sm font-black text-muted-foreground uppercase">
                         {e.empresa?.charAt(0) || '?'}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-[#2C2C2E] truncate max-w-[180px]">{e.empresa}</span>
+                    <span className="text-sm font-semibold text-foreground truncate max-w-[180px]">{e.empresa}</span>
                   </div>
-                  <span className="text-[12px] font-black tracking-widest text-[#375DFB] bg-[#375DFB]/10 px-4 py-1.5 rounded-full border border-[#375DFB]/20">
+                  <span className="text-[12px] font-black tracking-widest text-primary bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20">
                     {e.count}
                   </span>
                 </div>
               ))}
               {dados.top_empresas.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Vazio</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Vazio</p>
                 </div>
               )}
             </div>
@@ -317,8 +313,8 @@ export default function Match() {
         </div>
 
         {/* Histórico por fonte (stacked area) */}
-        <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white mb-6">
-          <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest mb-6">Mapeamento Evolutivo por Origem</h3>
+        <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10 mb-6">
+          <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-6">Mapeamento Evolutivo por Origem</h3>
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={porDiaReversed}>
               <defs>
@@ -335,17 +331,17 @@ export default function Match() {
                   <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.1} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border, rgba(0,0,0,0.05))" />
               <XAxis
                 dataKey="data"
-                tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
+                tick={{ fontSize: 11, fill: 'var(--text-muted, #9CA3AF)', fontWeight: 600 }}
                 tickFormatter={d => d.slice(5)}
                 axisLine={false}
                 tickLine={false}
                 dy={10}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
+                tick={{ fontSize: 11, fill: 'var(--text-muted, #9CA3AF)', fontWeight: 600 }}
                 axisLine={false}
                 tickLine={false}
                 dx={-10}
@@ -357,7 +353,7 @@ export default function Match() {
                 iconType="circle"
                 iconSize={10}
                 wrapperStyle={{ paddingBottom: '20px' }}
-                formatter={(value) => <span className="text-[12px] font-bold text-[#2C2C2E] ml-2">{value}</span>}
+                formatter={(value) => <span className="text-[12px] font-bold text-foreground ml-2">{value}</span>}
               />
               <Area type="monotone" dataKey="indeed" stackId="1" stroke="#375DFB" strokeWidth={3} fill="url(#colorIndeed)" name="Indeed" />
               <Area type="monotone" dataKey="linkedin_jobs" stackId="1" stroke="#10b981" strokeWidth={3} fill="url(#colorLinkedin)" name="LinkedIn Jobs" />
@@ -368,12 +364,12 @@ export default function Match() {
 
         {/* Requisitos de Inglês */}
         {inglesData.length > 0 && (
-          <div className="bg-white/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-white">
+          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center">
-                <Globe className="w-5 h-5 text-purple-600" strokeWidth={1.5} />
+              <div className="w-10 h-10 rounded-2xl bg-accent-purple/10 flex items-center justify-center">
+                <Globe className="w-5 h-5 text-accent-purple" strokeWidth={1.5} />
               </div>
-              <h3 className="text-sm font-bold text-[#2C2C2E] uppercase tracking-widest">Skill: Inglês Exigido</h3>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Skill: Inglês Exigido</h3>
             </div>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={inglesData}>
@@ -383,16 +379,16 @@ export default function Match() {
                     <stop offset="100%" stopColor="#c084fc" stopOpacity={0.5} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border, rgba(0,0,0,0.05))" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12, fill: '#4B5563', fontWeight: 600 }}
+                  tick={{ fontSize: 12, fill: 'var(--text-secondary, #4B5563)', fontWeight: 600 }}
                   axisLine={false}
                   tickLine={false}
                   dy={10}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#9CA3AF', fontWeight: 600 }}
+                  tick={{ fontSize: 11, fill: 'var(--text-muted, #9CA3AF)', fontWeight: 600 }}
                   axisLine={false}
                   tickLine={false}
                   dx={-10}

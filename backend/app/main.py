@@ -4,7 +4,7 @@ import os
 from sqlalchemy import text, inspect
 
 from .database import engine, Base
-from .api import vagas, stats, scraper, config, profile, search_urls, calendar
+from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin
 
 # Criar diretório data se não existir
 os.makedirs("data", exist_ok=True)
@@ -164,6 +164,8 @@ app.include_router(config.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
 app.include_router(search_urls.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
+app.include_router(gmail.router, prefix="/api")
+app.include_router(linkedin.router, prefix="/api")
 
 
 @app.get("/")

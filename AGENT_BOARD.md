@@ -15,7 +15,7 @@
 
 | Agente | Status Atual | Tarefa Ativa / Última Ação | Próximo Agente Esperado | Tarefa Sugerida (Próx Passo) | Última Atualização |
 |--------|--------------|----------------------------|-------------------------|------------------------------|--------------------|
-| **MacBook (Claude)** | 🟢 CONCLUÍDO | ✅ CalendarCard redesenhado com week view Soft UI (grade pontilhada, faixas all-day, overlay "Semana livre", navegação chevron). Push `789572d`. | **William** | Validar visual no browser. QA completo. | 02/03/2026 |
+| **MacBook (Claude)** | 🟡 EM ANDAMENTO | ⚡ **INTEGRAÇÃO LINKEDIN API** — Criando backend linkedin.py, router, frontend linkedinService + bloco em Configuracoes. GCP Gmail OAuth fix concluído (redirect URI adicionada ao cliente correto `574313230530-ksqs...`). **AVISO GERAL:** William mudou nome do projeto para `Vagas` (escopo atualizado). | **Todos** | Adotar nome `Vagas` em novos textos/commits. | 03/03/2026 |
 | **MacBook (Antigravity)** | 🟢 PRONTO | ✅ Firefighting e infraestrutura concluídos. Regras AAA Nativas implementadas (.gemini/GEMINI.md), UI sincronizada e repositório blindado contra vazamentos. Sessão livre de bugs estabilizada. | **William** | Focar 100% no produto. Definir a próxima tela ou funcionalidade a ser construída. | 03/03/2026 02:18 |
 | **Mac Mini (Antigravity)** | 🟡 EM ANDAMENTO | ⚡ Acordado pelo William. Diagnóstico do Handoff (Frontend UI M3 e Backend Auth) assimilado. Aguardando novo direcionamento tático. | **William** | Enviar comando de próxima feature ou problema. | 03/03/2026 03:00 |
 | **Mac Mini (Claude/SENTINELA)** | 🟢 CONCLUÍDO | ✅ **GOOGLE CALENDAR PKCE FIX.** Resolvido bug crítico de `InvalidGrantError` (google-auth-oauthlib 1.3+ usa PKCE automático; solução: `_pending_flows` dict para preservar Flow entre login→callback). Token salvo, `isConnected: true`. Post-mortem detalhado no AGENT_CHAT. Próximo: commit + push. | **William** | Validar se alguma feature nova está pendente. | 02/03/2026 |
@@ -48,3 +48,4 @@
 | 01/03/2026 | 🟢 CONCLUÍDO | Bento Grid Zero-Scroll: Analytics.jsx reconstruído, 7 cards, grid-cols-4, h-screen |
 | 01/03/2026 | 🟢 CONCLUÍDO | Fix regressão TopNav: bg-white/70→/60 (5 pills), gap-4→3. Regra histórico AGENT_BOARD |
 | 02/03/2026 | 🟢 CONCLUÍDO | CalendarCard Week View Soft UI: grid 1fr, all-day strip, "Semana livre" overlay, navegação semanas, EVT_PALETTES + AVATAR_BG |
+| 03/03/2026 | 🟢 CONCLUÍDO | **LAYOUT SWITCHER DINÂMICO!** TopNav ↔ Glass Sidebar toggle com Framer Motion. Novos: NavigationShell.jsx, LogoPill.jsx, LayoutModeContext.jsx, useMediaQuery.js. Deletados: TopNav.jsx, Sidebar.jsx, SidebarContext.jsx. localStorage + mobile guard. |

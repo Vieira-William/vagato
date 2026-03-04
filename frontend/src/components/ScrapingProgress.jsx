@@ -486,7 +486,7 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
 
   return (
     <Dialog open={true} onOpenChange={handleCloseRequest}>
-      <DialogContent className="max-w-2xl p-0 gap-0 flex flex-col max-h-[85vh] overflow-hidden bg-card border-none shadow-elevated">
+      <DialogContent className="max-w-2xl p-0 gap-0 flex flex-col max-h-[85vh] overflow-hidden bg-card border-none shadow-elevated [&>button:first-of-type]:hidden">
 
         <DialogHeader className="flex flex-row justify-between items-center p-6 border-b border-border/10 space-y-0 text-left">
           <div className="flex items-center gap-4">
@@ -525,20 +525,21 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                 <p className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Carregando fontes mapeadas...</p>
               </div>
             ) : error ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center py-12">
-                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-2">
-                  <AlertTriangle className="w-8 h-8 text-red-500" />
+              <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center py-12 px-6">
+                <div className="w-20 h-20 bg-destructive/10 rounded-[24px] flex items-center justify-center mb-2 shadow-inner border border-destructive/20">
+                  <AlertTriangle className="w-10 h-10 text-destructive" strokeWidth={1.5} />
                 </div>
-                <div className="max-w-xs">
-                  <p className="text-base font-bold text-[#2C2C2E] mb-2">Ops! Algo deu errado.</p>
-                  <p className="text-[13px] text-gray-500">{error}</p>
+                <div className="max-w-sm">
+                  <p className="text-2xl font-light text-foreground mb-2">Ops! Algo deu errado.</p>
+                  <p className="text-sm font-medium text-muted-foreground">{error}</p>
                 </div>
-                <button
+                <Button
                   onClick={() => window.location.reload()}
-                  className="px-6 py-3 mt-2 bg-[#375DFB]/10 hover:bg-[#375DFB]/20 text-[#375DFB] rounded-full text-xs font-black uppercase tracking-widest transition-colors"
+                  variant="outline"
+                  className="mt-4 px-8 py-6 rounded-full border border-border/50 text-foreground font-black text-[11px] uppercase tracking-widest hover:bg-muted/50 transition-all shadow-sm"
                 >
                   Tentar novamente
-                </button>
+                </Button>
               </div>
             ) : (
               <>
@@ -650,20 +651,22 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                     </div>
                   </button>
                 </div>
+                {/* Condicional movida para aparecer o botão apenas se NÃO houver erro e se TERMINOU inicial */}
+                {!loadingInitial && !error && (
+                  <div className="mt-auto pt-4">
+                    <Button
+                      size="lg"
+                      onClick={iniciarColeta}
+                      disabled={selecionados.length === 0}
+                      className="w-full h-14 rounded-[16px] bg-primary text-primary-foreground font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    >
+                      <Database className="w-5 h-5" strokeWidth={2.5} />
+                      <span>INICIAR COLETA GLOBAL</span>
+                    </Button>
+                  </div>
+                )}
               </>
             )}
-
-            <div className="mt-auto pt-4">
-              <Button
-                size="lg"
-                onClick={iniciarColeta}
-                disabled={selecionados.length === 0 || loadingInitial}
-                className="w-full h-14 rounded-full font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-3 transition-all"
-              >
-                <Database className="w-5 h-5" strokeWidth={2.5} />
-                <span>INICIAR COLETA GLOBAL</span>
-              </Button>
-            </div>
           </div>
         )}
 
