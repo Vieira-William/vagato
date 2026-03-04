@@ -12,8 +12,12 @@ import json
 import os
 import re
 from datetime import datetime
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+try:
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.keys import Keys
+except ImportError:
+    By = None
+    Keys = None
 import time
 
 from .login_helper import criar_driver_com_perfil, garantir_login_linkedin
