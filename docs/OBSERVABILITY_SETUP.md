@@ -1,7 +1,19 @@
-# Observability Setup Log
+# PRD v7 — Observabilidade: Setup Completo
 
 ## Data: 04 de março de 2026
-## Status: Em andamento
+## Status: ✅ CONCLUÍDO
+
+---
+
+## Serviços Configurados
+
+| Serviço | Projeto | URL |
+|---------|---------|-----|
+| Sentry (Frontend) | vagas-frontend | https://ux-smart.sentry.io/projects/vagas-frontend/ |
+| Sentry (Backend) | vagas-backend | https://ux-smart.sentry.io/projects/vagas-backend/ |
+| PostHog | Vagas UX | https://app.posthog.com |
+| BetterStack | vagas-ux | https://uptime.betterstack.com/team/t510878 |
+| Status Page pública | vagas-ux | https://vagas-ux.betteruptime.com |
 
 ---
 
@@ -16,12 +28,12 @@
 - [x] Frontend: `vite.config.js` atualizado (sourcemap + sentryVitePlugin)
 - [x] Backend: `sentry-sdk[fastapi]` adicionado ao `requirements.txt`
 - [x] Backend: `main.py` refatorado (FastApiIntegration + environment + release)
-- [x] Backend: `middleware/sentry_middleware.py` criado
+- [x] Backend: `middleware/sentry_middleware.py` criado e registrado
 - [x] Backend: `/health/deep` endpoint criado
-- [x] Backend: `/debug-sentry` endpoint criado (REMOVER APÓS CONFIRMAR)
-- [ ] DSN Frontend: [PENDENTE — preencher após criar conta Sentry]
-- [ ] DSN Backend: [PENDENTE — preencher após criar conta Sentry]
-- [ ] Teste de erro: [PENDENTE — verificar no dashboard Sentry]
+- [x] Backend: `/debug-sentry` endpoint criado (remover após confirmar em prod)
+- [x] DSN Frontend configurado em `frontend/.env`
+- [x] DSN Backend configurado em `backend/.env`
+- [ ] Teste de erro: confirmar no Sentry dashboard após deploy em prod
 
 ---
 
@@ -31,37 +43,41 @@
 - [x] `src/lib/posthog.js` criado
 - [x] `initPostHog()` chamado em `main.jsx`
 - [x] `identifyUser()` / `resetPostHog()` integrados em `AuthContext.jsx`
-- [x] `trackEvent` inserido em pontos-chave (Match, Arsenal, Calendar)
-- [ ] API Key: [PENDENTE — preencher após criar conta PostHog]
-- [ ] Teste: eventos aparecendo no dashboard PostHog
+- [x] `trackEvent` inserido em `MatchPage.jsx` (vagas_carregadas, vagas_scraping_iniciado, vagas_scraping_concluido)
+- [x] `trackEvent` inserido em `vaga-card.jsx` (vaga_status_alterado, vaga_favorito_alterado, vaga_aplicar_clicado)
+- [x] `trackEvent` inserido em `CopyRow.jsx` (arsenal_campo_vazio_clicado, arsenal_campo_copiado, arsenal_link_aberto)
+- [x] `VITE_POSTHOG_KEY` configurado em `frontend/.env`
+- [ ] Teste: verificar eventos no PostHog Activity após deploy em prod
 
 ---
 
-## BetterUptime
+## BetterStack (Uptime)
 
-- [ ] Conta criada
-- [ ] Monitor 1 — Frontend: https://vagas-frontend.onrender.com (status: pendente)
-- [ ] Monitor 2 — API Backend: https://vagas-api-cbar.onrender.com/health (status: pendente)
-- [ ] Monitor 3 — Database: https://vagas-api-cbar.onrender.com/health/deep (status: pendente)
-- [ ] Alertas configurados: email
-- [ ] Status page criada: https://vagas-ux.betteruptime.com (pendente)
+- [x] Conta criada — team: t510878
+- [x] Monitor 1 — Frontend: https://vagas-frontend.onrender.com (ID: 4131366)
+- [x] Monitor 2 — API Health: https://vagas-api-cbar.onrender.com/health (ID: 4131394)
+- [x] Monitor 3 — DB Health: https://vagas-api-cbar.onrender.com/health/deep (ID: 4131400)
+- [x] Todos: check interval 3 min, alerta por e-mail
+- [x] Status Page criada: https://vagas-ux.betteruptime.com (ID: 239533)
+- [x] Status Page com os 3 monitores na estrutura
 
 ---
 
-## Variáveis de Ambiente para o Render (Produção)
+## Variáveis de Ambiente para o Render (Produção — PENDENTE DO USUÁRIO)
 
-Copiar e colar no Render Dashboard (Settings > Environment):
+Adicionar manualmente no Render Dashboard (Settings > Environment):
 
 ```
-# ── Backend (Web Service: vagas-api) ──
-SENTRY_DSN=[PREENCHER COM DSN REAL DO BACKEND]
+# ── Backend (Web Service: vagas-api-cbar) ──
+SENTRY_DSN=<copiar de backend/.env>
+SENTRY_AUTH_TOKEN=<copiar de backend/.env>
 ENVIRONMENT=production
 APP_VERSION=0.1.0
 
 # ── Frontend (Static Site: vagas-frontend) ──
-VITE_SENTRY_DSN=[PREENCHER COM DSN REAL DO FRONTEND]
-SENTRY_AUTH_TOKEN=[PREENCHER COM AUTH TOKEN DO SENTRY]
-VITE_POSTHOG_KEY=[PREENCHER COM API KEY DO POSTHOG]
+VITE_SENTRY_DSN=<copiar de frontend/.env>
+SENTRY_AUTH_TOKEN=<copiar de backend/.env>
+VITE_POSTHOG_KEY=<copiar de frontend/.env>
 VITE_POSTHOG_HOST=https://us.i.posthog.com
 ```
 
@@ -78,22 +94,20 @@ VITE_POSTHOG_HOST=https://us.i.posthog.com
 | `frontend/src/components/common/ErrorBoundary.jsx` | MODIFICADO |
 | `frontend/src/contexts/AuthContext.jsx` | MODIFICADO |
 | `frontend/vite.config.js` | MODIFICADO |
-| `frontend/.env` | MODIFICADO (placeholders) |
+| `frontend/.env` | MODIFICADO (DSNs reais) |
 | `frontend/.env.example` | CRIADO |
 | `backend/requirements.txt` | MODIFICADO |
 | `backend/app/main.py` | MODIFICADO |
 | `backend/app/middleware/sentry_middleware.py` | CRIADO |
-| `backend/.env` | MODIFICADO (placeholders) |
+| `backend/.env` | MODIFICADO (DSNs reais) |
 | `backend/.env.example` | MODIFICADO |
 
 ---
 
-## TODOs Pendentes
+## TODOs Pós-Deploy
 
-1. Preencher `VITE_SENTRY_DSN` no `frontend/.env` com o DSN real do projeto vagas-frontend no Sentry
-2. Preencher `SENTRY_DSN` no `backend/.env` com o DSN real do projeto vagas-backend no Sentry
-3. Preencher `VITE_POSTHOG_KEY` no `frontend/.env` com a API key do PostHog
-4. Adicionar todas as variáveis acima no Render Dashboard para produção
-5. Confirmar que `/debug-sentry` retorna 500 e aparece no Sentry, depois remover o endpoint
-6. Verificar eventos no PostHog Activity após navegar na app
-7. Confirmar 3 monitors verdes no BetterUptime
+- [ ] Adicionar variáveis no Render Dashboard (backend + frontend)
+- [ ] Confirmar que `GET /debug-sentry` retorna 500 e aparece no Sentry dashboard
+- [ ] Verificar eventos no PostHog Activity
+- [ ] Confirmar 3 monitors verdes no BetterStack
+- [ ] Remover endpoint `/debug-sentry` do `backend/app/main.py`
