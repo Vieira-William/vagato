@@ -128,4 +128,14 @@ export const linkedinService = {
   disconnect: () => api.delete('/linkedin/disconnect'),
 };
 
+export const googleTasksService = {
+  getLoginUrl: () => api.get('/google-tasks/login'),
+  getStatus: () => api.get('/google-tasks/status'),
+  disconnect: () => api.delete('/google-tasks/disconnect'),
+  getLists: () => api.get('/google-tasks/lists'),
+  getTasks: (listIds) => api.get('/google-tasks/tasks', { params: { list_ids: listIds.join(',') } }),
+  completeTask: (taskId, tasklistId) => api.patch(`/google-tasks/tasks/${taskId}/complete`, null, { params: { tasklist_id: tasklistId } }),
+  uncompleteTask: (taskId, tasklistId) => api.patch(`/google-tasks/tasks/${taskId}/uncomplete`, null, { params: { tasklist_id: tasklistId } }),
+};
+
 export default api;

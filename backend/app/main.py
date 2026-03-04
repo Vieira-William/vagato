@@ -11,7 +11,7 @@ from sqlalchemy import text, inspect
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(message)s")
 
 from .database import engine, Base, SessionLocal
-from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin, smart_emails
+from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin, smart_emails, google_tasks
 from .middleware.sentry_middleware import SentryUserMiddleware
 
 
@@ -216,6 +216,7 @@ app.include_router(calendar.router, prefix="/api")
 app.include_router(gmail.router, prefix="/api")
 app.include_router(linkedin.router, prefix="/api")
 app.include_router(smart_emails.router, prefix="/api")
+app.include_router(google_tasks.router, prefix="/api")
 
 
 @app.get("/")

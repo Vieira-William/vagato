@@ -27,10 +27,11 @@ import {
   ChevronLeft,
   Copy,
   Calendar,
-  Mail
+  Mail,
+  ListTodo
 } from 'lucide-react';
 import SlideInConfirm from '../components/SlideInConfirm';
-import { searchUrlsService, configService, calendarService, gmailService, linkedinService } from '../services/api';
+import { searchUrlsService, configService, calendarService, gmailService, linkedinService, googleTasksService } from '../services/api';
 import { urlBuilder } from '../utils/urlBuilder';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -109,6 +110,13 @@ export default function Configuracoes() {
   const [linkedinConnected, setLinkedinConnected] = useState(false);
   const [loadingLinkedin, setLoadingLinkedin] = useState(true);
   const [linkedinProfile, setLinkedinProfile] = useState(null);
+  // Google Tasks states
+  const [tasksConnected, setTasksConnected] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+  const [tasksLists, setTasksLists] = useState([]);
+  const [selectedTaskLists, setSelectedTaskLists] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('google_tasks_selected_lists') || '[]'); } catch { return []; }
+  });
 
   useEffect(() => {
     fetchConfigStatus();
@@ -119,6 +127,7 @@ export default function Configuracoes() {
     fetchCalendarStatus();
     fetchGmailStatus();
     fetchLinkedinStatus();
+    fetchTasksStatus();
 
     // Mensagem de retorno do OAuth
     const params = new URLSearchParams(window.location.search);
@@ -132,6 +141,10 @@ export default function Configuracoes() {
     }
     if (params.get('linkedin') === 'conectado') {
       setMessage({ type: 'success', text: 'LinkedIn conectado com sucesso!' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (params.get('google_tasks') === 'conectado') {
+      setMessage({ type: 'success', text: 'Google Tasks conectado com sucesso!' });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -275,6 +288,56 @@ export default function Configuracoes() {
     } catch {
       setMessage({ type: 'error', text: 'Erro ao desconectar LinkedIn.' });
     }
+  };
+
+  const fetchTasksStatus = async () => {
+    try {
+      setLoadingTasks(true);
+      const { data } = await googleTasksService.getStatus();
+      setTasksConnected(data.isConnected);
+      if (data.isConnected) {
+        const listsRes = await googleTasksService.getLists();
+        setTasksLists(listsRes.data?.lists || []);
+      }
+    } catch {
+      setTasksConnected(false);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  const handleConnectTasks = async () => {
+    try {
+      const { data } = await googleTasksService.getLoginUrl();
+      if (data.auth_url) window.location.href = data.auth_url;
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Erro ao iniciar autenticacao Google Tasks.';
+      setMessage({ type: 'error', text: msg });
+    }
+  };
+
+  const handleDisconnectTasks = async () => {
+    if (!confirm('Deseja realmente desconectar o Google Tasks?')) return;
+    try {
+      await googleTasksService.disconnect();
+      setTasksConnected(false);
+      setTasksLists([]);
+      setSelectedTaskLists([]);
+      localStorage.removeItem('google_tasks_selected_lists');
+      setMessage({ type: 'success', text: 'Google Tasks desconectado!' });
+    } catch {
+      setMessage({ type: 'error', text: 'Erro ao desconectar Google Tasks.' });
+    }
+  };
+
+  const handleToggleTaskList = (listId) => {
+    setSelectedTaskLists(prev => {
+      const next = prev.includes(listId) ? prev.filter(id => id !== listId) : [...prev, listId];
+      localStorage.setItem('google_tasks_selected_lists', JSON.stringify(next));
+      // Dispara storage event para TasksCard reagir
+      window.dispatchEvent(new StorageEvent('storage', { key: 'google_tasks_selected_lists' }));
+      return next;
+    });
   };
 
   const handleDisconnectGmail = async () => {
@@ -702,6 +765,62 @@ export default function Configuracoes() {
                           </Button>
                         )}
                       </div>
+                    </div>
+
+                    {/* Google Tasks */}
+                    <div className="bg-muted/20 rounded-xl border border-black/5 p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-[#1A73E8] flex items-center justify-center text-white shadow-md shadow-[#1A73E8]/20">
+                            <ListTodo className="w-5 h-5" strokeWidth={1.5} />
+                          </div>
+                          <div>
+                            <h4 className="text-[13px] font-bold text-foreground">Google Tasks</h4>
+                            <p className="text-[10px] text-muted-foreground font-medium">Sincronize tarefas do Google Tasks no dashboard</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/30 border border-black/5">
+                            <div className={cn("w-1.5 h-1.5 rounded-full", tasksConnected ? "bg-green-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" : "bg-muted-foreground/30")} />
+                            <span className={cn("text-[8px] font-black uppercase tracking-widest", tasksConnected ? 'text-green-500' : 'text-muted-foreground')}>
+                              {loadingTasks ? '...' : tasksConnected ? 'Conectado' : 'Desconectado'}
+                            </span>
+                          </div>
+                          {tasksConnected ? (
+                            <Button variant="ghost" onClick={handleDisconnectTasks} className="h-8 px-4 rounded-full text-red-500 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest">
+                              Desconectar
+                            </Button>
+                          ) : (
+                            <Button onClick={handleConnectTasks} className="h-8 px-5 rounded-full bg-[#1A73E8] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-widest shadow-md shadow-[#1A73E8]/20 transition-all active:scale-95">
+                              Conectar
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Seleção de listas (só quando conectado) */}
+                      {tasksConnected && tasksLists.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-black/5">
+                          <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">Listas visíveis no card</p>
+                          <div className="flex flex-wrap gap-2">
+                            {tasksLists.map(list => (
+                              <button
+                                key={list.id}
+                                onClick={() => handleToggleTaskList(list.id)}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all",
+                                  selectedTaskLists.includes(list.id)
+                                    ? "bg-[#1A73E8]/10 text-[#1A73E8] border-[#1A73E8]/30"
+                                    : "bg-muted/30 text-muted-foreground border-black/5 hover:bg-muted/50"
+                                )}
+                              >
+                                {selectedTaskLists.includes(list.id) ? '✓ ' : ''}{list.title}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

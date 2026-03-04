@@ -1,15 +1,28 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { ChevronRight, X, Check, CheckCircle2, Circle, ListTodo } from 'lucide-react';
+import { ChevronRight, X, Check, CheckCircle2, Circle, ListTodo, Loader2, Link2, Calendar, AlertTriangle, Clock } from 'lucide-react';
+import { googleTasksService } from '../../services/api';
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_TASKS_INITIAL = [
-  { id: '1', title: 'Preparar portfólio', dueDate: '07/03', list: 'Processo Seletivo', overdue: false },
-  { id: '2', title: 'Enviar teste técnico', dueDate: '08/03', list: 'Processo Seletivo', overdue: false },
-  { id: '3', title: 'Atualizar LinkedIn', dueDate: '05/03', list: 'Perfil Profissional', overdue: true },
-  { id: '4', title: 'Pesquisar empresa XYZ', dueDate: '10/03', list: 'Pesquisa', overdue: false },
-  { id: '5', title: 'Follow-up iFood', dueDate: '06/03', list: 'Processo Seletivo', overdue: false },
-];
+const LS_KEY = 'google_tasks_selected_lists';
+
+function getSelectedListIds() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function getUrgencyInfo(task) {
+  if (!task.due) return { label: 'Sem prazo', color: 'text-white/30', bg: 'bg-white/5', icon: Clock };
+  const now = new Date();
+  const due = new Date(task.due);
+  const diffDays = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return { label: `${Math.abs(diffDays)}d atrasada`, color: 'text-red-400', bg: 'bg-red-500/15', icon: AlertTriangle };
+  if (diffDays === 0) return { label: 'Hoje', color: 'text-amber-400', bg: 'bg-amber-500/15', icon: AlertTriangle };
+  if (diffDays === 1) return { label: 'Amanhã', color: 'text-amber-300', bg: 'bg-amber-500/10', icon: Clock };
+  if (diffDays <= 7) return { label: `Em ${diffDays} dias`, color: 'text-blue-300', bg: 'bg-blue-500/10', icon: Calendar };
+  return { label: `Em ${diffDays} dias`, color: 'text-white/40', bg: 'bg-white/5', icon: Calendar };
+}
 
 // ─── Single Draggable Card ────────────────────────────────────────────────────
 function SwipeableCard({ task, onSwipeRight, onSwipeLeft, style }) {
@@ -37,42 +50,63 @@ function SwipeableCard({ task, onSwipeRight, onSwipeLeft, style }) {
       whileTap={{ scale: 1.02 }}
     >
       {/* Card Content */}
-      <div className="w-full h-full bg-white/10 rounded-[20px] p-4 flex flex-col justify-between border border-white/10">
-        {/* Indicators */}
-        <div className="flex justify-between items-start">
-          <motion.div
-            style={{ opacity: leftOpacity }}
-            className="flex items-center gap-1 bg-red-500/80 text-white text-[10px] font-bold px-2 py-1 rounded-full"
-          >
-            <X className="w-3 h-3" />
-            SKIP
-          </motion.div>
-          <motion.div
-            style={{ opacity: rightOpacity }}
-            className="flex items-center gap-1 bg-green-500/80 text-white text-[10px] font-bold px-2 py-1 rounded-full"
-          >
-            <Check className="w-3 h-3" />
-            OK
-          </motion.div>
-        </div>
+      {(() => {
+        const urgency = getUrgencyInfo(task);
+        const UrgencyIcon = urgency.icon;
+        return (
+          <div className="w-full h-full bg-white/10 rounded-[20px] p-4 flex flex-col border border-white/10">
+            {/* Swipe Indicators */}
+            <div className="flex justify-between items-start mb-2">
+              <motion.div
+                style={{ opacity: leftOpacity }}
+                className="flex items-center gap-1 bg-red-500/80 text-white text-[10px] font-bold px-2 py-1 rounded-full"
+              >
+                <X className="w-3 h-3" />
+                SKIP
+              </motion.div>
+              <motion.div
+                style={{ opacity: rightOpacity }}
+                className="flex items-center gap-1 bg-green-500/80 text-white text-[10px] font-bold px-2 py-1 rounded-full"
+              >
+                <Check className="w-3 h-3" />
+                OK
+              </motion.div>
+            </div>
 
-        {/* Task Info */}
-        <div>
-          <p className="text-xs font-semibold text-white/90 leading-tight line-clamp-2 mb-2">
-            {task.title}
-          </p>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[9px] text-white/40 truncate">{task.list}</span>
-            <span
-              className={`text-[9px] font-semibold shrink-0 ${
-                task.overdue ? 'text-red-400' : 'text-white/50'
-              }`}
-            >
-              {task.overdue ? '⚠ ' : ''}{task.dueDate}
-            </span>
+            {/* Urgency Badge */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full ${urgency.bg} ${urgency.color}`}>
+                <UrgencyIcon className="w-2.5 h-2.5" strokeWidth={2} />
+                {urgency.label}
+              </span>
+            </div>
+
+            {/* Title */}
+            <p className="text-[13px] font-semibold text-white/90 leading-snug line-clamp-2">
+              {task.title}
+            </p>
+
+            {/* Notes */}
+            {task.notes && (
+              <p className="text-[10px] text-white/35 leading-relaxed mt-1.5 line-clamp-3">
+                {task.notes}
+              </p>
+            )}
+
+            {/* Spacer */}
+            <div className="flex-1 min-h-1" />
+
+            {/* Footer: list + date */}
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+              <span className="text-[9px] text-white/40 truncate">{task.list}</span>
+              <span className={`flex items-center gap-1 text-[9px] font-semibold shrink-0 ${task.overdue ? 'text-red-400' : 'text-white/50'}`}>
+                <Calendar className="w-2.5 h-2.5" strokeWidth={1.5} />
+                {task.overdue ? '⚠ ' : ''}{task.dueDate || '—'}
+              </span>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
     </motion.div>
   );
 }
@@ -134,7 +168,7 @@ function CardStack({ tasks, onSwipeRight, onSwipeLeft, swipeDir }) {
           className="absolute inset-0 flex flex-col items-center justify-center gap-2"
         >
           <Check className="w-8 h-8 text-green-400" strokeWidth={1.5} />
-          <p className="text-[10px] text-white/50 font-medium">Tudo feito! 🎉</p>
+          <p className="text-[10px] text-white/50 font-medium">Tudo feito!</p>
         </motion.div>
       )}
     </div>
@@ -150,7 +184,7 @@ function ExpandedTaskItem({ task, done, onToggle, index }) {
       transition={{ delay: index * 0.05, duration: 0.25 }}
       className="flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0"
     >
-      <button onClick={() => onToggle(task.id)} className="shrink-0">
+      <button onClick={() => onToggle(task)} className="shrink-0">
         {done
           ? <CheckCircle2 className="w-5 h-5 text-green-400" strokeWidth={1.5} />
           : <Circle className="w-5 h-5 text-white/30 hover:text-white/60 transition-colors" strokeWidth={1.5} />
@@ -163,7 +197,7 @@ function ExpandedTaskItem({ task, done, onToggle, index }) {
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-[9px] text-white/30 truncate">{task.list}</span>
           <span className={`text-[9px] shrink-0 ${task.overdue && !done ? 'text-red-400 font-semibold' : 'text-white/25'}`}>
-            {task.overdue && !done ? '⚠ ' : ''}{task.dueDate}
+            {task.overdue && !done ? '⚠ ' : ''}{task.dueDate || '—'}
           </span>
         </div>
       </div>
@@ -173,18 +207,71 @@ function ExpandedTaskItem({ task, done, onToggle, index }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TasksCard() {
-  const [tasks, setTasks] = useState(MOCK_TASKS_INITIAL);
+  const [tasks, setTasks] = useState([]);
   const [done, setDone] = useState([]);
   const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false);
   const swipeDir = useRef(null);
 
-  const handleSwipeRight = () => {
+  const fetchTasks = useCallback(async () => {
+    try {
+      const statusRes = await googleTasksService.getStatus();
+      const isConn = statusRes.data?.isConnected;
+      setConnected(isConn);
+
+      if (!isConn) {
+        setLoading(false);
+        return;
+      }
+
+      const listIds = getSelectedListIds();
+      if (listIds.length === 0) {
+        // Sem listas selecionadas — buscar todas
+        const listsRes = await googleTasksService.getLists();
+        const allIds = (listsRes.data?.lists || []).map(l => l.id);
+        if (allIds.length === 0) {
+          setLoading(false);
+          return;
+        }
+        const tasksRes = await googleTasksService.getTasks(allIds);
+        setTasks(tasksRes.data?.tasks || []);
+      } else {
+        const tasksRes = await googleTasksService.getTasks(listIds);
+        setTasks(tasksRes.data?.tasks || []);
+      }
+    } catch (err) {
+      console.error('[TasksCard] Erro ao buscar tarefas:', err);
+      setConnected(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+
+    // Reagir a mudanças no localStorage (quando Configurações altera seleção de listas)
+    const handleStorage = (e) => {
+      if (e.key === LS_KEY) fetchTasks();
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [fetchTasks]);
+
+  const handleSwipeRight = async () => {
     swipeDir.current = 1;
-    setTasks((prev) => {
-      const [first, ...rest] = prev;
-      setDone((d) => [...d, first]);
-      return rest;
-    });
+    const task = tasks[0];
+    if (!task) return;
+
+    setTasks((prev) => prev.slice(1));
+    setDone((d) => [...d, task]);
+
+    try {
+      await googleTasksService.completeTask(task.id, task.tasklist_id);
+    } catch (err) {
+      console.error('[TasksCard] Erro ao completar tarefa:', err);
+    }
   };
 
   const handleSwipeLeft = () => {
@@ -195,24 +282,76 @@ export default function TasksCard() {
     });
   };
 
-  const toggleDone = (id) => {
-    const inDone = done.find((t) => t.id === id);
+  const toggleDone = async (task) => {
+    const inDone = done.find((t) => t.id === task.id);
     if (inDone) {
-      setDone((d) => d.filter((t) => t.id !== id));
+      // Reverter para pendente
+      setDone((d) => d.filter((t) => t.id !== task.id));
       setTasks((prev) => [inDone, ...prev]);
+      try {
+        await googleTasksService.uncompleteTask(task.id, task.tasklist_id);
+      } catch (err) {
+        console.error('[TasksCard] Erro ao reverter tarefa:', err);
+      }
     } else {
-      const inTasks = tasks.find((t) => t.id === id);
+      const inTasks = tasks.find((t) => t.id === task.id);
       if (inTasks) {
         swipeDir.current = 1;
-        setTasks((prev) => prev.filter((t) => t.id !== id));
+        setTasks((prev) => prev.filter((t) => t.id !== task.id));
         setDone((d) => [...d, inTasks]);
+        try {
+          await googleTasksService.completeTask(task.id, task.tasklist_id);
+        } catch (err) {
+          console.error('[TasksCard] Erro ao completar tarefa:', err);
+        }
       }
     }
   };
 
-  const allTasks = [...tasks, ...done];
   const pending = tasks.length;
-  const total = allTasks.length;
+  const total = tasks.length + done.length;
+
+  // ─── Estado: Não conectado ──────────────────────────────────────────────
+  if (!loading && !connected) {
+    return (
+      <div className="bg-[#2C2C2E] rounded-[32px] shadow-soft border border-white/5 p-5 flex flex-col overflow-hidden">
+        <div className="flex justify-between items-start mb-3 shrink-0">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+            Tarefas
+          </span>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 py-6">
+          <ListTodo className="w-8 h-8 text-white/20" strokeWidth={1.5} />
+          <p className="text-[10px] text-white/40 text-center leading-relaxed">
+            Conecte o Google Tasks<br />nas Configurações
+          </p>
+          <a
+            href="/configuracoes"
+            className="flex items-center gap-1.5 text-[10px] font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            <Link2 className="w-3 h-3" />
+            Conectar
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Estado: Loading ─────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="bg-[#2C2C2E] rounded-[32px] shadow-soft border border-white/5 p-5 flex flex-col overflow-hidden">
+        <div className="flex justify-between items-start mb-3 shrink-0">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+            Tarefas
+          </span>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-5 h-5 text-white/30 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -224,9 +363,11 @@ export default function TasksCard() {
             <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">
               Tarefas
             </span>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">
-              {total - pending}/{total}
-            </span>
+            {total > 0 && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/10 text-white/70">
+                {total - pending}/{total}
+              </span>
+            )}
           </div>
           <button
             onClick={() => setExpanded(true)}
@@ -331,7 +472,7 @@ export default function TasksCard() {
               )}
 
               {/* Empty */}
-              {allTasks.length === 0 && (
+              {total === 0 && (
                 <div className="flex flex-col items-center justify-center py-8 gap-2">
                   <Check className="w-10 h-10 text-green-400" strokeWidth={1.5} />
                   <p className="text-sm text-white/50">Nenhuma tarefa!</p>
