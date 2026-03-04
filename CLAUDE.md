@@ -610,7 +610,20 @@ Os tools de Figma Dev Mode MCP disponíveis são **read-only** (leitura/inspeç�
 
 ## 🔑 VARIÁVEIS DE AMBIENTE
 
-### Backend (Render)
+### Backend (`backend/.env` — não commitado)
+```
+DATABASE_URL=...
+ANTHROPIC_API_KEY=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/calendar/callback
+GOOGLE_GMAIL_REDIRECT_URI=http://localhost:8000/api/gmail/callback
+LINKEDIN_CLIENT_ID=<ver backend/.env>
+LINKEDIN_CLIENT_SECRET=<ver backend/.env — nunca commitar>
+LINKEDIN_REDIRECT_URI=http://localhost:8000/api/linkedin/callback
+```
+
+### Backend (Render — dashboard)
 ```
 ANTHROPIC_API_KEY=<configurada no dashboard do Render — não commitar>
 DATABASE_URL=<configurada no dashboard do Render — não commitar>
@@ -621,6 +634,13 @@ PYTHON_VERSION=3.11.0
 ```
 VITE_API_URL=https://vagas-api-cbar.onrender.com
 ```
+
+### Frontend Dev Mode (`frontend/.env.local` — não commitado, no .gitignore)
+```
+VITE_DEV_MODE=true
+```
+> Bypassa Supabase auth e LoadingScreen (backend não precisa estar rodando).
+> Para produção/teste real: setar `false` ou deletar o arquivo.
 
 ---
 
@@ -638,11 +658,20 @@ python -m uvicorn app.main:app --reload
 cd frontend
 npm run dev
 # → http://localhost:5173
-
-# Login LinkedIn (quando cookies expirarem)
-cd backend && source venv/bin/activate
-python3 fazer_login.py
 ```
+
+### 🧪 Dev Mode (sem login, sem backend)
+Crie `frontend/.env.local` com:
+```
+VITE_DEV_MODE=true
+```
+Com esse flag ativo:
+- **AuthContext** injeta sessão fake (`dev@vagas.local`) — Supabase não é chamado
+- **App.jsx** pula a `LoadingScreen` (não tenta conectar ao backend)
+- Todas as rotas protegidas ficam acessíveis direto
+- O arquivo `.env.local` está no `.gitignore` — nunca vai para produção
+
+Para voltar ao fluxo real: `VITE_DEV_MODE=false` ou delete o `.env.local`.
 
 ---
 
