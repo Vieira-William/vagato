@@ -9,6 +9,7 @@ import UserProfileCard from '../components/analytics/UserProfileCard';
 import VagasDaSemanaCard from '../components/analytics/VagasDaSemanaCard';
 import SmartEmailsCard from '../components/analytics/SmartEmailsCard';
 import TasksCard from '../components/analytics/TasksCard';
+import VagasProgressPills from '../components/analytics/VagasProgressPills';
 import QuickAccessCard from '../components/arsenal/QuickAccessCard';
 import DashboardCalendar from '../components/calendar/DashboardCalendar';
 import { statsService } from '../services/api';
@@ -255,24 +256,7 @@ export default function Analytics() {
       <header className="shrink-0 mb-5 flex justify-between items-end">
         <div className="flex flex-col">
           <h1 className="text-4xl font-light tracking-tight text-foreground mb-2">Welcome in, William</h1>
-          <div className="flex items-end gap-1">
-            <div className="flex flex-col gap-1.5 min-w-fit">
-              <span className="text-[11px] text-foreground font-medium tracking-wide">Interviews</span>
-              <div className="flex items-center justify-center bg-foreground text-background text-[11px] font-normal rounded-[14px] h-[30px] px-5 shadow-sm">15%</div>
-            </div>
-            <div className="flex flex-col gap-1.5 min-w-fit">
-              <span className="text-[11px] text-foreground font-medium tracking-wide">Hired</span>
-              <div className="flex items-center justify-center bg-primary text-primary-foreground text-[11px] font-normal rounded-[14px] h-[30px] px-5 shadow-sm">15%</div>
-            </div>
-            <div className="flex flex-col gap-1.5 min-w-fit">
-              <span className="text-[11px] text-foreground font-medium tracking-wide">Project time</span>
-              <div className="flex items-center pl-5 bg-striped-delicate border border-border/50 text-foreground text-[11px] font-normal rounded-[14px] h-[30px] w-48 shadow-sm">60%</div>
-            </div>
-            <div className="flex flex-col gap-1.5 min-w-fit">
-              <span className="text-[11px] text-foreground font-medium tracking-wide">Output</span>
-              <div className="flex items-center justify-center bg-transparent border border-border/50 text-foreground text-[11px] font-medium rounded-[14px] h-[30px] px-5">10%</div>
-            </div>
-          </div>
+          <VagasProgressPills />
         </div>
 
         <div className="flex items-center gap-10 pb-2">

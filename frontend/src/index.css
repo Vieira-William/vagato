@@ -168,6 +168,12 @@
   }
 }
 
+/* ── Vagas Progress Pills: animação de listras diagonal no hover ── */
+@keyframes stripe-slide {
+  0%   { background-position: 0 0; }
+  100% { background-position: 11.31px 11.31px; }
+}
+
 /* Modern Scrollbar — Thin, overlay style */
 * {
   scrollbar-width: thin;
