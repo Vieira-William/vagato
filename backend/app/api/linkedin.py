@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
+from typing import Optional
 import os
 import json
 import secrets
@@ -36,7 +37,7 @@ def _get_credentials():
     return client_id, client_secret, redirect_uri
 
 
-def _load_token() -> dict | None:
+def _load_token() -> Optional[dict]:
     if not os.path.exists(TOKEN_PATH):
         return None
     try:
