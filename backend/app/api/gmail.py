@@ -15,6 +15,9 @@ from datetime import datetime, timezone
 _ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
 load_dotenv(_ENV_PATH)
 
+# Safety net: tolera escopos retornados maiores que os solicitados (ex: Calendar já autorizado)
+os.environ.setdefault('OAUTHLIB_RELAX_TOKEN_SCOPE', '1')
+
 router = APIRouter(tags=["Gmail"])
 
 # Escopo readonly — suficiente para leitura total de emails
@@ -110,7 +113,6 @@ async def gmail_auth_init():
 
     authorization_url, state = flow.authorization_url(
         access_type='offline',
-        include_granted_scopes='true',
         prompt='consent'
     )
 
