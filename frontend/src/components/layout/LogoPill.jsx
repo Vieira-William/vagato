@@ -10,6 +10,9 @@ export default function LogoPill() {
   // Reset hover when mode changes (button moves, mouseLeave won't fire)
   useEffect(() => { setHovered(false); }, [mode]);
 
+  const isTop = mode === 'topnav';
+  const ToggleIcon = isTop ? PanelLeft : PanelTop;
+
   return (
     <motion.button
       layoutId="logo-pill"
@@ -18,41 +21,35 @@ export default function LogoPill() {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       disabled={isMobile}
-      className={`relative flex items-center cursor-pointer transition-colors ${
-        mode === 'topnav'
-          ? 'justify-center px-4 h-8 bg-white/40 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-full shadow-sm hover:bg-white/60 dark:hover:bg-white/15'
+      className={`relative flex items-center gap-2 cursor-pointer transition-all ${
+        isTop
+          ? 'px-4 h-10 bg-white/40 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-full shadow-sm hover:bg-white/60 dark:hover:bg-white/15'
           : 'justify-start h-9'
       }`}
       whileHover={!isMobile ? { scale: 1.02 } : undefined}
       whileTap={!isMobile ? { scale: 0.95 } : undefined}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
-      <AnimatePresence mode="wait">
-        {hovered && !isMobile ? (
+      {/* Logo — sempre visível */}
+      <img
+        src={isTop ? '/logos/logo.png' : '/logos/logo_horizontal.png'}
+        alt="Vagas Logo"
+        className={`object-contain select-none pointer-events-none ${isTop ? 'h-[20px]' : 'h-9 max-w-[140px]'}`}
+      />
+
+      {/* Ícone toggle — aparece ao lado direito da logo no hover */}
+      <AnimatePresence>
+        {hovered && !isMobile && (
           <motion.div
-            key="icon"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.15 }}
-            className="flex items-center gap-2"
+            key="toggle-icon"
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 0.5, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="flex items-center overflow-hidden shrink-0"
           >
-            {mode === 'topnav'
-              ? <PanelLeft className="w-4 h-4 text-[#2C2C2E] dark:text-white/80" strokeWidth={1.5} />
-              : <PanelTop className="w-4 h-4 text-[#2C2C2E] dark:text-white/80" strokeWidth={1.5} />
-            }
+            <ToggleIcon className="w-4 h-4 text-[#2C2C2E] dark:text-white/80" strokeWidth={1.5} />
           </motion.div>
-        ) : (
-          <motion.img
-            key="logo"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            src={mode === 'topnav' ? '/logos/logo.png' : '/logos/logo_horizontal.png'}
-            alt="Vagas Logo"
-            className={`object-contain select-none pointer-events-none ${mode === 'topnav' ? 'h-[18px]' : 'h-9 max-w-[140px]'}`}
-          />
         )}
       </AnimatePresence>
     </motion.button>

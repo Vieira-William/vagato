@@ -167,18 +167,18 @@ export default function NavigationShell() {
           <div className={`flex items-center gap-1.5 ${!isTop ? 'px-1 pt-1' : ''}`}>
             <button
               onClick={toggleTheme}
-              className={`${baseIconBtn} w-9 h-9 ${inactiveIcon}`}
+              className={`${baseIconBtn} w-10 h-10 ${inactiveIcon}`}
             >
               {theme === 'dark' ? <Sun className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} /> : <Moon className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />}
             </button>
 
-            <button className={`${baseIconBtn} w-9 h-9 ${inactiveIcon}`}>
+            <button className={`${baseIconBtn} w-10 h-10 ${inactiveIcon}`}>
               <Bell className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
             </button>
 
             <NavLink
               to="/perfil"
-              className={({ isActive }) => `${baseIconBtn} w-9 h-9 ${isActive ? activeIcon : inactiveIcon}`}
+              className={({ isActive }) => `${baseIconBtn} w-10 h-10 ${isActive ? activeIcon : inactiveIcon}`}
             >
               <User className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
             </NavLink>
@@ -187,7 +187,7 @@ export default function NavigationShell() {
             <button
               onClick={() => signOut()}
               title="Sair da plataforma"
-              className={`${baseIconBtn} w-9 h-9 bg-red-500/10 border-red-500/20 text-red-600 hover:bg-red-500 hover:text-white dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white`}
+              className={`${baseIconBtn} w-10 h-10 bg-red-500/10 border-red-500/20 text-red-600 hover:bg-red-500 hover:text-white dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white`}
             >
               <LogOut className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
             </button>
