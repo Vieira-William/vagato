@@ -2,10 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone
 import os
+import logging
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
 from sqlalchemy import text, inspect
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(message)s")
 
 from .database import engine, Base, SessionLocal
 from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin, smart_emails

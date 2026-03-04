@@ -67,6 +67,15 @@ JOB_KEYWORDS = {
         'não selecionado', 'encerrado', 'negativa',
         'linkedin', 'glassdoor', 'gupy', 'lever', 'greenhouse',
         'workable', 'indeed', 'catho', 'infojobs', 'vagas.com',
+        # Stems para cobrir variações
+        'document',          # stem: documentação, documentos, documento
+        'encerr',            # stem: encerramento, encerrado, encerrada
+        'participação', 'participacao',
+        'agradecer', 'agradecemos',
+        'obrigado pela',
+        'convocação', 'convocacao',
+        'exame admissional',
+        'envio urgente',
     ],
     'en': [
         'application', 'applied', 'applying',
@@ -80,6 +89,10 @@ JOB_KEYWORDS = {
         'onsite', 'on-site', 'panel interview',
         'background check', 'reference check',
         'start date', 'joining date',
+        'opportunity', 'position', 'role',
+        'documents', 'opening', 'vacancy',
+        'we appreciate', 'thank you for your interest',
+        'thank you for applying',
     ]
 }
 
@@ -200,6 +213,9 @@ def _pre_filter(emails: List[Dict]) -> List[Dict]:
         searchable = f"{email.get('subject', '')} {email.get('snippet', '')} {email.get('body_text', '')}".lower()
         if any(kw in searchable for kw in ALL_KEYWORDS):
             filtered.append(email)
+        else:
+            logger.debug(f"[Pre-filtro] REJEITADO: '{email.get('subject', '?')}' de {email.get('from_name', '?')}")
+    logger.info(f"[Pre-filtro] {len(filtered)}/{len(emails)} emails passaram")
     return filtered
 
 
@@ -235,13 +251,21 @@ def _keyword_fallback(emails: List[Dict]) -> List[Dict]:
             cat, priority = "INTERVIEW_SCHEDULED", "high"
         elif any(kw in searchable for kw in ['aprovado', 'avançou', 'congratulations', 'moved forward', 'próxima fase']):
             cat, priority = "STAGE_APPROVED", "high"
+        elif any(kw in searchable for kw in ['agradecer', 'gostamos do seu perfil', 'ficamos impressionados', 'we were impressed']):
+            cat, priority = "POSITIVE_FEEDBACK", "medium"
         elif any(kw in searchable for kw in ['proposta', 'offer', 'oferta', 'compensation']):
             cat, priority = "OFFER", "urgent"
-        elif any(kw in searchable for kw in ['não selecionado', 'regret', 'unfortunately', 'encerrado']):
+        elif any(kw in searchable for kw in ['document', 'documentação', 'admissão', 'admissao', 'exame admissional', 'convocação', 'convocacao']):
+            cat, priority = "DOCUMENTS_REQUEST", "medium"
+        elif any(kw in searchable for kw in ['não selecionado', 'regret', 'unfortunately', 'encerr', 'negativa',
+                                              'obrigado pela sua participação', 'obrigado pela sua participacao',
+                                              'agradecemos seu interesse', 'we appreciate your interest', 'not moving forward']):
             cat, priority = "REJECTION", "low"
         elif any(kw in searchable for kw in ['teste técnico', 'technical challenge', 'take-home', 'assessment', 'case']):
             cat, priority = "TECHNICAL_CHALLENGE", "high"
-        # APPLICATION_CONFIRMED (confirmações automáticas) são baixo sinal → não mostrar
+        else:
+            # Catch-all: email passou pré-filtro (contém keywords de processo seletivo)
+            cat, priority = "FOLLOW_UP_NEEDED", "medium"
 
         if cat:
             classified.append({
@@ -626,6 +650,7 @@ class EmailClassifierService:
         """Executa pipeline completo: Gmail → pre-filtro → LLM → cache."""
         # Fetch Gmail
         raw_emails = self._fetch_gmail_emails()
+        logger.info(f"[SmartEmails Pipeline] Gmail fetch: {len(raw_emails)} emails brutos")
         if not raw_emails:
             return {
                 "emails": [],
@@ -641,6 +666,7 @@ class EmailClassifierService:
         pending = len(raw_emails) - len(candidates)
 
         if not candidates:
+            logger.warning("[SmartEmails Pipeline] Nenhum email passou no pre-filtro")
             return {
                 "emails": [],
                 "urgent_count": 0,
@@ -651,7 +677,10 @@ class EmailClassifierService:
             }
 
         # Classificar (LLM ou fallback)
+        logger.info(f"[SmartEmails Pipeline] Classificando via {'LLM (Claude Haiku)' if self.llm_enabled else 'keyword fallback'}")
         classified = self._classify_with_llm(candidates)
+        cats = ', '.join(set(e.get('category', '?') for e in classified)) if classified else 'nenhuma'
+        logger.info(f"[SmartEmails Pipeline] Resultado: {len(classified)} relevantes | Categorias: {cats}")
 
         # Salvar no cache
         if classified:

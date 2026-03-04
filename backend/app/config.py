@@ -3,8 +3,13 @@ Configuracoes da aplicacao.
 Carrega variaveis de ambiente e define settings globais.
 """
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from dotenv import load_dotenv
+
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(_BACKEND_DIR / ".env", override=True)
 
 
 class Settings(BaseSettings):
@@ -34,8 +39,6 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./data/vagas.db"
 
     class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
         extra = "ignore"
 
 
