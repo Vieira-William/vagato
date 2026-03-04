@@ -41,3 +41,4 @@ bcrypt
 python-jose[cryptography]
 python-multipart
 pyarrow
+pdfplumber
