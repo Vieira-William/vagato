@@ -6,6 +6,9 @@ import {
   Monitor
 } from 'lucide-react';
 import UserProfileCard from '../components/analytics/UserProfileCard';
+import VagasDaSemanaCard from '../components/analytics/VagasDaSemanaCard';
+import SmartEmailsCard from '../components/analytics/SmartEmailsCard';
+import TasksCard from '../components/analytics/TasksCard';
 import QuickAccessCard from '../components/arsenal/QuickAccessCard';
 import DashboardCalendar from '../components/calendar/DashboardCalendar';
 import { statsService } from '../services/api';
@@ -309,12 +312,12 @@ export default function Analytics() {
         <div className="row-span-1 overflow-hidden rounded-[32px] shadow-soft bg-card backdrop-blur-lg transition-all hover:bg-card/80 border border-border/10">
           <UserProfileCard user={{ nome: 'William Marangon', profissao: 'Senior UX/UI Specialist' }} />
         </div>
-        <ProgressCard stats={stats} />
+        <VagasDaSemanaCard />
         <TimeTrackerCard />
-        <OnboardingCard />
+        <SmartEmailsCard />
         <QuickAccessCard />
         <DashboardCalendar />
-        <DarkTasksCard />
+        <TasksCard />
       </main>
     </div>
   );
