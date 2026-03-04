@@ -42,3 +42,4 @@ python-jose[cryptography]
 python-multipart
 pyarrow
 pdfplumber
+anthropic>=0.40.0

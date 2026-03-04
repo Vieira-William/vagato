@@ -8,7 +8,7 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 from sqlalchemy import text, inspect
 
 from .database import engine, Base, SessionLocal
-from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin
+from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin, smart_emails
 from .middleware.sentry_middleware import SentryUserMiddleware
 
 
@@ -212,6 +212,7 @@ app.include_router(search_urls.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
 app.include_router(gmail.router, prefix="/api")
 app.include_router(linkedin.router, prefix="/api")
+app.include_router(smart_emails.router, prefix="/api")
 
 
 @app.get("/")

@@ -115,6 +115,11 @@ export const gmailService = {
   disconnect: () => api.delete('/gmail/disconnect'),
 };
 
+export const smartEmailsService = {
+  get: () => api.get('/smart-emails/'),
+  refresh: () => api.post('/smart-emails/refresh'),
+};
+
 export const linkedinService = {
   getLoginUrl: () => api.get('/linkedin/login'),
   getStatus: () => api.get('/linkedin/status'),

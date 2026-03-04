@@ -319,6 +319,38 @@ class ValidacaoAuditoria(Base):
         return f"<ValidacaoAuditoria(id={self.id}, resultado='{self.resultado}', score={self.score_confianca})>"
 
 
+class SmartEmailCache(Base):
+    """Cache de e-mails classificados pela IA para o card Smart Emails do Dashboard."""
+    __tablename__ = "smart_emails_cache"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    message_id = Column(String(255), unique=True, nullable=False)
+    thread_id = Column(String(255))
+    category = Column(String(50), nullable=False)      # INTERVIEW_SCHEDULED, STAGE_APPROVED, etc.
+    priority = Column(String(20), nullable=False)       # urgent, high, medium, low
+    company_name = Column(String(255))
+    job_title = Column(String(255))
+    summary = Column(Text)                              # Resumo gerado pela IA
+    action_required = Column(Text)                      # Ação necessária (ou null)
+    deadline = Column(DateTime, nullable=True)          # Prazo (ISO datetime ou null)
+    sentiment = Column(String(20))                      # positive, neutral, negative
+    from_name = Column(String(255))
+    from_email = Column(String(255))
+    subject = Column(Text)
+    received_at = Column(DateTime)
+    is_unread = Column(Boolean, default=True)
+    classified_at = Column(DateTime, server_default=func.now())
+    expires_at = Column(DateTime, nullable=False)       # Cache TTL (6 horas)
+
+    __table_args__ = (
+        Index("idx_smart_priority", "priority"),
+        Index("idx_smart_expires", "expires_at"),
+    )
+
+    def __repr__(self):
+        return f"<SmartEmailCache(id={self.id}, company='{self.company_name}', priority='{self.priority}')>"
+
+
 class ConfiguracaoIA(Base):
     """Configurações globais e controle de custos da IA."""
     __tablename__ = "configuracao_ia"
