@@ -32,7 +32,7 @@ function getPillCSS(style, isHovered) {
       return { ...base, backgroundColor: isHovered ? '#2a2a4e' : '#1a1a2e', color: '#FFFFFF' };
 
     case 'accent':
-      return { ...base, backgroundColor: isHovered ? '#FCD34D' : '#FBBF24', color: '#1a1a2e' };
+      return { ...base, backgroundColor: isHovered ? '#4338CA' : '#4F46E5', color: '#FFFFFF' };
 
     case 'hatched':
       return {
@@ -192,19 +192,20 @@ export default function VagasProgressPills({ data = MOCK, loading = false }) {
     <div ref={ref} className="flex flex-col gap-2 w-full">
 
       {/* ── Camada de Labels ─────────────────────────────────────────────── */}
-      <div className="flex w-full">
+      <div className="flex w-full" style={{ gap: '6px' }}>
         {arranged.map((pill, i) => (
           <motion.span
             key={pill.key}
             initial={{ opacity: 0, y: 8 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.1 + i * 0.12, duration: 0.4, ease: 'easeOut' }}
-            className="text-center px-1 overflow-hidden text-ellipsis whitespace-nowrap transition-all duration-200"
+            className="px-1 whitespace-nowrap transition-all duration-200"
             style={{
               flex: pill.percent,
               fontSize: '12px',
               fontWeight: hoveredKey === pill.key ? 700 : 500,
               color: hoveredKey === pill.key ? '#1a1a2e' : '#4b5563',
+              textAlign: i === 0 ? 'left' : i === arranged.length - 1 ? 'right' : 'center',
             }}
           >
             {pill.label}
@@ -215,23 +216,17 @@ export default function VagasProgressPills({ data = MOCK, loading = false }) {
       {/* ── Camada de Pills ──────────────────────────────────────────────── */}
       {/*  SEM overflow-hidden no wrapper — cada pill gerencia seu próprio    */}
       {/*  border-radius para o tooltip não ser clipado                       */}
-      <div className="flex w-full">
+      <div className="flex w-full" style={{ gap: '6px' }}>
         {arranged.map((pill, i) => {
-          const isFirst = i === 0;
-          const isLast = i === arranged.length - 1;
           const isHovered = hoveredKey === pill.key;
           const isOtherHovered = hoveredKey !== null && !isHovered;
 
-          const borderRadius = isFirst
-            ? '22px 0 0 22px'
-            : isLast
-              ? '0 22px 22px 0'
-              : '0';
+          const borderRadius = '22px';
 
           const pillCSS = {
             ...getPillCSS(pill.style, isHovered),
             borderRadius,
-            transform: isHovered ? 'scaleY(1.08)' : 'scaleY(1)',
+            transform: isHovered ? 'scale(1.04)' : 'scale(1)',
             boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.12)' : 'none',
             opacity: isOtherHovered ? 0.55 : 1,
             filter: isOtherHovered ? 'brightness(0.92)' : 'none',
