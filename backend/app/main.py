@@ -248,8 +248,3 @@ def deep_health_check():
     }
 
 
-@app.get("/debug-sentry")
-def trigger_sentry_error():
-    """Endpoint temporário para testar integração Sentry. REMOVER APÓS CONFIRMAR."""
-    raise ZeroDivisionError("Sentry test error from vagas-backend — pode apagar este endpoint")
-
