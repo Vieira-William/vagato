@@ -18,7 +18,11 @@ export default function LogoPill() {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       disabled={isMobile}
-      className="relative flex items-center justify-center px-4 h-8 bg-white/40 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-full shadow-sm cursor-pointer hover:bg-white/60 dark:hover:bg-white/15 transition-colors"
+      className={`relative flex items-center cursor-pointer transition-colors ${
+        mode === 'topnav'
+          ? 'justify-center px-4 h-8 bg-white/40 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-full shadow-sm hover:bg-white/60 dark:hover:bg-white/15'
+          : 'justify-start h-9'
+      }`}
       whileHover={!isMobile ? { scale: 1.02 } : undefined}
       whileTap={!isMobile ? { scale: 0.95 } : undefined}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -39,16 +43,16 @@ export default function LogoPill() {
             }
           </motion.div>
         ) : (
-          <motion.span
-            key="text"
+          <motion.img
+            key="logo"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="font-semibold text-[#2C2C2E] dark:text-white/90 text-sm tracking-wide select-none"
-          >
-            Vagas
-          </motion.span>
+            src={mode === 'topnav' ? '/logos/logo.png' : '/logos/logo_horizontal.png'}
+            alt="Vagas Logo"
+            className={`object-contain select-none pointer-events-none ${mode === 'topnav' ? 'h-[18px]' : 'h-9 max-w-[140px]'}`}
+          />
         )}
       </AnimatePresence>
     </motion.button>

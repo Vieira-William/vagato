@@ -82,7 +82,7 @@ export default function NavigationShell() {
         }}
       >
         {/* === LOGO ZONE === */}
-        <div className={`shrink-0 pointer-events-auto ${isTop ? 'flex items-center' : 'flex items-center justify-center px-4 pt-5 pb-3'}`}>
+        <div className={`shrink-0 pointer-events-auto ${isTop ? 'flex items-center' : 'flex items-center justify-start px-4 pt-5 pb-5'}`}>
           <LogoPill />
         </div>
 
@@ -94,7 +94,7 @@ export default function NavigationShell() {
           className={`
             relative flex pointer-events-auto
             ${isTop
-              ? 'flex-row items-center gap-1 bg-white/40 backdrop-blur-lg border border-white/40 rounded-full shadow-sm px-1 h-8'
+              ? 'flex-row items-center gap-1 bg-white/40 backdrop-blur-lg border border-white/40 rounded-full shadow-sm px-1.5 h-11'
               : 'flex-col gap-1 flex-1 px-3 py-2'
             }
           `}
@@ -118,7 +118,7 @@ export default function NavigationShell() {
                   className={
                     `relative z-10 flex items-center whitespace-nowrap transition-colors duration-300 tracking-wide
                     ${isTop
-                      ? `px-4 h-6 rounded-full text-[12px] ${isActive ? 'text-white font-medium' : 'text-gray-500 font-light hover:text-[#2C2C2E]'}`
+                      ? `px-5 h-9 rounded-full text-[13px] ${isActive ? 'text-white font-semibold' : 'text-gray-600 font-normal hover:text-[#374151]'}`
                       : `gap-3 px-4 py-2.5 rounded-xl text-[13px] ${isActive ? 'text-white font-medium' : 'text-gray-700 dark:text-white/80 font-light hover:text-[#2C2C2E] dark:hover:text-white hover:bg-white/30 dark:hover:bg-white/10'}`
                     }`
                   }
@@ -155,41 +155,41 @@ export default function NavigationShell() {
             to="/configuracoes"
             className={({ isActive }) =>
               isTop
-                ? `flex items-center gap-1.5 px-3 h-8 backdrop-blur-lg rounded-full shadow-sm transition-all text-[12px] font-light ${isActive ? activeIcon : inactiveIcon}`
+                ? `flex items-center gap-2 px-4 h-10 backdrop-blur-lg rounded-full shadow-sm transition-all text-[13px] font-normal ${isActive ? activeIcon : inactiveIcon}`
                 : `flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-light transition-all ${isActive ? 'bg-[#375DFB] text-white shadow-md' : 'text-gray-700 dark:text-white/70 hover:bg-white/30 dark:hover:bg-white/5'
                 }`
             }
           >
-            <Settings className={isTop ? "w-3.5 h-3.5" : "w-4 h-4"} strokeWidth={1.5} />
+            <Settings className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
             <span>Configurações</span>
           </NavLink>
 
           <div className={`flex items-center gap-1.5 ${!isTop ? 'px-1 pt-1' : ''}`}>
             <button
               onClick={toggleTheme}
-              className={`${baseIconBtn} ${isTop ? 'w-8 h-8' : 'w-9 h-9'} ${inactiveIcon}`}
+              className={`${baseIconBtn} w-9 h-9 ${inactiveIcon}`}
             >
-              {theme === 'dark' ? <Sun className={isTop ? "w-3.5 h-3.5" : "w-4 h-4"} strokeWidth={1.5} /> : <Moon className={isTop ? "w-3.5 h-3.5" : "w-4 h-4"} strokeWidth={1.5} />}
+              {theme === 'dark' ? <Sun className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} /> : <Moon className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />}
             </button>
 
-            <button className={`${baseIconBtn} ${isTop ? 'w-8 h-8' : 'w-9 h-9'} ${inactiveIcon}`}>
-              <Bell className={isTop ? "w-3.5 h-3.5" : "w-4 h-4"} strokeWidth={1.5} />
+            <button className={`${baseIconBtn} w-9 h-9 ${inactiveIcon}`}>
+              <Bell className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
             </button>
 
             <NavLink
               to="/perfil"
-              className={({ isActive }) => `${baseIconBtn} ${isTop ? 'w-8 h-8' : 'w-9 h-9'} ${isActive ? activeIcon : inactiveIcon}`}
+              className={({ isActive }) => `${baseIconBtn} w-9 h-9 ${isActive ? activeIcon : inactiveIcon}`}
             >
-              <User className={isTop ? "w-3.5 h-3.5" : "w-4 h-4"} strokeWidth={1.5} />
+              <User className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
             </NavLink>
 
             {/* Logout Supabase via AuthContext */}
             <button
               onClick={() => signOut()}
               title="Sair da plataforma"
-              className={`${baseIconBtn} ${isTop ? 'w-8 h-8' : 'w-9 h-9'} bg-red-500/10 border-red-500/20 text-red-600 hover:bg-red-500 hover:text-white dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white`}
+              className={`${baseIconBtn} w-9 h-9 bg-red-500/10 border-red-500/20 text-red-600 hover:bg-red-500 hover:text-white dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white`}
             >
-              <LogOut className={isTop ? "w-3.5 h-3.5" : "w-4 h-4"} strokeWidth={1.5} />
+              <LogOut className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
             </button>
           </div>
         </div>
