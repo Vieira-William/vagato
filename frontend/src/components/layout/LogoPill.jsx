@@ -37,7 +37,7 @@ export default function LogoPill({ showToggle = false }) {
       <img
         src={isTop ? '/logos/logo.png' : '/logos/logo_horizontal.png'}
         alt="Vagas Logo"
-        className={`object-contain select-none pointer-events-none ${isTop ? 'h-[20px]' : 'h-9 max-w-[140px]'}`}
+        className={`object-contain select-none pointer-events-none ${isTop ? 'h-[16px]' : 'h-9 max-w-[140px]'}`}
       />
 
       {/* Ícone toggle — aparece ao lado direito da logo */}

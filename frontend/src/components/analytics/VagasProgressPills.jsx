@@ -18,7 +18,7 @@ const PRIORITY = { entrevista: 4, aplicadas: 3, vistas: 2, descartadas: 1 };
 // ─── Estilo de cada rank ────────────────────────────────────────────────────────
 function getPillCSS(style, isHovered) {
   const base = {
-    height: '44px',
+    height: '30px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -157,8 +157,8 @@ function PillsSkeleton() {
       <div
         className="animate-pulse w-full"
         style={{
-          height: '44px',
-          borderRadius: '22px',
+          height: '30px',
+          borderRadius: '15px',
           background: 'linear-gradient(90deg, #e5e7eb 25%, #d1d5db 50%, #e5e7eb 75%)',
           backgroundSize: '200% 100%',
         }}
@@ -179,7 +179,7 @@ export default function VagasProgressPills({ data = MOCK, loading = false }) {
     return (
       <div
         className="flex items-center justify-center w-full"
-        style={{ height: '44px', borderRadius: '22px', backgroundColor: '#f3f4f6' }}
+        style={{ height: '30px', borderRadius: '15px', backgroundColor: '#f3f4f6' }}
       >
         <span style={{ fontSize: '13px', color: '#9ca3af' }}>Nenhuma vaga processada ainda</span>
       </div>
@@ -221,7 +221,7 @@ export default function VagasProgressPills({ data = MOCK, loading = false }) {
           const isHovered = hoveredKey === pill.key;
           const isOtherHovered = hoveredKey !== null && !isHovered;
 
-          const borderRadius = '22px';
+          const borderRadius = '15px';
 
           const pillCSS = {
             ...getPillCSS(pill.style, isHovered),
@@ -261,7 +261,7 @@ export default function VagasProgressPills({ data = MOCK, loading = false }) {
                   onMouseEnter={() => setHoveredKey(pill.key)}
                   onMouseLeave={() => setHoveredKey(null)}
                 >
-                  <span style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
                     {pill.percent}%
                   </span>
                 </div>

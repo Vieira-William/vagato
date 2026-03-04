@@ -13,6 +13,8 @@ import VagasProgressPills from '../components/analytics/VagasProgressPills';
 import QuickAccessCard from '../components/arsenal/QuickAccessCard';
 import DashboardCalendar from '../components/calendar/DashboardCalendar';
 import { statsService } from '../services/api';
+import { useLayoutMode } from '../contexts/LayoutModeContext';
+import useVagatoEasterEgg from '../hooks/useVagatoEasterEgg';
 
 // ─── Dados Mock para os Cards Bento ─────────────────────────────────────────
 
@@ -225,8 +227,13 @@ function DarkTasksCard() {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function Analytics() {
+  const { mode } = useLayoutMode();
+  const isTop = mode === 'topnav';
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Easter Egg sonoro — digitar V-A-G-A-T-O toca miado de gato
+  useVagatoEasterEgg();
 
   useEffect(() => {
     (async () => {
@@ -294,14 +301,21 @@ export default function Analytics() {
       {/* 2. BENTO GRID */}
       <main className="flex-1 min-h-0 grid grid-cols-4 grid-rows-[minmax(0,40%)_1fr] gap-4">
         <div className="row-span-1 relative rounded-[32px] shadow-soft bg-card backdrop-blur-lg transition-all hover:bg-card/80 border border-border/10">
-          {/* Easter Egg — Mascote espiando atrás da borda esquerda do card */}
-          <img
-            src="/logos/logo_mascoteescondido.png"
-            alt=""
-            aria-hidden="true"
-            className="absolute pointer-events-none select-none z-[1] w-[55px] md:w-[65px] lg:w-[75px]"
-            style={{ top: '40%', left: '-28px', transform: 'translateY(-50%)' }}
-          />
+          {/* Easter Egg — Mascote "segurando" o card (apenas TopNav) */}
+          {isTop && (
+            <img
+              src="/logos/logo_mascoteescondido.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute pointer-events-none select-none z-[3] transition-opacity duration-500"
+              style={{
+                top: '12%',
+                right: '100%',
+                marginRight: '-8px',
+                width: 'clamp(28px, 3vw, 40px)',
+              }}
+            />
+          )}
           <div className="relative z-[2] w-full h-full overflow-hidden rounded-[32px]">
             <UserProfileCard user={{ nome: 'William Marangon', profissao: 'Senior UX/UI Specialist' }} />
           </div>

@@ -46,6 +46,7 @@ export default function NavigationShell() {
 
   const isTop = mode === 'topnav';
   const [sidebarHovered, setSidebarHovered] = useState(false);
+  const [muted, setMuted] = useState(false);
 
   // Dropdown position helper (TopNav: below, Sidebar: above)
   const dropdownBase = `absolute left-1/2 -translate-x-1/2 z-50 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-300 ease-out`;
@@ -210,15 +211,24 @@ export default function NavigationShell() {
               </div>
             </div>
 
-            {/* ── Notificações + Silenciar dropdown ───────────────── */}
+            {/* ── Notificações + Silenciar/Ativar dropdown ──────────── */}
             <div className="relative group">
               <button className={`${baseIconBtn} w-10 h-10 ${inactiveIcon}`}>
-                <Bell className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
+                {muted
+                  ? <BellOff className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
+                  : <Bell className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
+                }
               </button>
               <div className={dropdownPos}>
-                <button className="flex items-center gap-1.5 px-3 py-2 bg-white/90 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-full shadow-lg border border-white/50 dark:border-white/10 text-[11px] font-medium text-gray-600 dark:text-white/70 hover:bg-white hover:text-[#2C2C2E] dark:hover:bg-[#3C3C3E] dark:hover:text-white whitespace-nowrap transition-all duration-200">
-                  <BellOff className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  Silenciar
+                <button
+                  onClick={() => setMuted(!muted)}
+                  title={muted ? "Ativar notificações" : "Silenciar notificações"}
+                  className={`${baseIconBtn} w-10 h-10 bg-white/90 dark:bg-[#2C2C2E]/95 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg text-gray-600 dark:text-white/70 hover:bg-white hover:text-[#2C2C2E] dark:hover:bg-[#3C3C3E] dark:hover:text-white transition-all duration-200`}
+                >
+                  {muted
+                    ? <Bell className="w-5 h-5" strokeWidth={1.5} />
+                    : <BellOff className="w-5 h-5" strokeWidth={1.5} />
+                  }
                 </button>
               </div>
             </div>
@@ -235,10 +245,9 @@ export default function NavigationShell() {
                 <button
                   onClick={() => signOut()}
                   title="Sair da plataforma"
-                  className="flex items-center gap-1.5 px-3 py-2 bg-red-50/90 dark:bg-red-500/10 backdrop-blur-xl rounded-full shadow-lg border border-red-200/50 dark:border-red-500/20 text-[11px] font-medium text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white whitespace-nowrap transition-all duration-200"
+                  className={`${baseIconBtn} w-10 h-10 bg-red-50/90 dark:bg-red-500/10 backdrop-blur-xl border border-red-200/50 dark:border-red-500/20 shadow-lg text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white transition-all duration-200`}
                 >
-                  <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  Sair
+                  <LogOut className="w-5 h-5" strokeWidth={1.5} />
                 </button>
               </div>
             </div>
