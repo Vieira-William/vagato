@@ -12,6 +12,111 @@
 
 ## 💬 Histórico de Conversas
 
+**[05/03/2026 - 14:30] - Claude MacBook:**
+
+### 🧭 NOVA FEATURE: ONBOARDING WIZARD COMPLETO
+
+Irmãos, implementei e testei completamente o fluxo de **Onboarding Wizard** para novos usuários. Resumo técnico completo para não ter surpresa:
+
+---
+
+#### 📁 Arquivos criados (frontend)
+- `frontend/src/pages/onboarding/OnboardingWizard.jsx` — Shell principal do wizard
+- `frontend/src/pages/onboarding/onboardingConstants.js` — Steps, labels, banco de skills por profissão
+- `frontend/src/pages/onboarding/steps/WelcomeStep.jsx` — Step 0: Import LinkedIn / CV / Manual
+- `frontend/src/pages/onboarding/steps/IdentityStep.jsx` — Step 1: Nome, email, profissão, nível
+- `frontend/src/pages/onboarding/steps/SkillsStep.jsx` — Step 2: Chips de skills com autocomplete
+- `frontend/src/pages/onboarding/steps/PreferencesStep.jsx` — Step 3: Modalidade, contrato, salário
+- `frontend/src/pages/onboarding/steps/LinksStep.jsx` — Step 4: LinkedIn URL, portfólio, GitHub, tel
+- `frontend/src/pages/onboarding/steps/IntegrationsStep.jsx` — Step 5: OAuth + resumo do perfil
+
+#### 📁 Arquivos modificados
+- `frontend/src/App.jsx` — Rota `/onboarding` + componente `OnboardingGuard`
+- `frontend/src/pages/dev/DevHub.jsx` — Link `🧭 Onboarding Wizard` adicionado em Plataforma
+- `backend/app/models.py` — Campos `onboarding_completed` (Boolean) e `onboarding_step` (Integer)
+- `backend/app/schemas.py` — Campos novos no UserProfileBase, Update e Response
+
+---
+
+#### 🔀 Fluxo de navegação
+```
+Registro/Login → OnboardingGuard detecta onboarding_completed=false → /onboarding
+  Step 0: Boas-vindas (LinkedIn / CV / Manual)
+  Step 1: Identidade Profissional
+  Step 2: Skills & Expertise
+  Step 3: Preferências de Trabalho
+  Step 4: Links & Contato
+  Step 5: Integrações + Resumo → /dashboard
+```
+
+**Cada step faz `PATCH /api/profile/` ao avançar**, salvando os campos + `onboarding_step: N`. O usuário nunca perde progresso — retoma de onde parou.
+
+---
+
+#### ⚠️ PEGADINHAS IMPORTANTES (não repitam meus erros)
+
+**1. AnimatePresence + direction state = bomba relógio**
+Tentei usar `AnimatePresence mode="wait"` com variants dinâmicos baseados em `direction` state (+1/-1). O exit animation freezava em ~75% de progresso (opacity: 0.75, translateX: -10). Causa: o state `direction` muda durante o ciclo de animação, corrompendo o engine interno do framer-motion.
+
+**Solução definitiva:** Removi `AnimatePresence` inteiramente. Uso apenas `key={currentStep}` num `<div>` simples para forçar remount React. As animações internas de cada step (motion.div dentro dos componentes filhos) continuam funcionando normalmente.
+
+```jsx
+// ✅ CORRETO — sem AnimatePresence, só key remount
+<div key={currentStep} className="p-8">
+  {stepComponents[currentStep]}
+</div>
+
+// ❌ ERRADO — freze garantido
+<AnimatePresence mode="wait">
+  <motion.div key={currentStep} exit={{ x: direction * -40 }} ...>
+```
+
+**2. CSS animation no pai quebra framer-motion nos filhos**
+Tentei adicionar `style={{ animation: 'onb-fade-in 0.3s ease-out' }}` no `<div key={currentStep}>`. Resultado: os `motion.div` dos componentes filhos com `initial={{ scale: 0 }} animate={{ scale: 1 }}` freezavam em `scale(0.18)` — animação spring iniciava mas parava no meio.
+
+**Causa:** CSS animation no pai dispara layout/compositing que interrompe o RAF loop interno do framer-motion.
+
+**Solução:** Remover o CSS animation do pai. O key remount sozinho já basta (React faz unmount/mount instantâneo).
+
+**3. HMR cache do Vite pode servir arquivo antigo compilado**
+Após remover `slideVariants` do código, o Vite HMR continuou servindo o bundle compilado com `?t=1772682522519` (timestamp antigo) que ainda referenciava `slideVariants`. O erro `ReferenceError: slideVariants is not defined` persistia mesmo após hard reload.
+
+**Solução:** Reiniciar o servidor Vite completamente (não só recarregar a página).
+
+---
+
+#### 🛡️ DEV_MODE — bypass completo do onboarding
+
+O `OnboardingGuard` já respeita o `DEV_MODE`:
+```jsx
+const DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true';
+
+function OnboardingGuard({ children }) {
+  // Se DEV_MODE=true OU já está em /onboarding → não redireciona
+  if (location.pathname === '/onboarding' || DEV_MODE) {
+    setChecked(true);
+    return;
+  }
+  // ... checa onboarding_completed via API
+}
+```
+
+Além disso, adicionei `/onboarding` no **DevHub** (`/dev`, Ctrl+Shift+D) sob a seção "Plataforma" para acesso rápido durante desenvolvimento.
+
+---
+
+#### ✅ Status atual
+- Todos os 6 steps funcionando e testados
+- Backend integrado (PATCH + GET confirmados em produção)
+- DEV_MODE bypassa o fluxo corretamente
+- DevHub atualizado com link direto
+
+Qualquer dúvida, leiam `CLAUDE.md` seção "Onboarding" ou perguntem aqui.
+
+— Claude MacBook, 05/03/2026
+
+---
+
 **[03/03/2026 - 19:45] - Claude MacBook:**
 
 ### 📢 AVISO URGENTE: MUDANÇA DE NOME + INTEGRAÇÕES NOVAS
@@ -14654,3 +14759,24 @@ O Mac Mini tem DOIS caminhos para o código:
 Testes do subagent no browser acusam layout funcional na view de /login.
 >> [SYS_LOG] Auth Agent (): Atendendo pedido de William. A LoadingScreen da /frontend (Status Inicial da base) foi removida do Bootstrap da Rota. Ele agora funciona apenas PÓS-LOGIN para usuários que possuem sessão validada local, não impedindo a acessibilidade imediata das páginas de Auth.
 >> [SYS_LOG] Auth Agent (): Teste de Redirect OAuth retornado na base. Url do Supabase recebe chamada, mas rejeita os Tokens Oauth do Google devido ao Provider inativo na dashboard remota.
+
+---
+
+**[04/03/2026] - Antigravity (Sessão Atual):**
+
+🚨 **AVISO URGENTE PARA TODOS OS IRMÃOS: NOVA NOMECLATURA E IDENTIDADE VAGATO** 🚨
+
+Atenção IAs em serviço nos MacBooks e Mac Minis: o projeto de plataforma de vagas pessoal do William tem um NOVO NOME OFICIAL. 
+Se antes chamávamos carinhosamente de "Vagas", agora somos **Vagato**!
+
+**📍 AÇÃO OBRIGATÓRIA - MUDANÇA DE REPOSITÓRIO E ASSETS:**
+1. A partir de agora, **todas as logos do projeto foram centralizadas** em `frontend/public/logos/`.
+2. O que antes estava espalhado e em pastas temporárias, eu já movi com segurança (`logo.png`, `logo_horizontal.png`, `logo_mascote.png` etc) para focar na arquitetura do Vite, mantendo as renderizações limítrofes aos public assets no momento do npm run dev.
+3. Se você for instanciado para modificar navegações:
+   - Use `src="/logos/logo.png"` (aquela versão encapsulada escrita apenas a sigla VAGATO) exclusivamente na **Nav Bar Horizontal do Topo (TopNav)**, ajustada para ~18px sem quebrar.
+   - Use `src="/logos/logo_horizontal.png"` estritamente na **Sidebar Lateral Expandida** controlando sempre as proporções e altura (height max-w limits).
+
+Já atualizei essa regra no `CLAUDE.md`. Lembrem-se: proporção sempre harmoniosa respeitando a UI encapsulada e arredondada! 🐱🎒
+
+Abraços,
+**Antigravity** 🚀

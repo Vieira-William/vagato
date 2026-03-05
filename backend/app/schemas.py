@@ -291,6 +291,9 @@ class VagaResponse(VagaBase):
 # Schema para UserProfile
 class UserProfileBase(BaseModel):
     nome: str = Field(..., max_length=100)
+    primeiro_nome: Optional[str] = Field(None, max_length=50)
+    nome_meio: Optional[str] = Field(None, max_length=50)
+    ultimo_nome: Optional[str] = Field(None, max_length=100)
     email: Optional[str] = Field(None, max_length=100)
     cargos_interesse: Optional[List[str]] = []
     nivel_minimo: Optional[str] = "senior"
@@ -308,6 +311,24 @@ class UserProfileBase(BaseModel):
     portfolio_url: Optional[str] = Field(None, max_length=255)
     github_url: Optional[str] = Field(None, max_length=255)
     profissao: Optional[str] = Field(None, max_length=100)
+    # PRD v13 — Novos campos estruturados
+    profissoes_interesse: Optional[List[dict]] = []
+    idiomas: Optional[List[dict]] = []
+    formacoes: Optional[List[dict]] = []
+    salario_moeda: Optional[str] = "BRL"
+    salario_periodo: Optional[str] = "mensal"
+    salario_negociavel: Optional[bool] = True
+    modelos_trabalho: Optional[List[str]] = []
+    aceita_relocacao: Optional[bool] = False
+    raio_busca_km: Optional[int] = 50
+    pais: Optional[str] = "Brasil"
+    estado: Optional[str] = None
+    cidade: Optional[str] = None
+    cep: Optional[str] = None
+    skills_prioritarias: Optional[List[str]] = []
+    onboarding_completed: Optional[bool] = False
+    onboarding_step: Optional[int] = 0
+    import_method: Optional[str] = None
 
 
 class UserProfileCreate(UserProfileBase):
@@ -438,6 +459,9 @@ class MatchWeightsResponse(MatchWeightsBase):
 
 class UserProfileUpdate(BaseModel):
     nome: Optional[str] = Field(None, max_length=100)
+    primeiro_nome: Optional[str] = Field(None, max_length=50)
+    nome_meio: Optional[str] = Field(None, max_length=50)
+    ultimo_nome: Optional[str] = Field(None, max_length=100)
     email: Optional[str] = Field(None, max_length=100)
     cargos_interesse: Optional[List[str]] = None
     nivel_minimo: Optional[str] = None
@@ -455,3 +479,21 @@ class UserProfileUpdate(BaseModel):
     portfolio_url: Optional[str] = Field(None, max_length=255)
     github_url: Optional[str] = Field(None, max_length=255)
     profissao: Optional[str] = Field(None, max_length=100)
+    # PRD v13 — Novos campos estruturados
+    profissoes_interesse: Optional[List[dict]] = None
+    idiomas: Optional[List[dict]] = None
+    formacoes: Optional[List[dict]] = None
+    salario_moeda: Optional[str] = None
+    salario_periodo: Optional[str] = None
+    salario_negociavel: Optional[bool] = None
+    modelos_trabalho: Optional[List[str]] = None
+    aceita_relocacao: Optional[bool] = None
+    raio_busca_km: Optional[int] = None
+    pais: Optional[str] = None
+    estado: Optional[str] = None
+    cidade: Optional[str] = None
+    cep: Optional[str] = None
+    skills_prioritarias: Optional[List[str]] = None
+    onboarding_completed: Optional[bool] = None
+    onboarding_step: Optional[int] = None
+    import_method: Optional[str] = None

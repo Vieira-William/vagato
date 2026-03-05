@@ -106,6 +106,9 @@ class UserProfile(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     nome = Column(String(100), nullable=False)
+    primeiro_nome = Column(String(50), nullable=True)
+    nome_meio = Column(String(50), nullable=True)
+    ultimo_nome = Column(String(100), nullable=True)
     email = Column(String(100), unique=True)
 
     # Preferencias de cargo
@@ -137,6 +140,31 @@ class UserProfile(Base):
     # Salario
     salario_minimo = Column(Float, nullable=True)
     salario_maximo = Column(Float, nullable=True)
+
+    # PRD v13 — Novos campos estruturados
+    profissoes_interesse = Column(JSON, default=list)   # [{titulo, nivel, anos_exp}]
+    idiomas = Column(JSON, default=list)                # [{idioma, proficiencia}]
+    formacoes = Column(JSON, default=list)              # [{grau, curso, instituicao, status}]
+    salario_moeda = Column(String(5), default="BRL")
+    salario_periodo = Column(String(20), default="mensal")
+    salario_negociavel = Column(Boolean, default=True)
+    modelos_trabalho = Column(JSON, default=list)       # ["remoto", "hibrido", "presencial"]
+    aceita_relocacao = Column(Boolean, default=False)
+    raio_busca_km = Column(Integer, default=50)
+    pais = Column(String(100), default="Brasil")
+    estado = Column(String(100), nullable=True)
+    cidade = Column(String(100), nullable=True)
+    cep = Column(String(10), nullable=True)
+    skills_prioritarias = Column(JSON, default=list)    # top 5 skills (ordenadas)
+
+    # Onboarding
+    onboarding_completed = Column(Boolean, default=False)
+    onboarding_step = Column(Integer, default=0)
+    import_method = Column(String(20), nullable=True)  # 'linkedin_zip' | 'cv' | 'manual'
+
+    # Assinatura SaaS / Plano Premium
+    is_premium = Column(Boolean, default=False)
+    plano_expira_em = Column(DateTime, nullable=True)
 
     # Metadados
     is_active = Column(Boolean, default=True)
@@ -393,4 +421,48 @@ class ConfiguracaoIA(Base):
     def em_alerta(self) -> bool:
         """Verifica se está abaixo do limite de alerta."""
         return self.saldo_disponivel <= self.alerta_limite_usd
+
+class TransacaoPagamento(Base):
+    """Histórico de transações financeiras para compras de pacotes de IA."""
+    __tablename__ = "transacoes_pagamento"
+
+    id = Column(String(36), primary_key=True)  # UUID4
+    gateway = Column(String(50), nullable=False)  # 'mercadopago', 'stripe'
+    gateway_id = Column(String(100), nullable=True)  # ID retornado pelo Gateway
+    status = Column(String(20), default="pending")  # 'pending', 'approved', 'rejected'
+    
+    valor_usd = Column(Float, nullable=False)  # Quantidade de Créditos IA add
+    valor_brl = Column(Float, nullable=False)  # Valor pago pelo usuário em BRL
+    
+    criado_em = Column(DateTime, server_default=func.now())
+    atualizado_em = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    # Vinculo com o usuario do SaaS em vez da configuração de IA
+    user_email = Column(String(100), nullable=True)
+    
+    def __repr__(self):
+        return f"<TransacaoPagamento(id={self.id}, status='{self.status}', BRL={self.valor_brl})>"
+
+
+class ExtensionLog(Base):
+    """Log de eventos da Chrome Extension Vagato para analytics."""
+    __tablename__ = "extension_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_email = Column(String(100), nullable=False)
+    event = Column(String(50), nullable=False)       # form_detected, form_filled, ai_generated
+    site = Column(String(100), nullable=True)         # gupy.io, linkedin.com
+    fields_filled = Column(Integer, default=0)
+    ai_calls = Column(Integer, default=0)
+    created_at = Column(DateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_ext_log_email", "user_email"),
+        Index("idx_ext_log_event", "event"),
+        Index("idx_ext_log_timestamp", "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<ExtensionLog(id={self.id}, event='{self.event}', site='{self.site}')>"
+
 

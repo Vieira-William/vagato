@@ -16,9 +16,54 @@ from ..database import get_db
 from .. import models, schemas
 from ..services.default_profile import WILLIAM_PROFILE
 from ..services.ai_extractor import AIExtractor
+from ..services.linkedin_parser import parse_linkedin_zip
+from ..services.linkedin_pdf_parser import parse_linkedin_profile_pdf
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 logger = logging.getLogger(__name__)
+
+
+def sync_legacy_fields(update_data: dict) -> dict:
+    """
+    Sincroniza campos novos → legados para o JobMatcher.
+
+    O onboarding v13.1 grava em campos estruturados (profissoes_interesse,
+    modelos_trabalho, idiomas, pais/estado/cidade). O JobMatcher lê campos
+    legados (nivel_minimo, modalidades_aceitas, nivel_ingles, localizacoes).
+    Esta função deriva os legados automaticamente para manter o score correto.
+    """
+    # profissoes_interesse[0].nivel → nivel_minimo
+    profs = update_data.get("profissoes_interesse")
+    if profs and len(profs) > 0:
+        primeiro_nivel = profs[0].get("nivel", "") if isinstance(profs[0], dict) else ""
+        if primeiro_nivel:
+            update_data["nivel_minimo"] = primeiro_nivel
+
+    # modelos_trabalho → modalidades_aceitas
+    modelos = update_data.get("modelos_trabalho")
+    if modelos:
+        update_data["modalidades_aceitas"] = modelos
+
+    # idiomas (Inglês).proficiencia → nivel_ingles
+    idiomas = update_data.get("idiomas")
+    if idiomas:
+        for idioma in idiomas:
+            if isinstance(idioma, dict):
+                nome = (idioma.get("idioma") or "").lower()
+                if nome in ["inglês", "ingles", "english"]:
+                    update_data["nivel_ingles"] = idioma.get("proficiencia", "")
+                    break
+
+    # pais + estado + cidade → localizacoes (lista)
+    loc_parts = []
+    for key in ["cidade", "estado", "pais"]:
+        val = update_data.get(key)
+        if val and isinstance(val, str) and val.strip():
+            loc_parts.append(val.strip())
+    if loc_parts:
+        update_data["localizacoes"] = [", ".join(loc_parts)]
+
+    return update_data
 
 
 def get_or_create_profile(db: Session) -> models.UserProfile:
@@ -46,6 +91,8 @@ def get_or_create_profile(db: Session) -> models.UserProfile:
         nivel_ingles=WILLIAM_PROFILE.get("nivel_ingles", "intermediario"),
         salario_minimo=WILLIAM_PROFILE.get("salario_minimo"),
         salario_maximo=WILLIAM_PROFILE.get("salario_maximo"),
+        onboarding_completed=False,
+        onboarding_step=0,
         is_active=True
     )
     db.add(profile)
@@ -76,10 +123,23 @@ def atualizar_perfil(
 
     # Atualiza apenas campos fornecidos
     update_data = perfil_update.model_dump(exclude_unset=True)
+    update_data = sync_legacy_fields(update_data)
 
     for field, value in update_data.items():
         if hasattr(profile, field):
             setattr(profile, field, value)
+
+    # Derivar nome completo das partes quando qualquer parte for atualizada
+    name_fields = {'primeiro_nome', 'nome_meio', 'ultimo_nome'}
+    if name_fields & set(update_data.keys()):
+        parts = [
+            profile.primeiro_nome,
+            profile.nome_meio,
+            profile.ultimo_nome,
+        ]
+        computed = ' '.join(p for p in parts if p and p.strip())
+        if computed:
+            profile.nome = computed
 
     db.commit()
     db.refresh(profile)
@@ -237,6 +297,231 @@ async def upload_curriculo(
         "arquivos": profile.arquivos_curriculo,
         "filename": file.filename
     }
+
+@router.post("/import-linkedin-zip")
+async def import_linkedin_zip(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Recebe .zip do LinkedIn Data Export, parseia CSVs e mergeia dados no perfil.
+    LinkedIn > Settings > Privacy > Get a copy of your data
+    """
+    logger.info(f"[LINKEDIN-ZIP] Início - arquivo: {file.filename}")
+
+    if not file.filename or not file.filename.lower().endswith('.zip'):
+        raise HTTPException(
+            status_code=400,
+            detail="Formato inválido. Envie o arquivo .zip exportado do LinkedIn."
+        )
+
+    content = await file.read()
+    file_size = len(content)
+    logger.info(f"[LINKEDIN-ZIP] Arquivo lido: {file_size} bytes")
+
+    if file_size > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Arquivo muito grande. Máximo 50MB.")
+
+    if file_size < 100:
+        raise HTTPException(status_code=400, detail="Arquivo muito pequeno ou corrompido.")
+
+    # Parsear .zip
+    try:
+        dados = parse_linkedin_zip(content)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"[LINKEDIN-ZIP] Erro ao parsear: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao processar arquivo do LinkedIn.")
+
+    # Mergear no perfil (sem sobrescrever dados existentes que já tenham valor)
+    profile = get_or_create_profile(db)
+
+    if dados.get("nome") and not profile.nome:
+        profile.nome = dados["nome"]
+    elif dados.get("nome"):
+        profile.nome = dados["nome"]  # LinkedIn override: nome sempre atualiza
+
+    if dados.get("pais"):
+        profile.pais = dados["pais"]
+    if dados.get("estado"):
+        profile.estado = dados["estado"]
+    if dados.get("cidade"):
+        profile.cidade = dados["cidade"]
+
+    # Skills: merge (union)
+    if dados.get("skills"):
+        novas_skills = list(set((profile.skills or []) + dados["skills"]))
+        profile.skills = novas_skills
+        flag_modified(profile, "skills")
+
+    # Profissões de interesse
+    if dados.get("profissoes_interesse"):
+        profile.profissoes_interesse = dados["profissoes_interesse"]
+        flag_modified(profile, "profissoes_interesse")
+
+        # Inferir experiencia_anos da posição mais recente
+        primeiro = dados["profissoes_interesse"][0]
+        if primeiro.get("anos_exp") and not profile.experiencia_anos:
+            profile.experiencia_anos = primeiro["anos_exp"]
+        if primeiro.get("nivel"):
+            profile.nivel_minimo = primeiro["nivel"]
+
+    # Formações
+    if dados.get("formacoes"):
+        profile.formacoes = dados["formacoes"]
+        flag_modified(profile, "formacoes")
+
+    # Idiomas
+    if dados.get("idiomas"):
+        profile.idiomas = dados["idiomas"]
+        flag_modified(profile, "idiomas")
+
+        # Inferir nivel_ingles do idioma inglês, se presente
+        for idioma in dados["idiomas"]:
+            nome_idioma = (idioma.get("idioma") or "").lower()
+            if nome_idioma in ("english", "inglês", "ingles"):
+                profile.nivel_ingles = idioma.get("proficiencia", "intermediario")
+                break
+
+    # Marcar método de importação
+    profile.import_method = "linkedin_zip"
+
+    db.commit()
+    db.refresh(profile)
+
+    campos = dados.get("_campos_preenchidos", 0)
+    logger.info(f"[LINKEDIN-ZIP] Sucesso! {campos} campos preenchidos")
+
+    return {
+        "success": True,
+        "dados_importados": {
+            "nome": dados.get("nome"),
+            "profissoes_interesse": dados.get("profissoes_interesse", []),
+            "skills": dados.get("skills", []),
+            "formacoes": dados.get("formacoes", []),
+            "idiomas": dados.get("idiomas", []),
+            "pais": dados.get("pais"),
+            "estado": dados.get("estado"),
+            "cidade": dados.get("cidade"),
+        },
+        "campos_preenchidos": campos,
+    }
+
+
+@router.post("/import-linkedin-pdf")
+async def import_linkedin_pdf(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Recebe o PDF do perfil LinkedIn (Perfil → Mais → Salvar em PDF),
+    extrai dados estruturados e mergeia no perfil do usuário.
+    """
+    logger.info(f"[LINKEDIN-PDF] Início - arquivo: {file.filename}")
+
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=400,
+            detail="Formato inválido. Envie o PDF do seu perfil LinkedIn.",
+        )
+
+    content = await file.read()
+    file_size = len(content)
+    logger.info(f"[LINKEDIN-PDF] Arquivo lido: {file_size} bytes")
+
+    if file_size > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Arquivo muito grande. Máximo 20MB.")
+
+    if file_size < 500:
+        raise HTTPException(status_code=400, detail="Arquivo muito pequeno ou corrompido.")
+
+    # Parsear PDF
+    try:
+        dados = parse_linkedin_profile_pdf(content)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"[LINKEDIN-PDF] Erro ao parsear: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao processar o PDF. Verifique se é um PDF de perfil do LinkedIn.")
+
+    # Verificar se extraiu alguma coisa
+    campos = dados.get("_campos_preenchidos", 0)
+    if campos == 0 and not dados.get("nome") and not dados.get("skills"):
+        raise HTTPException(
+            status_code=422,
+            detail="Não foi possível extrair dados do PDF. Verifique se é um PDF de perfil do LinkedIn."
+        )
+
+    # Mergear no perfil
+    profile = get_or_create_profile(db)
+
+    if dados.get("nome"):
+        profile.nome = dados["nome"]
+
+    if dados.get("pais"):
+        profile.pais = dados["pais"]
+    if dados.get("estado"):
+        profile.estado = dados["estado"]
+    if dados.get("cidade"):
+        profile.cidade = dados["cidade"]
+
+    # Skills: merge (union)
+    if dados.get("skills"):
+        novas_skills = list(set((profile.skills or []) + dados["skills"]))
+        profile.skills = novas_skills
+        flag_modified(profile, "skills")
+
+    # Profissões de interesse
+    if dados.get("profissoes_interesse"):
+        profile.profissoes_interesse = dados["profissoes_interesse"]
+        flag_modified(profile, "profissoes_interesse")
+
+        primeiro = dados["profissoes_interesse"][0]
+        if primeiro.get("anos_exp") and not profile.experiencia_anos:
+            profile.experiencia_anos = primeiro["anos_exp"]
+        if primeiro.get("nivel"):
+            profile.nivel_minimo = primeiro["nivel"]
+
+    # Formações
+    if dados.get("formacoes"):
+        profile.formacoes = dados["formacoes"]
+        flag_modified(profile, "formacoes")
+
+    # Idiomas
+    if dados.get("idiomas"):
+        profile.idiomas = dados["idiomas"]
+        flag_modified(profile, "idiomas")
+
+        for idioma in dados["idiomas"]:
+            nome_idioma = (idioma.get("idioma") or "").lower()
+            if nome_idioma in ("english", "inglês", "ingles"):
+                profile.nivel_ingles = idioma.get("proficiencia", "intermediario")
+                break
+
+    # Marcar método de importação
+    profile.import_method = "linkedin_pdf"
+
+    db.commit()
+    db.refresh(profile)
+
+    logger.info(f"[LINKEDIN-PDF] Sucesso! {campos} campos preenchidos")
+
+    return {
+        "success": True,
+        "dados_importados": {
+            "nome": dados.get("nome"),
+            "profissoes_interesse": dados.get("profissoes_interesse", []),
+            "skills": dados.get("skills", []),
+            "formacoes": dados.get("formacoes", []),
+            "idiomas": dados.get("idiomas", []),
+            "pais": dados.get("pais"),
+            "estado": dados.get("estado"),
+            "cidade": dados.get("cidade"),
+        },
+        "campos_preenchidos": campos,
+    }
+
 
 @router.delete("/curriculo/{arquivo_id}")
 async def delete_curriculo(

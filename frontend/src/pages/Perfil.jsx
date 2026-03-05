@@ -96,7 +96,20 @@ export default function Perfil() {
   };
 
   const handleChange = (campo, valor) => {
-    setPerfil(prev => ({ ...prev, [campo]: valor }));
+    setPerfil(prev => {
+      const updated = { ...prev, [campo]: valor };
+      // Derivar nome completo quando qualquer parte do nome mudar
+      if (['primeiro_nome', 'nome_meio', 'ultimo_nome'].includes(campo)) {
+        const parts = [
+          campo === 'primeiro_nome' ? valor : prev.primeiro_nome,
+          campo === 'nome_meio' ? valor : prev.nome_meio,
+          campo === 'ultimo_nome' ? valor : prev.ultimo_nome,
+        ];
+        const computed = parts.filter(Boolean).join(' ');
+        if (computed) updated.nome = computed;
+      }
+      return updated;
+    });
   };
 
   const toggleArrayItem = (campo, item) => {
@@ -259,14 +272,34 @@ export default function Perfil() {
                 <h2 className="text-[15px] font-semibold text-foreground">Quem e voce</h2>
               </div>
               <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Nome Completo</label>
-                  <Input
-                    value={perfil?.nome || ''}
-                    onChange={(e) => handleChange('nome', e.target.value)}
-                    placeholder="Seu nome"
-                    className="rounded-xl bg-muted/30 border-black/5 h-9"
-                  />
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Primeiro nome</label>
+                    <Input
+                      value={perfil?.primeiro_nome || ''}
+                      onChange={(e) => handleChange('primeiro_nome', e.target.value)}
+                      placeholder="William"
+                      className="rounded-xl bg-muted/30 border-black/5 h-9"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Nome do meio</label>
+                    <Input
+                      value={perfil?.nome_meio || ''}
+                      onChange={(e) => handleChange('nome_meio', e.target.value)}
+                      placeholder="Opcional"
+                      className="rounded-xl bg-muted/30 border-black/5 h-9"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Último nome</label>
+                    <Input
+                      value={perfil?.ultimo_nome || ''}
+                      onChange={(e) => handleChange('ultimo_nome', e.target.value)}
+                      placeholder="Marangon"
+                      className="rounded-xl bg-muted/30 border-black/5 h-9"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">E-mail</label>
