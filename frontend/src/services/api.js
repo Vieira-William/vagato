@@ -62,6 +62,20 @@ export const profileService = {
   },
   deletarCurriculo: (id) => api.delete(`/profile/curriculo/${id}`),
   recalcularScores: () => api.post('/profile/recalcular-scores'),
+  importLinkedinZip: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/profile/import-linkedin-zip', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  importLinkedinPdf: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/profile/import-linkedin-pdf', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // PRD v3: API de Search URLs
@@ -128,6 +142,10 @@ export const linkedinService = {
   disconnect: () => api.delete('/linkedin/disconnect'),
 };
 
+export const coursesService = {
+  getRecommended: () => api.get('/courses/recommended'),
+};
+
 export const googleTasksService = {
   getLoginUrl: () => api.get('/google-tasks/login'),
   getStatus: () => api.get('/google-tasks/status'),
@@ -136,6 +154,16 @@ export const googleTasksService = {
   getTasks: (listIds) => api.get('/google-tasks/tasks', { params: { list_ids: listIds.join(',') } }),
   completeTask: (taskId, tasklistId) => api.patch(`/google-tasks/tasks/${taskId}/complete`, null, { params: { tasklist_id: tasklistId } }),
   uncompleteTask: (taskId, tasklistId) => api.patch(`/google-tasks/tasks/${taskId}/uncomplete`, null, { params: { tasklist_id: tasklistId } }),
+};
+
+export const googleCombinedService = {
+  getLoginUrl: () => api.get('/google/login'),
+  getStatus:   () => api.get('/google/status'),
+};
+
+export const pagamentosService = {
+  status: () => api.get('/pagamento/status'),
+  processarBrick: (payload) => api.post('/pagamento/checkout/mercadopago/process', payload),
 };
 
 export default api;
