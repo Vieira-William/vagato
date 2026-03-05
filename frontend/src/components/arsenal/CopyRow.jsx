@@ -64,7 +64,7 @@ export default function CopyRow({ icon: Icon, label, value, placeholder, isLink 
 
       <span className="shrink-0">
         {copied ? (
-          <Check className="w-4 h-4 text-emerald-500" strokeWidth={2} />
+          <Check className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
         ) : (
           <Copy className={`w-3.5 h-3.5 ${empty ? 'text-muted-foreground/30' : 'text-muted-foreground/60 group-hover:text-foreground/80'}`} strokeWidth={1.5} />
         )}

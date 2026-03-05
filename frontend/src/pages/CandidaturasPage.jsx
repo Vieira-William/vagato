@@ -221,7 +221,7 @@ export default function CandidaturasPage() {
             onClick={carregarVagas}
             className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all ml-2"
           >
-            <RefreshCw className="w-3.5 h-3.5" strokeWidth={2} />
+            <RefreshCw className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>
         </div>
       </div>

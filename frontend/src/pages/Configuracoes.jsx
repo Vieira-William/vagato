@@ -28,7 +28,11 @@ import {
   Copy,
   Calendar,
   Mail,
-  ListTodo
+  ListTodo,
+  Bot,
+  Plug,
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import SlideInConfirm from '../components/SlideInConfirm';
 import { searchUrlsService, configService, calendarService, gmailService, linkedinService, googleTasksService, pagamentosService } from '../services/api';
@@ -127,11 +131,19 @@ export default function Configuracoes() {
   const [showMPBrick, setShowMPBrick] = useState(false);
   const [processingMP, setProcessingMP] = useState(false);
   const [planStatus, setPlanStatus] = useState({ is_premium: false, plano_expira_em: null, plano: 'free' });
+  const [iaStatus, setIaStatus] = useState(null);
 
   const loadPlanStatus = async () => {
     try {
       const { data } = await pagamentosService.status();
       setPlanStatus(data);
+    } catch {}
+  };
+
+  const fetchIAStatus = async () => {
+    try {
+      const { data } = await configService.getIAStatus();
+      setIaStatus(data);
     } catch {}
   };
 
@@ -145,6 +157,7 @@ export default function Configuracoes() {
     fetchLinkedinStatus();
     fetchTasksStatus();
     loadPlanStatus();
+    fetchIAStatus();
 
     // Mensagem de retorno do OAuth
     const params = new URLSearchParams(window.location.search);
@@ -575,7 +588,7 @@ export default function Configuracoes() {
             "rounded-xl p-3 flex items-center gap-3 text-[11px] font-bold border",
             message.type === 'success' ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"
           )}>
-            {message.type === 'success' ? <Check className="w-4 h-4" strokeWidth={2.5} /> : <AlertCircle className="w-4 h-4" />}
+            {message.type === 'success' ? <Check className="w-4 h-4" strokeWidth={1.5} /> : <AlertCircle className="w-4 h-4" strokeWidth={1.5} />}
             {message.text}
           </div>
         </div>
@@ -597,9 +610,9 @@ export default function Configuracoes() {
                   paymentStatus.status === 'pending' ? "bg-yellow-500 shadow-yellow-500/30" :
                     "bg-red-500 shadow-red-500/30"
               )}>
-                {paymentStatus.status === 'success' ? <Check className="w-5 h-5" strokeWidth={3} /> :
-                  paymentStatus.status === 'pending' ? <Loader2 className="w-5 h-5 animate-spin" /> :
-                    <AlertCircle className="w-5 h-5" />}
+                {paymentStatus.status === 'success' ? <Check className="w-5 h-5" strokeWidth={1.5} /> :
+                  paymentStatus.status === 'pending' ? <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.5} /> :
+                    <AlertCircle className="w-5 h-5" strokeWidth={1.5} />}
               </div>
               <div>
                 <h3 className="text-sm font-bold tracking-tight">
@@ -644,80 +657,228 @@ export default function Configuracoes() {
 
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4">
 
-          <TabsContent value="assinatura" className="m-0 h-full w-full">
-            <div className="max-w-2xl mx-auto py-8">
-              {/* PLANO / ASSINATURA SAAS */}
-              <div className="w-full bg-[#1E1E20] border-2 border-black/5 rounded-[32px] shadow-2xl p-10 flex flex-col justify-between overflow-hidden relative group transition-all min-h-[500px]">
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="p-3 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
-                      <Target className="w-5 h-5 text-white" strokeWidth={1.5} />
-                    </div>
-                    <Badge className="bg-white/10 text-white border-none rounded-full px-4 py-1 text-[10px] font-black tracking-[0.15em] uppercase shadow-sm">Meu Plano Vigente</Badge>
-                  </div>
+          <TabsContent value="assinatura" className="m-0 h-full">
+            <div className="grid grid-cols-[2fr_3fr] gap-4 h-full pb-4">
 
-                  <div className="space-y-1 mb-8">
-                    <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.25em]">Status de Acesso</p>
-                    <h3 className="text-5xl font-light tracking-tight text-white">
-                      {planStatus.is_premium ? 'Premium' : 'Free'}
-                    </h3>
-                    {planStatus.plano_expira_em && (
-                      <p className="text-white/40 text-[11px] font-medium mt-1">
-                        Expira em {new Date(planStatus.plano_expira_em).toLocaleDateString('pt-BR')}
-                      </p>
-                    )}
-                  </div>
+              {/* ── COLUNA ESQUERDA: Plano + IA + Transações ── */}
+              <div className="bg-[#1E1E20] rounded-2xl p-6 flex flex-col gap-5 overflow-hidden relative">
 
-                  <div className="space-y-4 max-w-sm">
-                    <p className="text-[14px] text-white/60 font-normal leading-relaxed">Libere acesso a todos os recursos avançados da plataforma de carreiras UX, incluindo robôs buscadores e Smart Emails Ilimitados.</p>
+                {/* Header */}
+                <div className="flex items-center justify-between shrink-0">
+                  <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
+                    <Target className="w-4 h-4 text-white" strokeWidth={1.5} />
                   </div>
+                  <Badge className="bg-white/10 text-white border-none rounded-full px-3 py-1 text-[9px] font-black tracking-[0.15em] uppercase">
+                    Meu Plano
+                  </Badge>
                 </div>
 
-                <div className="mt-12 pt-8 border-t border-white/10 relative z-10">
-                  <div className="space-y-5">
-                    {showMPBrick ? (
-                      <div className="bg-white rounded-3xl p-5 shadow-inner min-h-[400px]">
-                        <Button variant="ghost" className="mb-4 h-8 text-[11px] w-full rounded-full bg-muted/30" onClick={() => setShowMPBrick(false)}>
-                          Cancelar e Voltar
-                        </Button>
-                        <Payment
-                          initialization={{ amount: 25 }}
-                          customization={{
-                            paymentMethods: { creditCard: "all", pix: "all" },
-                            visual: { style: { theme: 'dark', customVariables: { textPrimaryColor: '#000000', baseColor: '#375DFB' } } }
-                          }}
-                          onSubmit={async (param) => { await handlePaymentSubmit(param); }}
-                          onReady={() => console.log("MP Brick Ready")}
-                          onError={(err) => handlePaymentError(err)}
+                {/* Nome do plano */}
+                <div className="shrink-0">
+                  <p className="text-white/35 text-[9px] font-black uppercase tracking-[0.25em] mb-1">Status de Acesso</p>
+                  <h3 className="text-4xl font-light tracking-tight text-white leading-none">
+                    {planStatus.is_premium ? 'Premium' : 'Free'}
+                  </h3>
+                  {planStatus.is_premium && planStatus.plano_expira_em ? (
+                    <p className="text-white/40 text-[11px] font-medium mt-1.5">
+                      Expira em {new Date(planStatus.plano_expira_em).toLocaleDateString('pt-BR')}
+                    </p>
+                  ) : (
+                    <p className="text-white/25 text-[10px] font-medium mt-1.5">Plano gratuito ativo</p>
+                  )}
+                </div>
+
+                {/* Créditos de IA */}
+                <div className="border-t border-white/8 pt-4 shrink-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Coins className="w-3.5 h-3.5 text-white/40" strokeWidth={1.5} />
+                    <p className="text-[9px] font-black uppercase tracking-widest text-white/35">Créditos de IA</p>
+                  </div>
+                  {iaStatus ? (
+                    <>
+                      <div className="w-full h-1.5 bg-white/10 rounded-full mb-2">
+                        <div
+                          className={cn(
+                            "h-1.5 rounded-full transition-all duration-700",
+                            iaStatus.em_alerta ? "bg-red-400" : "bg-[#375DFB]"
+                          )}
+                          style={{ width: `${Math.min(iaStatus.saldo_percentual_restante || 0, 100)}%` }}
                         />
                       </div>
-                    ) : (
-                      <>
-                        <p className="text-white/70 text-[12px] font-medium mb-2 uppercase tracking-widest text-center md:text-left">Escolha como deseja assinar <span className="text-white font-bold">(R$ 25,00/mês)</span></p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Button
-                            onClick={() => handleCheckout('mercadopago')}
-                            disabled={recharging}
-                            className="w-full bg-white text-black hover:bg-white/90 rounded-full font-bold text-[11px] uppercase tracking-widest h-14 shadow-xl border-none transition-transform active:scale-95"
-                          >
-                            Pagar com Cartão
-                          </Button>
-                          <Button
-                            onClick={() => handleCheckout('mercadopago')}
-                            disabled={recharging}
-                            className="w-full bg-[#10B981] text-white hover:bg-[#10B981]/90 rounded-full font-bold text-[11px] uppercase tracking-widest h-14 shadow-xl shadow-[#10B981]/20 border-none transition-transform active:scale-95"
-                          >
-                            <span className="flex items-center gap-2"><Zap className="w-4 h-4" fill="currentColor" /> Pagar com Pix</span>
-                          </Button>
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/60 text-[11px] font-semibold">
+                          ${(iaStatus.saldo_disponivel_usd || 0).toFixed(3)} disponível
+                        </span>
+                        <span className="text-white/25 text-[10px]">
+                          de ${(iaStatus.saldo_inicial_usd || 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-1.5 bg-white/10 rounded-full" />
+                  )}
+                </div>
+
+                {/* Transações recentes */}
+                <div className="border-t border-white/8 pt-4 flex-1 flex flex-col min-h-0">
+                  <div className="flex items-center gap-2 mb-3 shrink-0">
+                    <History className="w-3.5 h-3.5 text-white/40" strokeWidth={1.5} />
+                    <p className="text-[9px] font-black uppercase tracking-widest text-white/35">Últimas Transações</p>
+                  </div>
+                  <div className="space-y-2 overflow-y-auto custom-scrollbar">
+                    {planStatus.transacoes_recentes?.length > 0 ? (
+                      planStatus.transacoes_recentes.slice(0, 4).map((t, i) => (
+                        <div key={i} className="flex items-center justify-between bg-white/4 rounded-xl px-3 py-2.5 border border-white/5">
+                          <div>
+                            <p className="text-[11px] font-bold text-white/80 capitalize">{t.gateway}</p>
+                            <p className="text-[10px] text-white/25 mt-0.5">
+                              {t.criado_em ? new Date(t.criado_em).toLocaleDateString('pt-BR') : '—'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[12px] font-bold text-white">R$ {(t.valor_brl || 0).toFixed(2)}</p>
+                            <span className={cn(
+                              "text-[9px] font-black uppercase tracking-wider",
+                              t.status === 'approved' ? 'text-green-400' :
+                              t.status === 'pending' ? 'text-yellow-400' : 'text-red-400'
+                            )}>
+                              {t.status === 'approved' ? 'Aprovado' : t.status === 'pending' ? 'Pendente' : t.status}
+                            </span>
+                          </div>
                         </div>
-                      </>
+                      ))
+                    ) : (
+                      <p className="text-white/20 text-[11px]">Nenhuma transação ainda.</p>
                     )}
                   </div>
                 </div>
 
-                {/* Efeito Glow BG */}
-                <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-[#375DFB]/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-[#375DFB]/20 transition-all duration-1000" />
+                {/* Glow */}
+                <div className="absolute -bottom-20 -right-20 w-56 h-56 bg-[#375DFB]/8 rounded-full blur-[80px] pointer-events-none" />
               </div>
+
+              {/* ── COLUNA DIREITA: Features + Pagamento ── */}
+              <div className="bg-white rounded-2xl border border-black/5 flex flex-col overflow-hidden">
+                {showMPBrick ? (
+                  /* Brick de pagamento */
+                  <div className="flex flex-col h-full p-6">
+                    <div className="flex items-center gap-3 mb-5 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowMPBrick(false)}
+                        className="gap-1.5 text-[11px] font-bold uppercase tracking-widest h-8 px-3 rounded-full"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" /> Voltar
+                      </Button>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                        Pagamento Seguro · R$ 25,00/mês
+                      </span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                      <Payment
+                        initialization={{ amount: 25 }}
+                        customization={{
+                          paymentMethods: { creditCard: 'all', pix: 'all' },
+                          visual: {
+                            style: {
+                              theme: 'default',
+                              customVariables: { baseColor: '#375DFB' }
+                            }
+                          }
+                        }}
+                        onSubmit={async (param) => { await handlePaymentSubmit(param); }}
+                        onReady={() => console.log('MP Brick Ready')}
+                        onError={(err) => handlePaymentError(err)}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* Features + CTA */
+                  <div className="flex flex-col h-full">
+
+                    {/* Cabeçalho com preço */}
+                    <div className="p-6 pb-5 border-b border-black/5 shrink-0">
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Plano Premium</p>
+                          <h2 className="text-3xl font-light tracking-tight text-foreground leading-none">
+                            R$ 25<span className="text-base font-light text-muted-foreground">/mês</span>
+                          </h2>
+                        </div>
+                        <Badge className={cn(
+                          "rounded-full px-3 text-[9px] font-black tracking-widest uppercase border",
+                          planStatus.is_premium
+                            ? "bg-green-50 text-green-600 border-green-200"
+                            : "bg-[#375DFB]/8 text-[#375DFB] border-[#375DFB]/20"
+                        )}>
+                          {planStatus.is_premium ? '✓ Ativo' : 'Disponível'}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Grade de features */}
+                    <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-4">O que está incluído</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { icon: Bot, label: 'Robôs buscadores', desc: 'Coleta automática 24/7' },
+                          { icon: Mail, label: 'Smart Emails', desc: 'IA escreve para recrutadores' },
+                          { icon: Plug, label: 'Extension Chrome', desc: 'Autopreenchimento de formulários' },
+                          { icon: FileText, label: 'Análise de CV', desc: 'Feedback de currículo com IA' },
+                          { icon: Target, label: 'Pitch com IA', desc: 'Apresentação única por vaga' },
+                          { icon: BarChart3, label: 'Analytics completo', desc: 'Dashboard de candidaturas' },
+                        ].map(f => (
+                          <div key={f.label} className="flex items-start gap-3 p-3.5 bg-muted/20 rounded-xl border border-black/5 hover:border-[#375DFB]/20 hover:bg-[#375DFB]/3 transition-all">
+                            <f.icon className="w-5 h-5 shrink-0 text-[#375DFB] mt-0.5" strokeWidth={1.5} />
+                            <div>
+                              <p className="text-[12px] font-bold text-foreground leading-tight">{f.label}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{f.desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Footer: botões de pagamento ou badge ativo */}
+                    <div className="p-6 pt-4 border-t border-black/5 shrink-0">
+                      {planStatus.is_premium ? (
+                        <div className="flex items-center gap-4 bg-green-50 rounded-2xl p-4 border border-green-100">
+                          <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                            <Check className="w-5 h-5 text-white" strokeWidth={1.5} />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-bold text-green-700">Assinatura ativa!</p>
+                            <p className="text-[11px] text-green-600 mt-0.5">Você tem acesso completo a todos os recursos.</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-3 text-center">Escolha a forma de pagamento</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Button
+                              onClick={() => handleCheckout('mercadopago')}
+                              disabled={recharging}
+                              className="w-full bg-[#1E1E20] text-white hover:bg-black rounded-xl font-bold text-[11px] uppercase tracking-widest h-12 shadow-md border-none transition-transform active:scale-95"
+                            >
+                              Pagar com Cartão
+                            </Button>
+                            <Button
+                              onClick={() => handleCheckout('mercadopago')}
+                              disabled={recharging}
+                              className="w-full bg-[#10B981] text-white hover:bg-[#10B981]/90 rounded-xl font-bold text-[11px] uppercase tracking-widest h-12 shadow-md shadow-[#10B981]/20 border-none transition-transform active:scale-95"
+                            >
+                              <Zap className="w-4 h-4 mr-2" fill="currentColor" />
+                              Pagar com Pix
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
             </div>
           </TabsContent>
 

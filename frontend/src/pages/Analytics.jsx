@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BarChart, Bar, Cell, ResponsiveContainer } from 'recharts';
 import {
   Star, Briefcase, CheckCircle, Users, Calendar,
-  Play, Pause, Check, ChevronDown, ChevronRight,
+  Check, ChevronDown, ChevronRight,
   Monitor
 } from 'lucide-react';
 import UserProfileCard from '../components/analytics/UserProfileCard';
@@ -12,6 +12,7 @@ import TasksCard from '../components/analytics/TasksCard';
 import VagasProgressPills from '../components/analytics/VagasProgressPills';
 import QuickAccessCard from '../components/arsenal/QuickAccessCard';
 import DashboardCalendar from '../components/calendar/DashboardCalendar';
+import AffiliateCoursesCard from '../components/analytics/AffiliateCoursesCard';
 import { statsService } from '../services/api';
 import { useLayoutMode } from '../contexts/LayoutModeContext';
 import useVagatoEasterEgg from '../hooks/useVagatoEasterEgg';
@@ -94,46 +95,7 @@ function ProgressCard({ stats }) {
   );
 }
 
-function TimeTrackerCard() {
-  const [running, setRunning] = useState(false);
-  const radius = 44;
-  const circumference = 2 * Math.PI * radius;
-  const progress = 0.65;
-
-  return (
-    <div className="bg-card backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-all hover:bg-card/80">
-      <div className="flex justify-between items-start mb-1">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Time tracker</span>
-        <ChevronRight className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-      </div>
-      <div className="flex-1 min-h-0 flex items-center justify-center py-2">
-        <div className="relative">
-          <svg width="110" height="110" viewBox="0 0 110 110">
-            <circle cx="55" cy="55" r={radius} fill="none" stroke="#f0ede9" strokeWidth="7" strokeDasharray="4 3" />
-            <circle
-              cx="55" cy="55" r={radius} fill="none" stroke="#375DFB" strokeWidth="7" strokeLinecap="round"
-              strokeDasharray={`${circumference * progress} ${circumference}`}
-              transform="rotate(-90 55 55)"
-              style={{ transition: 'stroke-dasharray 0.5s ease' }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xl font-light text-[#2C2C2E] leading-none">02:35</span>
-            <span className="text-[9px] text-gray-400 mt-0.5">Work Time</span>
-          </div>
-        </div>
-      </div>
-      <div className="flex justify-center gap-3">
-        <button onClick={() => setRunning(false)} className="w-9 h-9 rounded-full bg-[#f0ede9] flex items-center justify-center hover:bg-[#e8e4e0] transition-all active:scale-90">
-          <Play className="w-3.5 h-3.5 text-[#2C2C2E] ml-0.5" strokeWidth={1.5} />
-        </button>
-        <button onClick={() => setRunning(true)} className="w-9 h-9 rounded-full bg-[#2C2C2E] flex items-center justify-center hover:bg-[#1a1a1a] transition-all active:scale-90 shadow-sm">
-          <Pause className="w-3.5 h-3.5 text-white" strokeWidth={1.5} />
-        </button>
-      </div>
-    </div>
-  );
-}
+/* TimeTrackerCard removido — substituído por AffiliateCoursesCard (componente externo) */
 
 function OnboardingCard() {
   return (
@@ -158,7 +120,7 @@ function OnboardingCard() {
         {ONBOARD_TASKS.slice(0, 4).map((task, i) => (
           <div key={i} className="flex items-center gap-2">
             <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${task.done ? 'bg-[#375DFB]' : 'border border-gray-200 bg-white'}`}>
-              {task.done ? <Check className="w-3 h-3 text-white" strokeWidth={2.5} /> : <task.icon className="w-2.5 h-2.5 text-gray-300" strokeWidth={1.5} />}
+              {task.done ? <Check className="w-3 h-3 text-white" strokeWidth={2} /> : <task.icon className="w-2.5 h-2.5 text-gray-300" strokeWidth={1.5} />}
             </div>
             <div className="min-w-0">
               <p className={`text-xs font-medium truncate ${task.done ? 'text-gray-400 line-through' : 'text-[#2C2C2E]'}`}>{task.title}</p>
@@ -211,7 +173,7 @@ function DarkTasksCard() {
         {ONBOARD_TASKS.map((task, i) => (
           <div key={i} className="flex items-center gap-2.5 py-2 border-b border-white/[0.06] last:border-0">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${task.done ? 'bg-[#375DFB]' : 'border border-white/20 bg-white/5'}`}>
-              {task.done ? <Check className="w-3.5 h-3.5 text-white" strokeWidth={2.5} /> : <task.icon className="w-3.5 h-3.5 text-white/30" strokeWidth={1.5} />}
+              {task.done ? <Check className="w-3.5 h-3.5 text-white" strokeWidth={1.5} /> : <task.icon className="w-3.5 h-3.5 text-white/30" strokeWidth={1.5} />}
             </div>
             <div className="min-w-0">
               <p className={`text-xs font-medium truncate ${task.done ? 'text-white/40 line-through' : 'text-white/90'}`}>{task.title}</p>
@@ -321,11 +283,11 @@ export default function Analytics() {
           </div>
         </div>
         <VagasDaSemanaCard />
-        <TimeTrackerCard />
+        <TasksCard />
         <SmartEmailsCard />
         <QuickAccessCard />
         <DashboardCalendar />
-        <TasksCard />
+        <AffiliateCoursesCard />
       </main>
     </div>
   );

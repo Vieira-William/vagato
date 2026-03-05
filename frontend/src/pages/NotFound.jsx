@@ -24,10 +24,10 @@ export default function NotFound() {
 
                 {/* Botão de Voltar para a Home/Dashboard */}
                 <button
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/dashboard")}
                     className="flex items-center gap-2 bg-[#375DFB] hover:bg-[#375DFB]/90 text-white px-6 py-3 rounded-full font-medium text-[14px] transition-all shadow-sm shadow-[#375DFB]/20 w-full justify-center"
                 >
-                    <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                    <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
                     Voltar para a Dashboard
                 </button>
             </div>

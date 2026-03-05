@@ -41,14 +41,14 @@ export default function TimetableGrid({ events = [], weekOffset = 0, onWeekChang
           onClick={() => onWeekChange?.(weekOffset - 1)}
           className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
         >
-          <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" />
+          <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
         </button>
         <span className="text-[10px] font-semibold text-muted-foreground capitalize">{monthLabel}</span>
         <button
           onClick={() => onWeekChange?.(weekOffset + 1)}
           className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
         >
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
         </button>
       </div>
 

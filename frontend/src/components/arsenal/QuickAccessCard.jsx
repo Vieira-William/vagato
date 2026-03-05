@@ -21,7 +21,7 @@ export default function QuickAccessCard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-amber-500" strokeWidth={2} fill="currentColor" />
+          <Zap className="w-4 h-4 text-amber-500" strokeWidth={1.5} fill="currentColor" />
           <h3 className="text-[11px] font-bold uppercase tracking-[0.05em] text-foreground">
             Meu Arsenal
           </h3>

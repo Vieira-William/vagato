@@ -241,7 +241,7 @@ export default function LoadingScreen({ onComplete, onError }) {
           {error && (
             <div className="mt-8 text-center animate-in slide-in-from-bottom-2 fade-in">
               <div className="w-12 h-12 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-5 h-5" strokeWidth={2} />
+                <AlertTriangle className="w-5 h-5" strokeWidth={1.5} />
               </div>
               <h3 className="text-foreground font-bold text-lg leading-tight mb-2">Falhamos e fomos sinceros.</h3>
               <p className="text-[13px] text-muted-foreground mb-6">{error.message}</p>

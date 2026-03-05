@@ -231,7 +231,7 @@ export default function Perfil() {
             variant="secondary"
             className="h-8 rounded-full px-4 text-[10px] font-bold uppercase tracking-widest bg-muted/50 text-foreground gap-1.5 border border-black/5 hover:bg-muted/80 transition-all"
           >
-            <RefreshCw className={cn("w-3 h-3", recalculando && "animate-spin")} strokeWidth={2.5} />
+            <RefreshCw className={cn("w-3 h-3", recalculando && "animate-spin")} strokeWidth={2} />
             Recalcular
           </Button>
           <Button
@@ -239,7 +239,7 @@ export default function Perfil() {
             disabled={saving}
             className="h-8 rounded-full px-5 text-[10px] font-bold uppercase tracking-widest bg-[#375DFB] text-white gap-1.5 shadow-md shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
           >
-            <Save className="w-3 h-3" strokeWidth={2.5} />
+            <Save className="w-3 h-3" strokeWidth={2} />
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
         </div>
@@ -252,7 +252,7 @@ export default function Perfil() {
             "rounded-xl p-3 flex items-center gap-3 text-[11px] font-bold border",
             error ? "bg-red-500/10 text-red-600 border-red-500/20" : "bg-green-500/10 text-green-600 border-green-500/20"
           )}>
-            {error ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" strokeWidth={2.5} />}
+            {error ? <AlertCircle className="w-4 h-4" strokeWidth={1.5} /> : <Check className="w-4 h-4" strokeWidth={1.5} />}
             {error || success}
           </div>
         </div>
@@ -370,7 +370,7 @@ export default function Perfil() {
                   >
                     {skill}
                     <button onClick={() => removerSkill(skill)} className="text-muted-foreground/40 hover:text-red-500 transition-colors">
-                      <X className="w-3 h-3" strokeWidth={2.5} />
+                      <X className="w-3 h-3" strokeWidth={2} />
                     </button>
                   </span>
                 ))}
@@ -389,7 +389,7 @@ export default function Perfil() {
                   onClick={adicionarSkill}
                   className="w-9 h-9 p-0 bg-[#375DFB] text-white rounded-xl hover:bg-[#375DFB]/90 active:scale-90 transition-all"
                 >
-                  <Plus className="w-4 h-4" strokeWidth={2.5} />
+                  <Plus className="w-4 h-4" strokeWidth={1.5} />
                 </Button>
               </div>
 
@@ -535,7 +535,7 @@ export default function Perfil() {
                           disabled={uploading}
                           className="p-1.5 text-muted-foreground/40 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
                         >
-                          <X className="w-3 h-3" strokeWidth={3} />
+                          <X className="w-3 h-3" strokeWidth={2} />
                         </button>
                       </div>
                     ))}
@@ -557,7 +557,7 @@ export default function Perfil() {
                       "inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-white text-[10px] font-bold uppercase tracking-widest cursor-pointer shadow-md transition-all",
                       uploading ? "bg-muted-foreground cursor-not-allowed" : "bg-[#375DFB] shadow-primary/30 hover:scale-105 active:scale-95"
                     )}>
-                      {uploading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" strokeWidth={2.5} />}
+                      {uploading ? <RefreshCw className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : <Upload className="w-4 h-4" strokeWidth={1.5} />}
                       {uploading ? 'Analisando...' : 'Subir Curriculo'}
                       <input type="file" accept=".pdf" className="hidden" disabled={uploading} onChange={handleFileUpload} />
                     </label>
@@ -566,7 +566,7 @@ export default function Perfil() {
                 ) : (
                   <div className="py-4">
                     <div className="w-12 h-12 rounded-full bg-[#375DFB]/10 text-[#375DFB] flex items-center justify-center mx-auto mb-3">
-                      <Check className="w-6 h-6" strokeWidth={2.5} />
+                      <Check className="w-6 h-6" strokeWidth={1.5} />
                     </div>
                     <h3 className="text-sm font-semibold text-foreground">Capacidade Maxima</h3>
                     <p className="text-[10px] text-muted-foreground font-medium">Delete um arquivo para subir um novo.</p>

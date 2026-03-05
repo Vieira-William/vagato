@@ -7,11 +7,12 @@
 
 ## 🧭 O QUE É ESTE PROJETO
 
-**Nome:** Vagas UX Platform
+**Nome:** Vagato (anteriormente Vagas UX Platform / Vagas)
 **Objetivo:** Plataforma pessoal de agregação de vagas de emprego para UX/UI Designer. Coleta automática de vagas do Indeed, LinkedIn Jobs e LinkedIn Posts, analisa com IA (Claude API), calcula score de compatibilidade com o perfil do usuário e gera cold messages personalizadas.
 **Dono:** William Marangon — 18 anos de experiência em UX/Produto
 **Status:** Em produção (Render), em desenvolvimento ativo
 **Linguagem das respostas:** Sempre Português Brasileiro
+**Logos / Identidade:** Todos os arquivos visuais de logotipia devem ser consultados e utilizados a partir de `frontend/public/logos/`.
 
 ---
 
@@ -352,6 +353,30 @@ postgresql://neondb_owner:npg_imcE8WQIJ5nd@ep-shiny-forest-aidp7er1-pooler.c-4.u
 - Font: **Inter** (Google Fonts)
 - Escala: 12px caption → 14px sm/button → 16px body → 20px h3 → 24px h2 → 28px h1 → 32px display
 - Dark mode: class-based (`.dark` no `<html>`)
+
+### 🚨 Padrão Iconográfico — OBRIGATÓRIO PARA TODOS OS AGENTES
+
+**Biblioteca única:** `lucide-react` v0.563+ — **NUNCA instalar outra biblioteca de ícones**
+
+**strokeWidth padrão:** `strokeWidth={1.5}` em TODOS os ícones lucide-react
+
+**Exceções toleradas (somente):**
+- Ícones `w-2.5` e `w-3` → `strokeWidth={2}` (muito pequenos, precisam de mais peso visual)
+- Propriedades de gráficos Recharts (`<Area strokeWidth={...}>`) → manter como design
+
+**Hierarquia de tamanho (por contexto):**
+| Tamanho | Contexto |
+|---------|---------|
+| `w-3.5 h-3.5` | Micro — inline text, badges |
+| `w-4 h-4` | **Padrão** — listas, labels, formulários |
+| `w-5 h-5` | Medium — botões, nav items |
+| `w-6 h-6` | Large — headers de seção |
+| `w-7 h-7` / `w-8 h-8` | XL — logos de integração |
+
+**PROIBIDO:**
+- Emojis como ícones funcionais (🤖 ✉️ etc.)
+- SVG inline para ícones genéricos (só para brand logos OAuth)
+- Qualquer outra biblioteca de ícones
 
 ---
 
@@ -721,3 +746,25 @@ Para voltar ao fluxo real: `VITE_DEV_MODE=false` ou delete o `.env.local`.
 4. **Testes E2E** — Pytest + Playwright
 5. **Resolver loop LinkedIn Jobs** — monitorar e corrigir quando ocorrer
 6. **Upgrade Render** — plano pago elimina hibernação do servidor
+
+---
+
+## 🚀 IMPLEMENTAÇÕES FUTURAS (ROADMAP)
+
+> Features planejadas para versões futuras, ordenadas por **impacto ÷ esforço** (melhor ROI primeiro).
+> Consultar antes de iniciar qualquer PRD novo.
+
+| # | Feature | Impacto | Esforço | Racional |
+|---|---------|---------|---------|----------|
+| 1 | **Importação LinkedIn** — Leitura do perfil do LinkedIn para montar perfil automaticamente na plataforma | 🔴 Alto | 🟡 Médio | Mata fricção de onboarding; tudo depende de um perfil completo |
+| 2 | **Currículo ATS por Vaga** — IA gera currículo otimizado para ATS específico para cada vaga aplicada | 🔴 Alto | 🟡 Médio | Aumenta diretamente taxa de entrevistas; IA já está na stack |
+| 3 | **Link Inteligente** — Colar link da vaga → receber currículo ATS, texto para e-mail ou DM LinkedIn | 🔴 Alto | 🟢 Baixo | Feature de página única, valor instantâneo por vaga |
+| 4 | **Alertas WhatsApp** — Notificações de vagas e assuntos importantes direto no WhatsApp | 🔴 Alto | 🟢 Baixo | API simples (Twilio/Meta); engajamento e retenção massivos |
+| 5 | **Candidatura Facilitada** — Aplicação auto em vagas de baixa interação; menos cliques, não automação total | 🔴 Alto | 🟡 Médio | Core value prop da plataforma; exige scraping de formulários |
+| 6 | **Cursos Relevantes** — Card com cursos ligados à vaga buscada (monetização via link de afiliado) | 🟡 Médio | 🟢 Baixo | Receita passiva + valor pro usuário; implementação simples |
+| 7 | **Modo Pós-Contratação** — Mesmo empregado, ficar de olho em vagas com salários/cargos maiores | 🟡 Médio | 🟢 Baixo | Retenção longo prazo; basicamente filtro + toggle |
+| 8 | **Plugin Chrome** — Extensão que preenche formulários de vagas automaticamente com dados do perfil | 🔴 Alto | 🔴 Alto | Muito poderoso mas complexo; manutenção contínua cross-browser |
+| 9 | **Doe seu Plano** — Ao ser contratado, doar dias restantes do plano para um amigo | 🟢 Baixo | 🟢 Baixo | Viral/comunidade; lógica trivial, bom PR |
+| 10 | **Inbox de Mensagens** — Página de e-mail para gerenciar mensagens entre recrutador e candidato | 🟡 Médio | 🔴 Alto | Conveniência, mas real-time messaging é pesado de construir |
+| 11 | **App Mobile** — App nativo para candidatura em qualquer local + push notifications | 🔴 Alto | 🔴 Alto | Alcance enorme mas investimento massivo (React Native + stores) |
+| 12 | **Área do Desenvolvedor** — API/botão para empresas integrarem candidatura automática via Vagato | 🟡 Médio | 🔴 Alto | Precisa de ecossistema primeiro; API docs, auth, sandbox |

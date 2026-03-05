@@ -80,7 +80,7 @@ export default function UserProfileCard({ user, onAvatarChange }) {
                                     onMouseLeave={() => setShowInfoTooltip(false)}
                                     className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                                 >
-                                    <Info className="w-4 h-4 text-[#375DFB]" strokeWidth={3} />
+                                    <Info className="w-4 h-4 text-[#375DFB]" strokeWidth={1.5} />
                                 </button>
 
                                 {showInfoTooltip && (
@@ -99,12 +99,12 @@ export default function UserProfileCard({ user, onAvatarChange }) {
                             <button
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#375DFB] hover:bg-[#2a4ad9] text-white rounded-full transition-all active:scale-95 shadow-sm"
                             >
-                                <Upload className="w-3 h-3" strokeWidth={3} />
+                                <Upload className="w-3 h-3" strokeWidth={2} />
                                 <span className="text-[9px] font-extrabold uppercase tracking-tighter">Upload</span>
                             </button>
 
                             <button onClick={() => setShowGallery(false)} className="text-black/40 hover:text-black transition-colors p-1">
-                                <X className="w-5 h-5" strokeWidth={2} />
+                                <X className="w-5 h-5" strokeWidth={1.5} />
                             </button>
                         </div>
                     </div>
@@ -113,7 +113,7 @@ export default function UserProfileCard({ user, onAvatarChange }) {
                     <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-hide bg-white">
                         {/* Aviso de Visibilidade (Fundo Sólido, Alto Contraste) */}
                         <div className="mb-5 flex items-start gap-2.5 p-3 bg-amber-50 rounded-xl border border-amber-200">
-                            <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" strokeWidth={2.5} />
+                            <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" strokeWidth={1.5} />
                             <p className="text-[10px] text-black leading-tight font-bold">
                                 Imagens conceituais são ilustrativas e <span className="underline decoration-amber-500">não serão enviadas</span> para recrutadores. Use o Upload para processos oficiais.
                             </p>
@@ -133,7 +133,7 @@ export default function UserProfileCard({ user, onAvatarChange }) {
                                     <img src={avatar.url} alt={avatar.name} className="w-full h-full object-cover rounded-[14px]" />
                                     {selectedAvatar === avatar.url && (
                                         <div className="absolute top-1.5 right-1.5 bg-[#375DFB] rounded-full p-0.5 shadow-sm">
-                                            <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />
+                                            <Check className="w-2.5 h-2.5 text-white" strokeWidth={2} />
                                         </div>
                                     )}
                                 </button>

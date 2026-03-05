@@ -18,7 +18,7 @@ export default function PasswordInput({ className, ...props }) {
                 onClick={() => setShow(!show)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             >
-                {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {show ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
             </button>
         </div>
     );

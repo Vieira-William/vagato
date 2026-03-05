@@ -145,8 +145,8 @@ export default function Match() {
             <div className="flex items-center gap-3 mb-4">
               <div className={`p-3 rounded-2xl ${crescimentoPositivo ? 'bg-accent-success/10' : 'bg-accent-danger/10'}`}>
                 {crescimentoPositivo
-                  ? <TrendingUp className="w-5 h-5 text-accent-success" strokeWidth={2.5} />
-                  : <TrendingDown className="w-5 h-5 text-accent-danger" strokeWidth={2.5} />
+                  ? <TrendingUp className="w-5 h-5 text-accent-success" strokeWidth={1.5} />
+                  : <TrendingDown className="w-5 h-5 text-accent-danger" strokeWidth={1.5} />
                 }
               </div>
               <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Crescimento</span>
@@ -159,7 +159,7 @@ export default function Match() {
           <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-border/10 transition-transform hover:bg-card/80">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-2xl bg-accent-purple/10">
-                <Calendar className="w-5 h-5 text-accent-purple" strokeWidth={2.5} />
+                <Calendar className="w-5 h-5 text-accent-purple" strokeWidth={1.5} />
               </div>
               <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Período Ativo</span>
             </div>

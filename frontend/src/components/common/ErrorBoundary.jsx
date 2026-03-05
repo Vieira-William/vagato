@@ -73,11 +73,11 @@ class ErrorBoundary extends React.Component {
                                     onClick={() => window.location.reload()}
                                     className="h-11 rounded-full px-8 bg-foreground text-background font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-all flex-1 active:scale-95"
                                 >
-                                    <RefreshCcw className="w-4 h-4" strokeWidth={2.5} />
+                                    <RefreshCcw className="w-4 h-4" strokeWidth={1.5} />
                                     Tentar Novamente
                                 </button>
                                 <button
-                                    onClick={() => window.location.href = '/'}
+                                    onClick={() => window.location.href = '/dashboard'}
                                     className="h-11 rounded-full px-8 bg-background border border-border/50 text-foreground font-bold text-[11px] uppercase tracking-widest flex items-center justify-center hover:bg-muted/50 transition-all active:scale-95"
                                 >
                                     Voltar ao Início

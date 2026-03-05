@@ -660,7 +660,7 @@ export default function ScrapingProgress({ onComplete, onClose, comAuditoria = f
                       disabled={selecionados.length === 0}
                       className="w-full h-14 rounded-[16px] bg-primary text-primary-foreground font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                     >
-                      <Database className="w-5 h-5" strokeWidth={2.5} />
+                      <Database className="w-5 h-5" strokeWidth={1.5} />
                       <span>INICIAR COLETA GLOBAL</span>
                     </Button>
                   </div>

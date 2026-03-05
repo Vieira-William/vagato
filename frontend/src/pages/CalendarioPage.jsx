@@ -142,7 +142,7 @@ export default function CalendarioPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+        <RefreshCw className="w-6 h-6 animate-spin text-primary" strokeWidth={1.5} />
       </div>
     );
   }
@@ -190,7 +190,7 @@ export default function CalendarioPage() {
                 onClick={fetchEvents}
                 className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
               >
-                <RefreshCw className="w-3.5 h-3.5" strokeWidth={2} />
+                <RefreshCw className="w-3.5 h-3.5" strokeWidth={1.5} />
               </button>
               <button
                 onClick={handleDisconnect}
@@ -206,7 +206,7 @@ export default function CalendarioPage() {
               disabled={connecting}
               className="h-8 px-5 rounded-full bg-[#375DFB] text-white text-[10px] font-bold uppercase tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50"
             >
-              {connecting ? <RefreshCw className="w-3 h-3 animate-spin" /> : <LogIn className="w-3 h-3" />}
+              {connecting ? <RefreshCw className="w-3 h-3 animate-spin" strokeWidth={1.5} /> : <LogIn className="w-3 h-3" strokeWidth={1.5} />}
               {connecting ? 'Conectando...' : 'Conectar Google'}
             </button>
           )}
@@ -220,7 +220,7 @@ export default function CalendarioPage() {
             "rounded-xl p-3 flex items-center gap-3 text-[11px] font-bold border",
             error ? "bg-red-500/10 text-red-600 border-red-500/20" : "bg-green-500/10 text-green-600 border-green-500/20"
           )}>
-            {error ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" strokeWidth={2.5} />}
+            {error ? <AlertCircle className="w-4 h-4" strokeWidth={1.5} /> : <Check className="w-4 h-4" strokeWidth={1.5} />}
             {error || success}
           </div>
         </div>
@@ -313,7 +313,7 @@ export default function CalendarioPage() {
               disabled={connecting}
               className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-[#375DFB] text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
             >
-              {connecting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+              {connecting ? <RefreshCw className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : <LogIn className="w-4 h-4" strokeWidth={1.5} />}
               {connecting ? 'Conectando...' : 'Conectar Google Agenda'}
             </button>
             <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mt-3">

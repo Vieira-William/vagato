@@ -57,11 +57,11 @@ export default function NextEventBar({ events = [] }) {
               : 'bg-muted/30 hover:bg-muted/50 text-muted-foreground'
           }`}
         >
-          <Video className="w-3 h-3" />
+          <Video className="w-3 h-3" strokeWidth={1.5} />
           {copied ? (
-            <Check className="w-3 h-3 text-emerald-500" />
+            <Check className="w-3 h-3 text-emerald-500" strokeWidth={2} />
           ) : (
-            <Copy className="w-2.5 h-2.5 opacity-60" />
+            <Copy className="w-2.5 h-2.5 opacity-60" strokeWidth={2} />
           )}
         </button>
       )}
