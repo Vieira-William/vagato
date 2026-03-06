@@ -9,6 +9,10 @@ export default defineConfig({
     // Source maps são obrigatórios para o Sentry mapear erros de produção
     sourcemap: true,
   },
+  optimizeDeps: {
+    // @mercadopago/sdk-react não tem exports ESM completos — forçar pré-bundle
+    include: ['@mercadopago/sdk-react'],
+  },
   plugins: [
     react(),
     // Sentry plugin: faz upload de source maps no build (só funciona com SENTRY_AUTH_TOKEN)
