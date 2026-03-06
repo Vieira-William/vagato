@@ -10,7 +10,7 @@ export default defineConfig({
     sourcemap: true,
   },
   optimizeDeps: {
-    // @mercadopago/sdk-react não tem exports ESM completos — forçar pré-bundle
+    // @mercadopago/sdk-react não tem exports ESM completos — forçar pré-bundle no dev
     include: ['@mercadopago/sdk-react'],
   },
   plugins: [
@@ -31,6 +31,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL('./src', import.meta.url)),
+      // @mercadopago/sdk-react não tem campo "exports" — apontar diretamente para o ESM
+      // evita que Rollup 4 tente resolver via "main" (CJS) e falhe
+      "@mercadopago/sdk-react": fileURLToPath(new URL('./node_modules/@mercadopago/sdk-react/esm/index.js', import.meta.url)),
     },
   },
   server: {
