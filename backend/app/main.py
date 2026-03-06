@@ -11,7 +11,7 @@ from sqlalchemy import text, inspect
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(message)s")
 
 from .database import engine, Base, SessionLocal
-from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin, smart_emails, google_tasks
+from .api import vagas, stats, scraper, config, profile, search_urls, calendar, gmail, linkedin, smart_emails, google_tasks, courses, google_combined, extension
 from .middleware.sentry_middleware import SentryUserMiddleware
 
 
@@ -174,7 +174,9 @@ def shutdown_scheduler():
 # SentryUserMiddleware ANTES do CORS (propaga identidade do usuário para eventos Sentry)
 app.add_middleware(SentryUserMiddleware)
 
-# CORS para permitir frontend local e produção
+# CORS para permitir frontend local, produção e Chrome Extension
+# Chrome Extensions enviam origin como chrome-extension://<id>
+# O ID muda em dev (unpacked), então usamos allow_origin_regex
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -199,7 +201,10 @@ app.add_middleware(
         "http://MacBook-Air-de-William.local:5173",
         "http://MacBook-Air-de-William.local:5174",
         "https://vagas-frontend.onrender.com",
+        "https://vagato.com.br",
+        "https://www.vagato.com.br",
     ],
+    allow_origin_regex=r"^chrome-extension://.*$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -217,6 +222,30 @@ app.include_router(gmail.router, prefix="/api")
 app.include_router(linkedin.router, prefix="/api")
 app.include_router(smart_emails.router, prefix="/api")
 app.include_router(google_tasks.router, prefix="/api")
+app.include_router(google_combined.router, prefix="/api")
+app.include_router(courses.router, prefix="/api")
+from .api import pagamentos
+app.include_router(pagamentos.router, prefix="/api")
+app.include_router(extension.router, prefix="/api")
+from .api import whatsapp
+app.include_router(whatsapp.router, prefix="/api")
+
+# ── Backoffice Admin ──
+from .api import admin_auth, admin_overview, admin_users
+from .api import admin_financial, admin_coupons, admin_plans
+from .api import admin_ai_costs, admin_logs, admin_settings
+from .api import admin_emails, admin_integrations
+app.include_router(admin_auth.router, prefix="/api")
+app.include_router(admin_overview.router, prefix="/api")
+app.include_router(admin_users.router, prefix="/api")
+app.include_router(admin_financial.router, prefix="/api")
+app.include_router(admin_coupons.router, prefix="/api")
+app.include_router(admin_plans.router, prefix="/api")
+app.include_router(admin_ai_costs.router, prefix="/api")
+app.include_router(admin_logs.router, prefix="/api")
+app.include_router(admin_settings.router, prefix="/api")
+app.include_router(admin_emails.router, prefix="/api")
+app.include_router(admin_integrations.router, prefix="/api")
 
 
 @app.get("/")
