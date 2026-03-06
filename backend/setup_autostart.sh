@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script para configurar coleta automática diária no macOS
 
-PROJETO_DIR="$HOME/Projects/vagas-ux-platform"
+PROJETO_DIR="$HOME/Projects/vagato"
 PLIST_FILE="$HOME/Library/LaunchAgents/com.vagas.ux.collector.plist"
 
 echo "=================================================="

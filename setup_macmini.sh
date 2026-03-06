@@ -33,15 +33,15 @@ check_status "Git verificado"
 # 2. Clonar o repositório
 echo -e "\n${YELLOW}[2/7] Clonando repositório...${NC}"
 cd ~ || exit
-if [ -d "Projects/vagas-ux-platform" ]; then
+if [ -d "Projects/vagato" ]; then
     echo "Repositório já existe. Fazendo pull..."
-    cd Projects/vagas-ux-platform
+    cd Projects/vagato
     git pull origin main
 else
     mkdir -p Projects
     cd Projects
-    git clone https://github.com/Vieira-William/vagas-ux-platform.git
-    cd vagas-ux-platform
+    git clone https://github.com/Vieira-William/vagato.git
+    cd vagato
 fi
 check_status "Repositório clonado/atualizado"
 
@@ -100,16 +100,16 @@ echo "🚀 PRÓXIMOS PASSOS:"
 echo "=================================================="
 echo ""
 echo "1️⃣  Para rodar o BACKEND:"
-echo "   cd ~/Projects/vagas-ux-platform/backend"
+echo "   cd ~/Projects/vagato/backend"
 echo "   source venv/bin/activate"
 echo "   python -m uvicorn app.main:app --reload"
 echo ""
 echo "2️⃣  Para rodar o FRONTEND (em outro terminal):"
-echo "   cd ~/Projects/vagas-ux-platform/frontend"
+echo "   cd ~/Projects/vagato/frontend"
 echo "   npm run dev"
 echo ""
 echo "3️⃣  Para sincronizar com GitHub:"
-echo "   cd ~/Projects/vagas-ux-platform"
+echo "   cd ~/Projects/vagato"
 echo "   git pull origin main  # antes de começar"
 echo "   git add ."
 echo "   git commit -m 'sua mensagem'"

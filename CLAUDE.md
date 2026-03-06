@@ -23,7 +23,7 @@
 | **Frontend (online/produção)** | https://vagas-frontend.onrender.com/ |
 | **Backend API (produção)** | https://vagas-api-cbar.onrender.com |
 | **API Docs (Swagger)** | https://vagas-api-cbar.onrender.com/docs |
-| **Repositório GitHub** | https://github.com/Vieira-William/vagas-ux-platform |
+| **Repositório GitHub** | https://github.com/Vieira-William/vagato |
 | **Render Dashboard** | https://dashboard.render.com |
 | **Neon PostgreSQL** | https://neon.tech |
 | **Anthropic Console** | https://console.anthropic.com |
@@ -80,7 +80,7 @@ git push origin main
 ### Setup do Mac Mini
 Script automático disponível:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagas-ux-platform/main/setup_macmini.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagato/main/setup_macmini.sh | bash
 ```
 
 > **Git Push no Mac Mini:** `gh` CLI instalado em `/opt/homebrew/bin/gh` e autenticado (Vieira-William, token scope `repo`). Credential helper configurado via `gh auth setup-git`. Push funciona normalmente com `git push origin main` via HTTPS.
@@ -132,7 +132,7 @@ curl -fsSL https://raw.githubusercontent.com/Vieira-William/vagas-ux-platform/ma
 ## 📁 ESTRUTURA COMPLETA DO PROJETO
 
 ```
-vagas-ux-platform/
+vagato/
 │
 ├── CLAUDE.md                          ← ESTE ARQUIVO (ler sempre primeiro)
 ├── AGENT_BOARD.md                     ← Quadro de Status (Memory Lock) em tempo real
@@ -768,3 +768,10 @@ Para voltar ao fluxo real: `VITE_DEV_MODE=false` ou delete o `.env.local`.
 | 10 | **Inbox de Mensagens** — Página de e-mail para gerenciar mensagens entre recrutador e candidato | 🟡 Médio | 🔴 Alto | Conveniência, mas real-time messaging é pesado de construir |
 | 11 | **App Mobile** — App nativo para candidatura em qualquer local + push notifications | 🔴 Alto | 🔴 Alto | Alcance enorme mas investimento massivo (React Native + stores) |
 | 12 | **Área do Desenvolvedor** — API/botão para empresas integrarem candidatura automática via Vagato | 🟡 Médio | 🔴 Alto | Precisa de ecossistema primeiro; API docs, auth, sandbox |
+
+## Sistema de Notificações WhatsApp (PRD v17)
+- **Engine**: Twilio SDK (via Verify API para OTP de 6 dígitos e Messaging API para templates directos).
+- **Setup**: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` e `TWILIO_VERIFY_SERVICE_SID`.
+- **Backend Flow**: Endpoints protegidos em `/api/whatsapp`. Rotas: `/preferences` (GET/PATCH), `/verify/send`, `/verify/confirm`, `/disconnect`.
+- **Models**: `WhatsAppPreferences` e `WhatsAppLog` interagem via UUID e rastreiam o switch mestre `is_active` mais flags granulares (`alert_high_score`, `alert_interview`, `alert_daily_summary`, etc).
+- **Front End (Whitelabel/Soft UI)**: Componentizado nativamente dentro de `Configuracoes.jsx`. Card premium travado para usuários FREE. O State Machine flui de "idle" -> "otp_sent" -> "verified".

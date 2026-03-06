@@ -259,7 +259,7 @@ def main():
 </html>"""
 
     # Write to file
-    output_file = "/Volumes/vagas-ux-platform/design_system_virtual_frames.html"
+    output_file = "/Volumes/vagato/design_system_virtual_frames.html"
     with open(output_file, "w") as f:
         f.write(html_all)
 

@@ -16,7 +16,7 @@ class FigmaDesignSystemSetup:
     def __init__(self):
         self.file_id = "46upQ0yYDHuJqssvTT4Pxp"
         self.file_name = "Vagas"
-        self.project_root = "/Users/williammarangon/Projects/vagas-ux-platform"
+        self.project_root = "/Users/williammarangon/Projects/vagato"
         self.timestamp = datetime.now().isoformat()
 
     def create_page_structure(self):

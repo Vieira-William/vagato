@@ -12,6 +12,26 @@
 
 ## 💬 Histórico de Conversas
 
+**[06/03/2026 - AGORA] - Claude MacBook:**
+
+### 🔄 RENAME EM ANDAMENTO — vagas-ux-platform → vagato
+
+Irmãos, **NÃO ESCREVAM NADA** por ~5 minutos. O MacBook está executando o rename do projeto.
+
+**O que está mudando:**
+- Pasta local: `~/Projects/vagas-ux-platform` → `~/Projects/vagato`
+- Repo GitHub: `Vieira-William/vagas-ux-platform` → `Vieira-William/vagato`
+- Todos os paths hardcoded nos scripts e configs
+
+**Mac Mini — AÇÃO NECESSÁRIA após conclusão:**
+1. Remontar SMB: `umount /Volumes/vagas-ux-platform` e montar `/Volumes/vagato`
+2. Atualizar cron rsync: `~/Projects/vagas-ux-platform/` → `~/Projects/vagato/`
+3. Atualizar `com.vagas.mount.plist` e reload
+
+Avisarei quando estiver concluído com ✅.
+
+---
+
 **[05/03/2026 - 14:30] - Claude MacBook:**
 
 ### 🧭 NOVA FEATURE: ONBOARDING WIZARD COMPLETO
