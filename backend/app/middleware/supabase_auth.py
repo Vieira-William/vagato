@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 # ── Config ───────────────────────────────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
 JWT_AUDIENCE = "authenticated"
 
@@ -41,7 +42,10 @@ _jwks_lock = asyncio.Lock()
 
 
 async def _get_jwks() -> dict:
-    """Retorna JWKS do Supabase, cacheando em memória após primeiro fetch."""
+    """
+    Retorna JWKS do Supabase, cacheando em memória após primeiro fetch.
+    Endpoint: /auth/v1/.well-known/jwks.json (requer header apikey).
+    """
     global _jwks_cache
     if _jwks_cache is not None:
         return _jwks_cache
@@ -51,10 +55,14 @@ async def _get_jwks() -> dict:
         if _jwks_cache is not None:
             return _jwks_cache
 
-        url = f"{SUPABASE_URL}/auth/v1/jwks"
+        url = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
+        headers = {}
+        if SUPABASE_ANON_KEY:
+            headers["apikey"] = SUPABASE_ANON_KEY
+
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get(url)
+                resp = await client.get(url, headers=headers)
                 resp.raise_for_status()
                 data = resp.json()
                 _jwks_cache = data
@@ -136,11 +144,20 @@ async def get_current_user(
 
     # ── Rota 1: ES256 via JWKS (Supabase ECC P-256) ───────────────────────
     if SUPABASE_URL:
+        # Etapa 1a: valida estrutura do token antes de buscar JWKS
+        try:
+            header = jwt.get_unverified_header(token)
+        except JWTError as e:
+            logger.warning(f"[JWT] Token malformado (header inválido): {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token inválido ou expirado",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # Etapa 1b: busca JWKS e valida assinatura ES256
         try:
             jwks = await _get_jwks()
-
-            # Identifica a chave correta via kid no header do token
-            header = jwt.get_unverified_header(token)
             kid = header.get("kid")
             key_data = _find_key(jwks, kid)
             public_key = jwk.construct(key_data)
@@ -155,7 +172,7 @@ async def get_current_user(
             return payload
 
         except (ExpiredSignatureError, JWTClaimsError) as e:
-            # Erros de claims/expiração são definitivos — não fazer fallback
+            # Expiração/claims são definitivos — sem fallback
             logger.warning(f"[JWT] Token ES256 rejeitado: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -163,8 +180,8 @@ async def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
         except JWTError as e:
-            # kid não bateu ou assinatura inválida → invalida cache e tenta HS256
-            logger.warning(f"[JWT] Falha ES256 (kid mismatch?): {e} — invalidando cache JWKS.")
+            # Assinatura inválida pode ser rotação de chave — invalida cache
+            logger.warning(f"[JWT] Falha ES256 (possível rotação?): {e} — invalidando cache JWKS.")
             _invalidate_jwks_cache()
         except (httpx.HTTPError, ValueError, Exception) as e:
             logger.error(f"[JWT] Erro inesperado ES256: {e}")
