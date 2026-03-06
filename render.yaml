@@ -6,55 +6,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
     envVars:
-      # Banco de dados (Neon PostgreSQL)
-      - key: DATABASE_URL
-        sync: false
       - key: PYTHON_VERSION
         value: 3.11.0
-      # Supabase Auth
-      - key: SUPABASE_URL
-        value: https://qpcwlajeocicvjnhqkqj.supabase.co
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      # Anthropic AI
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      # Google OAuth2 (redirect URIs apontam para produção)
-      - key: GOOGLE_CLIENT_ID
-        value: 574313230530-ksqs84hkeb90c6b5pepuv4ts89iqsnf5.apps.googleusercontent.com
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: GOOGLE_REDIRECT_URI
-        value: https://api.vagato.com.br/api/calendar/callback
-      - key: GOOGLE_GMAIL_REDIRECT_URI
-        value: https://api.vagato.com.br/api/gmail/callback
-      - key: GOOGLE_TASKS_REDIRECT_URI
-        value: https://api.vagato.com.br/api/google-tasks/callback
-      # LinkedIn OAuth2
-      - key: LINKEDIN_CLIENT_ID
-        value: 77hgl24a72gdgn
-      - key: LINKEDIN_CLIENT_SECRET
-        sync: false
-      - key: LINKEDIN_REDIRECT_URI
-        value: https://api.vagato.com.br/api/linkedin/callback
-      # Observabilidade
-      - key: SENTRY_DSN
-        value: https://97563ba25f3033518762a32dfb30e795@o4510984234074112.ingest.us.sentry.io/4510984281194496
-      - key: SENTRY_AUTH_TOKEN
-        sync: false
       - key: ENVIRONMENT
         value: production
-      - key: APP_VERSION
-        value: 0.1.0
-      # Mercado Pago
-      - key: MERCADOPAGO_ACCESS_TOKEN
-        sync: false
-      # Twilio WhatsApp
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: TWILIO_PHONE_NUMBER
-        value: "+14155238886"
-      - key: TWILIO_VERIFY_SERVICE_SID
-        value: VA260f7319e5e32f13d7053a2d80f9bbd1
