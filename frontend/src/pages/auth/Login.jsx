@@ -50,9 +50,22 @@ export default function Login() {
                 return;
             }
 
-            // Sucesso
+            // Sucesso — verificar intent de plano salvo antes do registro
             setSuccess('Login efetuado! Redirecionando...');
-            setTimeout(() => navigate('/match'), 800);
+            setTimeout(() => {
+                try {
+                    const intentRaw = sessionStorage.getItem('vagato_intent');
+                    if (intentRaw) {
+                        const intent = JSON.parse(intentRaw);
+                        sessionStorage.removeItem('vagato_intent');
+                        if (intent.plano && ['pro', 'ultimate'].includes(intent.plano)) {
+                            navigate(`/configuracoes?tab=assinatura&plano=${intent.plano}&billing=${intent.billing || 'mensal'}`);
+                            return;
+                        }
+                    }
+                } catch {}
+                navigate('/dashboard');
+            }, 800);
 
         } catch (err) {
             console.error(err);
