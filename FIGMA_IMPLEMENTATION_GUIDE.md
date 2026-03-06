@@ -4,7 +4,7 @@
 ### Project Information
 - **Figma File**: Vagas
 - **File URL**: https://figma.com/design/46upQ0yYDHuJqssvTT4Pxp/Vagas
-- **Frontend Path**: /Users/williammarangon/Projects/vagas-ux-platform/frontend
+- **Frontend Path**: /Users/williammarangon/Projects/vagato/frontend
 - **Design Tokens Reference**: /src/index.css, tailwind.config.js
 
 ---
@@ -616,7 +616,7 @@ Dark Mode (active):
 
 ## FILES REFERENCED
 
-- Frontend codebase: /Users/williammarangon/Projects/vagas-ux-platform/frontend
+- Frontend codebase: /Users/williammarangon/Projects/vagato/frontend
 - Design tokens: /src/index.css
 - Tailwind config: tailwind.config.js
 - Components: /src/components
