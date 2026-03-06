@@ -15,8 +15,14 @@ from jose import jwt, JWTError
 
 logger = logging.getLogger(__name__)
 
-# Secret key para JWT — lê do .env, fallback para dev
-EXTENSION_JWT_SECRET = os.getenv("EXTENSION_JWT_SECRET", "vagato-extension-dev-secret-change-in-production")
+# Secret key para JWT — lê do .env obrigatoriamente em produção
+_ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+EXTENSION_JWT_SECRET = os.getenv("EXTENSION_JWT_SECRET")
+if not EXTENSION_JWT_SECRET:
+    if _ENVIRONMENT == "production":
+        raise RuntimeError("EXTENSION_JWT_SECRET não definido. Configure no painel do Render.")
+    EXTENSION_JWT_SECRET = "dev-only-insecure-fallback"
+    logger.warning("[Extension Auth] EXTENSION_JWT_SECRET não definido. Usando fallback de desenvolvimento.")
 EXTENSION_JWT_ALGORITHM = "HS256"
 EXTENSION_JWT_EXPIRE_DAYS = 30
 

@@ -3,6 +3,7 @@ Middleware de autenticação para o Backoffice Admin.
 JWT próprio (não Supabase Auth) + bcrypt + pyotp (2FA).
 """
 import os
+import logging
 import time
 import bcrypt
 import pyotp
@@ -15,8 +16,16 @@ from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from ..models import AdminUser
 
+logger = logging.getLogger(__name__)
+
 # ── Config ──────────────────────────────────────────────────────────────────
-ADMIN_JWT_SECRET = os.getenv("ADMIN_JWT_SECRET", "vagato-admin-secret-change-me")
+_ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+ADMIN_JWT_SECRET = os.getenv("ADMIN_JWT_SECRET")
+if not ADMIN_JWT_SECRET:
+    if _ENVIRONMENT == "production":
+        raise RuntimeError("ADMIN_JWT_SECRET não definido. Configure no painel do Render.")
+    ADMIN_JWT_SECRET = "dev-only-insecure-fallback-admin"
+    logger.warning("[Admin Auth] ADMIN_JWT_SECRET não definido. Usando fallback de desenvolvimento.")
 ADMIN_JWT_ALGORITHM = "HS256"
 ADMIN_JWT_EXPIRE_HOURS = 4
 

@@ -177,33 +177,25 @@ app.add_middleware(SentryUserMiddleware)
 # CORS para permitir frontend local, produção e Chrome Extension
 # Chrome Extensions enviam origin como chrome-extension://<id>
 # O ID muda em dev (unpacked), então usamos allow_origin_regex
+# IPs de rede local e outros hosts: adicionar via EXTRA_CORS_ORIGINS no .env
+_BASE_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:3000",
+    "https://vagas-frontend.onrender.com",
+    "https://vagato.com.br",
+    "https://www.vagato.com.br",
+]
+_extra_raw = os.getenv("EXTRA_CORS_ORIGINS", "")
+_extra_origins = [o.strip() for o in _extra_raw.split(",") if o.strip()]
+_ALLOWED_ORIGINS = _BASE_ORIGINS + _extra_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-        "http://localhost:5177",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "http://127.0.0.1:5175",
-        "http://127.0.0.1:3000",
-        "http://192.168.1.16:5173",
-        "http://192.168.1.16:5174",
-        "http://192.168.1.16:5175",
-        "http://192.168.1.22:5173",
-        "http://192.168.1.22:5174",
-        "http://192.168.1.22:5175",
-        "http://Williams-Mac-mini.local:5173",
-        "http://Williams-Mac-mini.local:5174",
-        "http://MacBook-Air-de-William.local:5173",
-        "http://MacBook-Air-de-William.local:5174",
-        "https://vagas-frontend.onrender.com",
-        "https://vagato.com.br",
-        "https://www.vagato.com.br",
-    ],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_origin_regex=r"^chrome-extension://.*$",
     allow_credentials=True,
     allow_methods=["*"],
