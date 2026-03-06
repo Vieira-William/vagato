@@ -237,7 +237,7 @@ export default function Perfil() {
           <Button
             onClick={salvarPerfil}
             disabled={saving}
-            className="h-8 rounded-full px-5 text-[10px] font-bold uppercase tracking-widest bg-[#375DFB] text-white gap-1.5 shadow-md shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+            className="h-8 rounded-full px-5 text-[10px] font-bold uppercase tracking-widest bg-[#375DFB] text-white gap-1.5 shadow-md shadow-primary/20 dark:shadow-none hover:scale-105 active:scale-95 transition-all"
           >
             <Save className="w-3 h-3" strokeWidth={2} />
             {saving ? 'Salvando...' : 'Salvar'}

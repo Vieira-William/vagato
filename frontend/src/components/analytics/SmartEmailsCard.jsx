@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, X, Mail, ExternalLink, RefreshCw, AlertTriangle, Loader2 } from 'lucide-react';
 import { smartEmailsService, gmailService } from '../../services/api';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -166,6 +167,7 @@ function DisconnectedState() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SmartEmailsCard() {
+  const { isDark } = useTheme();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -207,8 +209,8 @@ export default function SmartEmailsCard() {
     <>
       {/* ── Card Colapsado ─────────────────────────────────────────────────── */}
       <motion.div
-        className="bg-card backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-colors hover:bg-card/80 cursor-pointer"
-        whileHover={{ scale: 1.01 }}
+        className="bg-card dark:backdrop-blur-none backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-colors hover:bg-card/80 cursor-pointer"
+        whileHover={isDark ? undefined : { scale: 1.01 }}
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         onClick={() => setExpanded(true)}
       >

@@ -4,6 +4,7 @@ import {
   BarChart, Bar, ResponsiveContainer, Tooltip,
 } from 'recharts';
 import { ChevronRight, X, ArrowRight, Building2 } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK = {
@@ -81,7 +82,7 @@ function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-3 py-2 text-xs pointer-events-none">
+    <div className="bg-white dark:bg-card rounded-xl shadow-lg border border-gray-100 dark:border-border px-3 py-2 text-xs pointer-events-none">
       <p className="text-gray-500 mb-0.5">{d?.fullDay}</p>
       <p className="font-semibold text-[#4F46E5]">{d?.vagas} vagas</p>
     </div>
@@ -161,6 +162,7 @@ function DayLabels() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function VagasDaSemanaCard() {
+  const { isDark } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const count = useCountUp(MOCK.total, 800);
 
@@ -168,8 +170,8 @@ export default function VagasDaSemanaCard() {
     <>
       {/* ── Card Colapsado ───────────────────────────────────────────────── */}
       <motion.div
-        className="bg-card backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-colors hover:bg-card/80 cursor-pointer"
-        whileHover={{ scale: 1.01 }}
+        className="bg-card dark:backdrop-blur-none backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-colors hover:bg-card/80 cursor-pointer"
+        whileHover={isDark ? undefined : { scale: 1.01 }}
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         onClick={() => setExpanded(true)}
       >
@@ -219,7 +221,7 @@ export default function VagasDaSemanaCard() {
 
             {/* Card do Modal */}
             <motion.div
-              className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-md p-6 flex flex-col gap-4 max-h-[88vh] overflow-y-auto"
+              className="relative bg-white dark:bg-card rounded-[32px] shadow-2xl w-full max-w-md p-6 flex flex-col gap-4 max-h-[88vh] overflow-y-auto"
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}

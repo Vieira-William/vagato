@@ -265,7 +265,7 @@ export default function VagasPage() {
             </div>
 
             {/* Main content panel — card-in-card pattern */}
-            <div className="flex-1 flex flex-col min-h-0 bg-white/50 backdrop-blur-sm rounded-t-2xl border border-white/60 border-b-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0 bg-white/50 dark:bg-card backdrop-blur-sm dark:backdrop-blur-none rounded-t-2xl border border-white/60 dark:border-border border-b-0 overflow-hidden">
 
                 {/* Tabs bar inside the panel */}
                 <div className="flex items-center gap-2 px-4 pt-3 pb-2 shrink-0 border-b border-black/[0.04]">

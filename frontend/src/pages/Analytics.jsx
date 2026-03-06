@@ -64,7 +64,7 @@ function ProgressCard({ stats }) {
   ];
 
   return (
-    <div className="bg-card backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-all hover:bg-card/80">
+    <div className="bg-card dark:backdrop-blur-none backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-all hover:bg-card/80">
       <div className="flex justify-between items-start mb-1">
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Progress</span>
         <ChevronRight className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
@@ -99,7 +99,7 @@ function ProgressCard({ stats }) {
 
 function OnboardingCard() {
   return (
-    <div className="bg-card backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-all hover:bg-card/80">
+    <div className="bg-card dark:backdrop-blur-none backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-all hover:bg-card/80">
       <div className="flex justify-between items-start mb-3">
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Onboarding</span>
         <span className="text-2xl font-light text-foreground">18%</span>
@@ -136,7 +136,7 @@ function OnboardingCard() {
 function AccordionCard() {
   const [expanded, setExpanded] = useState(1);
   return (
-    <div className="bg-card backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-all hover:bg-card/80">
+    <div className="bg-card dark:backdrop-blur-none backdrop-blur-lg rounded-[32px] shadow-soft border border-border/10 p-5 flex flex-col overflow-hidden transition-all hover:bg-card/80">
       {ACCORDION_ITEMS.map((item, i) => (
         <div key={i}>
           <button onClick={() => setExpanded(expanded === i ? -1 : i)} className="w-full flex items-center justify-between py-3 border-b border-gray-100 last:border-0 hover:opacity-70 transition-opacity">
@@ -262,7 +262,7 @@ export default function Analytics() {
 
       {/* 2. BENTO GRID */}
       <main className="flex-1 min-h-0 grid grid-cols-4 grid-rows-[minmax(0,40%)_1fr] gap-4">
-        <div className="row-span-1 relative rounded-[32px] shadow-soft bg-card backdrop-blur-lg transition-all hover:bg-card/80 border border-border/10">
+        <div className="row-span-1 relative rounded-[32px] shadow-soft bg-card dark:backdrop-blur-none backdrop-blur-lg transition-all hover:bg-card/80 border border-border/10">
           {/* Easter Egg — Mascote "segurando" o card (apenas TopNav) */}
           {isTop && (
             <img

@@ -16,7 +16,7 @@ const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#a855f7'];
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card/90 backdrop-blur-xl border border-border/10 rounded-[16px] p-4 shadow-xl">
+      <div className="bg-card/90 dark:bg-card backdrop-blur-xl dark:backdrop-blur-none border border-border/10 rounded-[16px] p-4 shadow-xl">
         <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-2">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm font-bold" style={{ color: entry.color }}>
@@ -63,7 +63,7 @@ export default function Match() {
   if (loading || !dados) {
     return (
       <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-6">
-        <div className="text-center bg-card/70 backdrop-blur-lg rounded-[32px] p-12 shadow-soft border border-border/10">
+        <div className="text-center bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-12 shadow-soft border border-border/10">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto"></div>
           <p className="text-muted-foreground mt-6 font-medium text-sm">Carregando seus insights...</p>
         </div>
@@ -141,7 +141,7 @@ export default function Match() {
             icon={Calendar}
             color="info"
           />
-          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-border/10 transition-transform hover:bg-card/80">
+          <div className="bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-6 shadow-soft border border-border/10 transition-transform hover:bg-card/80">
             <div className="flex items-center gap-3 mb-4">
               <div className={`p-3 rounded-2xl ${crescimentoPositivo ? 'bg-accent-success/10' : 'bg-accent-danger/10'}`}>
                 {crescimentoPositivo
@@ -156,7 +156,7 @@ export default function Match() {
             </p>
             <p className="text-[11px] text-muted-foreground font-semibold mt-2">VS PERÍODO ANTERIOR</p>
           </div>
-          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-6 shadow-soft border border-border/10 transition-transform hover:bg-card/80">
+          <div className="bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-6 shadow-soft border border-border/10 transition-transform hover:bg-card/80">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-2xl bg-accent-purple/10">
                 <Calendar className="w-5 h-5 text-accent-purple" strokeWidth={1.5} />
@@ -173,7 +173,7 @@ export default function Match() {
         {/* Gráficos Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Vagas por dia - Area Chart com gradiente */}
-          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
+          <div className="bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-8 shadow-soft border border-border/10">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-6">Ritmo de Coleta</h3>
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={porDiaReversed}>
@@ -213,7 +213,7 @@ export default function Match() {
           </div>
 
           {/* Distribuição por fonte - Donut Chart */}
-          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
+          <div className="bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-8 shadow-soft border border-border/10">
             <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-6">Origem dos Matchs</h3>
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
@@ -248,7 +248,7 @@ export default function Match() {
         {/* Gráficos Row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Modalidade - Bar Chart */}
-          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
+          <div className="bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-8 shadow-soft border border-border/10">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-2xl bg-accent-success/10 flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-accent-success" strokeWidth={1.5} />
@@ -280,7 +280,7 @@ export default function Match() {
           </div>
 
           {/* Top Empresas */}
-          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
+          <div className="bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-8 shadow-soft border border-border/10">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-primary" strokeWidth={1.5} />
@@ -313,7 +313,7 @@ export default function Match() {
         </div>
 
         {/* Histórico por fonte (stacked area) */}
-        <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10 mb-6">
+        <div className="bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-8 shadow-soft border border-border/10 mb-6">
           <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-6">Mapeamento Evolutivo por Origem</h3>
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={porDiaReversed}>
@@ -364,7 +364,7 @@ export default function Match() {
 
         {/* Requisitos de Inglês */}
         {inglesData.length > 0 && (
-          <div className="bg-card/70 backdrop-blur-lg rounded-[32px] p-8 shadow-soft border border-border/10">
+          <div className="bg-card/70 dark:bg-card backdrop-blur-lg dark:backdrop-blur-none rounded-[32px] p-8 shadow-soft border border-border/10">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-2xl bg-accent-purple/10 flex items-center justify-center">
                 <Globe className="w-5 h-5 text-accent-purple" strokeWidth={1.5} />

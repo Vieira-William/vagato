@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import LogoPill from './LogoPill';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/match', label: 'Match', icon: Target },
   { to: '/candidaturas', label: 'Candidaturas', icon: Briefcase },
   { to: '/calendario', label: 'Calendário', icon: Calendar },
@@ -38,7 +38,7 @@ function useViewportSize() {
 }
 
 export default function NavigationShell() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme, cycleTheme, isDark } = useTheme();
   const { mode } = useLayoutMode();
   const { signOut } = useAuth();
   const location = useLocation();
@@ -111,8 +111,8 @@ export default function NavigationShell() {
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = item.to === '/'
-              ? location.pathname === '/'
+            const isActive = item.to === '/dashboard'
+              ? location.pathname === '/dashboard'
               : location.pathname.startsWith(item.to);
 
             return (
@@ -124,7 +124,7 @@ export default function NavigationShell() {
               >
                 <NavLink
                   to={item.to}
-                  end={item.to === '/'}
+                  end={item.to === '/dashboard'}
                   className={
                     `relative z-10 flex items-center whitespace-nowrap transition-colors duration-300 tracking-wide
                     ${isTop
@@ -179,29 +179,34 @@ export default function NavigationShell() {
             {/* ── Theme Toggle + Slider dropdown ──────────────────── */}
             <div className="relative group">
               <button
-                onClick={toggleTheme}
+                onClick={cycleTheme}
                 className={`${baseIconBtn} w-10 h-10 ${inactiveIcon}`}
+                title="Alternar tema"
               >
-                {theme === 'dark' ? <Sun className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} /> : <Moon className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />}
+                {theme === 'dark'
+                  ? <Sun className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
+                  : theme === 'solid'
+                  ? <SunMoon className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />
+                  : <Moon className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />}
               </button>
               <div className={dropdownPos}>
                 <div className="flex items-center gap-0.5 bg-white/90 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-full p-1 border border-white/50 dark:border-white/10 shadow-lg">
                   <button
-                    onClick={() => { if (theme === 'dark') toggleTheme(); }}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme !== 'dark' ? 'bg-[#375DFB] text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`}
-                    title="Modo Diurno"
+                    onClick={() => setTheme('crystal')}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme === 'crystal' ? 'bg-[#375DFB] text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`}
+                    title="Modo Cristal"
                   >
                     <Sun className="w-4 h-4" strokeWidth={1.5} />
                   </button>
                   <button
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 dark:text-white/20 cursor-not-allowed"
-                    title="Modo Automático (em breve)"
-                    disabled
+                    onClick={() => setTheme('solid')}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme === 'solid' ? 'bg-[#375DFB] text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`}
+                    title="Modo Sólido"
                   >
                     <SunMoon className="w-4 h-4" strokeWidth={1.5} />
                   </button>
                   <button
-                    onClick={() => { if (theme !== 'dark') toggleTheme(); }}
+                    onClick={() => setTheme('dark')}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme === 'dark' ? 'bg-[#375DFB] text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`}
                     title="Modo Noturno"
                   >

@@ -2,50 +2,65 @@ import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext();
 
+const THEMES = ['crystal', 'solid', 'dark'];
+
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
+  const [theme, setThemeState] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'light';
+      const saved = localStorage.getItem('theme');
+      // Migração: 'light' → 'crystal'
+      if (saved === 'light') return 'crystal';
+      if (THEMES.includes(saved)) return saved;
     }
-    return 'light';
+    return 'crystal';
   });
+
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     const root = document.documentElement;
-
-    if (theme === 'dark') {
+    if (isDark) {
       root.classList.add('dark');
-      console.log('ThemeContext: Added dark class');
     } else {
       root.classList.remove('dark');
-      console.log('ThemeContext: Removed dark class');
     }
-
     localStorage.setItem('theme', theme);
-  }, [theme]);
+  }, [theme, isDark]);
 
   // Escuta mudanças na preferência do sistema
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
     const handleChange = (e) => {
       const saved = localStorage.getItem('theme');
       // Só atualiza se não tiver preferência manual salva
       if (!saved) {
-        setTheme(e.matches ? 'dark' : 'light');
+        setThemeState(e.matches ? 'dark' : 'crystal');
       }
     };
-
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
+  // Setter seguro
+  const setTheme = (val) => {
+    if (THEMES.includes(val)) setThemeState(val);
+  };
+
+  // Cicla: crystal → solid → dark → crystal
+  const cycleTheme = () => {
+    setThemeState((prev) => {
+      const idx = THEMES.indexOf(prev);
+      return THEMES[(idx + 1) % THEMES.length];
+    });
+  };
+
+  // Compatibilidade: toggleTheme mantido para nada quebrar
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setThemeState((prev) => (prev === 'dark' ? 'crystal' : 'dark'));
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, cycleTheme, toggleTheme, isDark }}>
       {children}
     </ThemeContext.Provider>
   );

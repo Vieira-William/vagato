@@ -37,7 +37,7 @@ export default function SlideInConfirm({
       ${visible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-12 opacity-0 scale-95'}
     `}>
             <div className={`
-        bg-white/90 backdrop-blur-2xl border rounded-[24px] shadow-2xl overflow-hidden relative
+        bg-white/90 dark:bg-card backdrop-blur-2xl dark:backdrop-blur-none border rounded-[24px] shadow-2xl overflow-hidden relative
         ${type === 'danger' ? 'border-red-500/20' : 'border-white'}
       `}>
                 {/* Linha superior luminosa */}

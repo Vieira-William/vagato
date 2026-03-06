@@ -62,36 +62,45 @@
     /* ── Accent Extended ──────────────────────────────────────────────────── */
     --accent-color: hsl(226, 96%, 60%);
     --accent-soft: hsl(226, 96%, 95%);
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
+    /* ── Core (base = backoffice, contraste máximo) ── */
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-
-    --card: 240 10% 6%;
+    --card: 240 6% 9%;
     --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 6%;
+    --popover: 240 6% 9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 10% 3.9%;
+    /* ── Primary = INDIGO do brand ── */
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 10% 12%;
+    /* ── Secondary / Muted / Accent ── */
+    --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
 
-    --muted: 240 10% 15%;
-    --muted-foreground: 240 5% 65%;
-
-    --accent: 226 96% 60%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 31%;
+    /* ── Destructive ── */
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 10% 18%;
-    --input: 240 10% 18%;
-    --ring: 226 96% 60%;
+    /* ── Borders / Input / Ring ── */
+    --border: 240 4% 18%;
+    --input: 240 3.7% 15.9%;
+    --ring: 239 84% 67%;
 
     /* ── Legacy Compatibility Vars (Soft UI palette — Dark) ──────────────── */
     --bg-primary: #090912;
@@ -102,13 +111,33 @@
     --text-muted: #6b6b7a;
     --border-legacy: #27273a;
 
-    /* ── Shadow Scale (Dark) ─────────────────────────────────────────────── */
-    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --soft-card: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 16px rgba(0, 0, 0, 0.3);
+    /* ── Sombras: zero ou quase zero (bordas fazem o trabalho) ── */
+    --shadow-card: none;
+    --shadow-elevated: none;
+    --soft-card: 0 0 0 1px rgba(255, 255, 255, 0.06);
 
-    /* ── Accent Extended (Dark) ───────────────────────────────────────────── */
-    --accent-soft: hsl(226, 96%, 20%);
+    /* ── Accent Extended ── */
+    --accent-color: hsl(239, 84%, 67%);
+    --accent-soft: hsl(239, 84%, 20%);
+
+    /* ── Sidebar ── */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 239 84% 67%;
+
+    /* ── Chart Colors ── */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+
+    color-scheme: dark;
   }
 }
 
@@ -166,6 +195,26 @@
         rgba(255, 255, 255, 0.8) 4px,
         rgba(255, 255, 255, 0.8) 5px);
   }
+
+  /* ── Dark Mode: desligar efeitos decorativos ─────────────────────────── */
+  .dark .bg-sunbeam {
+    display: none;
+  }
+
+  .dark .bg-striped-delicate {
+    background: none;
+  }
+
+  .dark .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
+  }
+
+  .dark .shadow-soft {
+    box-shadow: none;
+  }
 }
 
 /* ── Vagas Progress Pills: animação de listras diagonal no hover ── */
@@ -182,6 +231,10 @@
 
 *:hover {
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+.dark *:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -207,6 +260,14 @@
   background: rgba(0, 0, 0, 0.25);
 }
 
+.dark *:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dark *:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 /* Custom scrollbar class — always visible, edge-to-edge */
 .custom-scrollbar {
   scrollbar-width: thin;
@@ -230,6 +291,18 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* ── Animações Especiais (PRD v8) ─────────────────────────────────────────── */
 @keyframes barGrow {
   0% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
@@ -249,3 +322,50 @@
 .animate-barGrow { animation: barGrow 800ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
 .animate-slideInRight { animation: slideInRight 400ms ease-out both; }
 .animate-slideInLeft { animation: slideInLeft 400ms ease-out both; }
+
+@keyframes onb-fade-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ADMIN THEME: Dark + Blue Accent (shadcn Blue)
+   Ativado via [data-admin] no AdminLayout wrapper.
+   ══════════════════════════════════════════════════════════════════════════════ */
+[data-admin] {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 6% 9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 6% 9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 4% 18%;
+  --input: 240 3.7% 15.9%;
+  --ring: 217.2 91.2% 59.8%;
+  --radius: 0.5rem;
+  --sidebar-background: 240 5.9% 10%;
+  --sidebar-foreground: 240 4.8% 95.9%;
+  --sidebar-primary: 217.2 91.2% 59.8%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 3.7% 15.9%;
+  --sidebar-accent-foreground: 240 4.8% 95.9%;
+  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
+  --chart-1: 220 70% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}

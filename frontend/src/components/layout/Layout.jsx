@@ -1,19 +1,23 @@
 import { useLayoutMode } from '../../contexts/LayoutModeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import NavigationShell from './NavigationShell';
 
 export default function Layout({ children }) {
   const { mode } = useLayoutMode();
+  const { isDark } = useTheme();
   const isTop = mode === 'topnav';
 
   return (
     <div
       className="h-screen flex flex-col text-foreground relative overflow-hidden transition-colors duration-500 font-['Outfit']"
       style={{
-        background: `
-          radial-gradient(ellipse at 90% -10%, rgba(55, 93, 251, 0.35) 0%, transparent 70%),
-          radial-gradient(circle at -10% 110%, rgba(55, 93, 251, 0.10) 0%, transparent 50%),
-          #E4E6E7
-        `
+        background: isDark
+          ? 'hsl(var(--background))'
+          : `
+            radial-gradient(ellipse at 90% -10%, rgba(55, 93, 251, 0.35) 0%, transparent 70%),
+            radial-gradient(circle at -10% 110%, rgba(55, 93, 251, 0.10) 0%, transparent 50%),
+            #E4E6E7
+          `
       }}
     >
       {/* Raio de Sol */}

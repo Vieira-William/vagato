@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // ─── Mock Data ─────────────────────────────────────────────────────────────────
 const MOCK = {
@@ -16,7 +17,7 @@ const MOCK = {
 const PRIORITY = { entrevista: 4, aplicadas: 3, vistas: 2, descartadas: 1 };
 
 // ─── Estilo de cada rank ────────────────────────────────────────────────────────
-function getPillCSS(style, isHovered) {
+function getPillCSS(style, isHovered, isDark = false) {
   const base = {
     height: '30px',
     display: 'flex',
@@ -37,9 +38,12 @@ function getPillCSS(style, isHovered) {
     case 'hatched':
       return {
         ...base,
-        background: 'repeating-linear-gradient(-45deg, #e5e7eb, #e5e7eb 4px, #d1d5db 4px, #d1d5db 8px)',
+        background: isDark
+          ? 'repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.08) 4px, rgba(255,255,255,0.08) 5px)'
+          : 'repeating-linear-gradient(-45deg, #e5e7eb, #e5e7eb 4px, #d1d5db 4px, #d1d5db 8px)',
         backgroundSize: '11.31px 11.31px',
-        color: '#374151',
+        color: isDark ? '#e5e7eb' : '#374151',
+        border: isDark ? '1px solid rgba(255,255,255,0.12)' : 'none',
         animation: isHovered ? 'stripe-slide 1.5s linear infinite' : 'none',
       };
 
@@ -47,8 +51,12 @@ function getPillCSS(style, isHovered) {
       return {
         ...base,
         backgroundColor: 'transparent',
-        border: isHovered ? '2px solid #4b5563' : '2px solid #9ca3af',
-        color: isHovered ? '#374151' : '#6b7280',
+        border: isDark
+          ? (isHovered ? '2px solid rgba(255,255,255,0.5)' : '2px solid rgba(255,255,255,0.2)')
+          : (isHovered ? '2px solid #4b5563' : '2px solid #9ca3af'),
+        color: isDark
+          ? (isHovered ? '#ffffff' : 'rgba(255,255,255,0.5)')
+          : (isHovered ? '#374151' : '#6b7280'),
         boxSizing: 'border-box',
       };
 
@@ -169,6 +177,7 @@ function PillsSkeleton() {
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 export default function VagasProgressPills({ data = MOCK, loading = false }) {
+  const { isDark } = useTheme();
   const [hoveredKey, setHoveredKey] = useState(null);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-30px' });
@@ -179,9 +188,9 @@ export default function VagasProgressPills({ data = MOCK, loading = false }) {
     return (
       <div
         className="flex items-center justify-center w-full"
-        style={{ height: '30px', borderRadius: '15px', backgroundColor: '#f3f4f6' }}
+        style={{ height: '30px', borderRadius: '15px', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6' }}
       >
-        <span style={{ fontSize: '13px', color: '#9ca3af' }}>Nenhuma vaga processada ainda</span>
+        <span style={{ fontSize: '13px', color: isDark ? 'rgba(255,255,255,0.4)' : '#9ca3af' }}>Nenhuma vaga processada ainda</span>
       </div>
     );
   }
@@ -204,7 +213,9 @@ export default function VagasProgressPills({ data = MOCK, loading = false }) {
               flex: pill.percent,
               fontSize: '12px',
               fontWeight: hoveredKey === pill.key ? 700 : 500,
-              color: hoveredKey === pill.key ? '#1a1a2e' : '#4b5563',
+              color: hoveredKey === pill.key
+                ? (isDark ? '#ffffff' : '#1a1a2e')
+                : (isDark ? 'rgba(255,255,255,0.6)' : '#4b5563'),
               textAlign: i === 0 ? 'left' : i === arranged.length - 1 ? 'right' : 'center',
             }}
           >
@@ -224,7 +235,7 @@ export default function VagasProgressPills({ data = MOCK, loading = false }) {
           const borderRadius = '15px';
 
           const pillCSS = {
-            ...getPillCSS(pill.style, isHovered),
+            ...getPillCSS(pill.style, isHovered, isDark),
             borderRadius,
             transform: isHovered ? 'scale(1.04)' : 'scale(1)',
             boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.12)' : 'none',

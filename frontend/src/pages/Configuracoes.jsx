@@ -43,13 +43,54 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
-import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
+import { initMercadoPago, Payment, CardPayment } from '@mercadopago/sdk-react';
+import { whatsappService } from '../services/whatsappApi';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const MP_PUBLIC_KEY = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-placeholder';
 
 // Inicializa a SDK
 initMercadoPago(MP_PUBLIC_KEY);
+
+// ── Dados dos planos ─────────────────────────────────────────────────────
+const PLAN_HIERARCHY = ['free', 'pro', 'ultimate'];
+const PLAN_CARDS = [
+  { slug: 'free',     label: 'Free',     mensal: 0,  anual: 0  },
+  { slug: 'pro',      label: 'Pro',      mensal: 29, anual: 23, badge: '★ Popular' },
+  { slug: 'ultimate', label: 'Ultimate', mensal: 59, anual: 47, dark: true },
+];
+const PLANO_PRECOS = {
+  pro:      { mensal: 29,  anual: 276 },
+  ultimate: { mensal: 59,  anual: 564 },
+};
+const PLANO_FEATURES = {
+  free: [
+    '10 vagas por semana',
+    'Score de match básico',
+    '1 perfil de busca',
+    'Coleta manual de vagas',
+    'Dashboard simples',
+  ],
+  pro: [
+    'Vagas ilimitadas',
+    'Coleta automática 24/7',
+    'Smart Emails com IA (10/mês)',
+    'Extension Chrome (autopreenchimento)',
+    'Analytics avançado',
+    'Score de match avançado',
+    'Suporte por e-mail',
+  ],
+  ultimate: [
+    'Tudo do Pro',
+    'Análise de CV com IA',
+    'Pitch personalizado por vaga',
+    'Smart Emails ilimitados',
+    'Robôs buscadores ilimitados',
+    'Suporte prioritário 24/7',
+    'Relatórios exportáveis',
+  ],
+};
+const PLANO_LABEL = { free: 'Free', pro: 'Pro', ultimate: 'Ultimate' };
 
 export default function Configuracoes() {
   // LinkedIn states
@@ -126,11 +167,21 @@ export default function Configuracoes() {
     try { return JSON.parse(localStorage.getItem('google_tasks_selected_lists') || '[]'); } catch { return []; }
   });
 
+  // WhatsApp states
+  const [waPrefs, setWaPrefs] = useState(null);
+  const [waPhoneInput, setWaPhoneInput] = useState('');
+  const [waOtpInput, setWaOtpInput] = useState('');
+  const [waStepping, setWaStepping] = useState('idle'); // idle -> otp_sent -> verified
+  const [waLoading, setWaLoading] = useState(false);
+  const [waCountryCode, setWaCountryCode] = useState('+55');
+
   // Payment Status State
   const [paymentStatus, setPaymentStatus] = useState({ show: false, status: null, gateway: null });
-  const [showMPBrick, setShowMPBrick] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(null); // null | 'card' | 'pix'
+  const [billing, setBilling] = useState('mensal');          // 'mensal' | 'anual'
+  const [selectedPlan, setSelectedPlan] = useState(null);   // null | 'pro' | 'ultimate'
   const [processingMP, setProcessingMP] = useState(false);
-  const [planStatus, setPlanStatus] = useState({ is_premium: false, plano_expira_em: null, plano: 'free' });
+  const [planStatus, setPlanStatus] = useState({ is_premium: false, plano_expira_em: null, plano: 'free', plano_tipo: 'free', billing_period: 'mensal' });
   const [iaStatus, setIaStatus] = useState(null);
 
   const loadPlanStatus = async () => {
@@ -156,6 +207,7 @@ export default function Configuracoes() {
     fetchGmailStatus();
     fetchLinkedinStatus();
     fetchTasksStatus();
+    fetchWaPrefs();
     loadPlanStatus();
     fetchIAStatus();
 
@@ -190,6 +242,12 @@ export default function Configuracoes() {
       setPaymentStatus({ show: true, status: 'cancelled', gateway: params.get('gateway') });
       window.history.replaceState({}, '', window.location.pathname);
     }
+
+    // Intent preservation: plano e billing via URL (?plano=pro&billing=anual)
+    const urlPlano   = params.get('plano');
+    const urlBilling = params.get('billing');
+    if (urlPlano && ['pro', 'ultimate'].includes(urlPlano)) setSelectedPlan(urlPlano);
+    if (urlBilling && ['mensal', 'anual'].includes(urlBilling)) setBilling(urlBilling);
   }, []);
 
 
@@ -379,6 +437,91 @@ export default function Configuracoes() {
     }
   };
 
+  // Funcoes WhatsApp
+  const fetchWaPrefs = async () => {
+    try {
+      setWaLoading(true);
+      const { data } = await whatsappService.getPreferences();
+      setWaPrefs(data);
+      setWaStepping(data.phone_verified ? 'verified' : 'idle');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  // Mascara de numero LOCAL (sem DDI): (XX) XXXXX-XXXX
+  const formatLocalPhone = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) return digits.length ? `(${digits}` : '';
+    if (digits.length <= 6) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+  };
+  const rawWaPhone = () => waCountryCode + waPhoneInput.replace(/\D/g, '');
+
+  const handleWaVerifySend = async () => {
+    const raw = rawWaPhone();
+    if (raw.replace(/\D/g,'').length < 13) {
+      return setMessage({ type: 'error', text: 'Insira o DDD + número completo. Ex: +55 (11) 99999-9999' });
+    }
+    setWaLoading(true);
+    try {
+      await whatsappService.sendVerification(raw);
+      setMessage({ type: 'success', text: 'Código enviado para o seu WhatsApp!' });
+      setWaStepping('otp_sent');
+    } catch (e) {
+      setMessage({ type: 'error', text: e.response?.data?.detail || 'Erro ao enviar SMS' });
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  const handleWaVerifyConfirm = async () => {
+    if (!waOtpInput || waOtpInput.length < 4) return;
+    const raw = rawWaPhone();
+    setWaLoading(true);
+    try {
+      await whatsappService.confirmVerification(raw, waOtpInput);
+      setMessage({ type: 'success', text: 'Número confirmado! Alertas estão ATIVOS.' });
+      setWaStepping('verified');
+      fetchWaPrefs();
+    } catch (e) {
+      setMessage({ type: 'error', text: e.response?.data?.detail || 'Código inválido' });
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  const handleWaDisconnect = async () => {
+    if (!confirm('Deseja realmente desligar o WhatsApp? Vagas urgentes não serão alertadas no seu celular.')) return;
+    setWaLoading(true);
+    try {
+      await whatsappService.disconnect();
+      setMessage({ type: 'success', text: 'WhatsApp desvinculado.' });
+      setWaPhoneInput('');
+      setWaOtpInput('');
+      setWaStepping('idle');
+      fetchWaPrefs();
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Erro ao desvincular WhatsApp.' });
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  const handleWaToggle = async (key, val) => {
+    // Optimistic UI
+    setWaPrefs(prev => ({ ...prev, [key]: val }));
+    try {
+      await whatsappService.updatePreferences({ [key]: val });
+    } catch (e) {
+      setWaPrefs(prev => ({ ...prev, [key]: !val })); // rollback
+      setMessage({ type: 'error', text: 'Servidor falhou ao salvar config: ' + key });
+    }
+  };
+
   const handleConnectCalendar = async () => {
     try {
       const { data } = await calendarService.getLoginUrl();
@@ -522,40 +665,24 @@ export default function Configuracoes() {
     }
   };
 
-  const handleCheckout = async (gateway) => {
-    setMessage(null);
-    if (gateway === 'mercadopago') {
-      setShowMPBrick(true);
-      return;
-    }
-
-    setRecharging(true);
-    try {
-      const response = await fetch(`${API_URL}/api/pagamento/checkout/${gateway}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await response.json();
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Erro ao gerar link de pagamento' });
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Falha de comunicação com o servidor de pagamentos' });
-    } finally {
-      setRecharging(false);
-    }
+  const getPlanAmount = () => {
+    if (!selectedPlan || !PLANO_PRECOS[selectedPlan]) return 29;
+    return PLANO_PRECOS[selectedPlan][billing];
   };
 
   const handlePaymentSubmit = async (param) => {
     setProcessingMP(true);
     try {
-      const { data } = await pagamentosService.processarBrick(param);
+      // Passa plano_tipo e billing_period junto ao payload do Brick
+      const payload = { ...param, plano_tipo: selectedPlan || 'pro', billing_period: billing };
+      const { data } = await pagamentosService.processarBrick(payload);
       if (data.status === 'approved' || data.status === 'in_process') {
+        setMessage(null);
         setPaymentStatus({ show: true, status: 'success', gateway: 'mp' });
-        setShowMPBrick(false);
+        setPaymentMethod(null);
+        setSelectedPlan(null);
         await loadPlanStatus();
+        await fetchIAStatus();
       } else {
         setMessage({ type: 'error', text: 'Pagamento não aprovado: ' + (data.status || 'Erro desconhecido') });
       }
@@ -598,14 +725,14 @@ export default function Configuracoes() {
       {paymentStatus.show && (
         <div className="py-2 shrink-0 animate-in fade-in slide-in-from-top-4 duration-500 z-50">
           <div className={cn(
-            "rounded-2xl p-4 flex items-center justify-between gap-4 border shadow-xl backdrop-blur-md",
+            "rounded-2xl p-4 flex items-center justify-between gap-4 border shadow-xl backdrop-blur-md dark:backdrop-blur-none",
             paymentStatus.status === 'success' ? "bg-green-500/10 border-green-500/30 text-green-700" :
               paymentStatus.status === 'pending' ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-700" :
                 "bg-red-500/10 border-red-500/30 text-red-700"
           )}>
             <div className="flex items-center gap-3">
               <div className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg",
+                "w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg dark:shadow-none",
                 paymentStatus.status === 'success' ? "bg-green-500 shadow-green-500/30" :
                   paymentStatus.status === 'pending' ? "bg-yellow-500 shadow-yellow-500/30" :
                     "bg-red-500 shadow-red-500/30"
@@ -642,7 +769,7 @@ export default function Configuracoes() {
         </div>
       )}
 
-      <Tabs defaultValue="assinatura" className="flex-1 flex flex-col min-h-0 bg-white/50 backdrop-blur-sm rounded-t-2xl border border-white/60 border-b-0 overflow-hidden mt-1 p-4">
+      <Tabs defaultValue="assinatura" className="flex-1 flex flex-col min-h-0 bg-white/50 dark:bg-card backdrop-blur-sm dark:backdrop-blur-none rounded-t-2xl border border-white/60 dark:border-border border-b-0 overflow-hidden mt-1 p-4">
         <TabsList className="w-full justify-start h-12 bg-muted/30 border border-black/5 rounded-xl p-1 mb-4 hidden md:flex shrink-0">
           <TabsTrigger value="assinatura" className="rounded-lg text-[11px] font-bold uppercase tracking-widest px-6 h-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
             Assinatura e Cobrança
@@ -677,12 +804,14 @@ export default function Configuracoes() {
                 <div className="shrink-0">
                   <p className="text-white/35 text-[9px] font-black uppercase tracking-[0.25em] mb-1">Status de Acesso</p>
                   <h3 className="text-4xl font-light tracking-tight text-white leading-none">
-                    {planStatus.is_premium ? 'Premium' : 'Free'}
+                    {planStatus.is_premium ? PLANO_LABEL[planStatus.plano_tipo] || 'Premium' : 'Free'}
                   </h3>
                   {planStatus.is_premium && planStatus.plano_expira_em ? (
                     <p className="text-white/40 text-[11px] font-medium mt-1.5">
                       Expira em {new Date(planStatus.plano_expira_em).toLocaleDateString('pt-BR')}
                     </p>
+                  ) : planStatus.is_premium ? (
+                    <p className="text-white/30 text-[10px] font-medium mt-1.5">Acesso completo ativo</p>
                   ) : (
                     <p className="text-white/25 text-[10px] font-medium mt-1.5">Plano gratuito ativo</p>
                   )}
@@ -757,124 +886,219 @@ export default function Configuracoes() {
                 <div className="absolute -bottom-20 -right-20 w-56 h-56 bg-[#375DFB]/8 rounded-full blur-[80px] pointer-events-none" />
               </div>
 
-              {/* ── COLUNA DIREITA: Features + Pagamento ── */}
-              <div className="bg-white rounded-2xl border border-black/5 flex flex-col overflow-hidden">
-                {showMPBrick ? (
-                  /* Brick de pagamento */
-                  <div className="flex flex-col h-full p-6">
-                    <div className="flex items-center gap-3 mb-5 shrink-0">
+              {/* ── COLUNA DIREITA: Seletor de Planos + Pagamento ── */}
+              <div className="bg-white rounded-2xl border border-black/5 flex flex-col min-h-[420px]">
+
+                {paymentMethod ? (
+                  /* ── BRICK STATE ── */
+                  <div className="flex flex-col p-5">
+                    {/* Header do Brick */}
+                    <div className="flex items-center gap-3 mb-4 shrink-0">
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowMPBrick(false)}
+                        variant="ghost" size="sm"
+                        onClick={() => setPaymentMethod(null)}
                         className="gap-1.5 text-[11px] font-bold uppercase tracking-widest h-8 px-3 rounded-full"
                       >
-                        <ChevronLeft className="w-3.5 h-3.5" /> Voltar
+                        <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.5} /> Voltar
                       </Button>
-                      <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                        Pagamento Seguro · R$ 25,00/mês
-                      </span>
-                    </div>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                      <Payment
-                        initialization={{ amount: 25 }}
-                        customization={{
-                          paymentMethods: { creditCard: 'all', pix: 'all' },
-                          visual: {
-                            style: {
-                              theme: 'default',
-                              customVariables: { baseColor: '#375DFB' }
-                            }
-                          }
-                        }}
-                        onSubmit={async (param) => { await handlePaymentSubmit(param); }}
-                        onReady={() => console.log('MP Brick Ready')}
-                        onError={(err) => handlePaymentError(err)}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  /* Features + CTA */
-                  <div className="flex flex-col h-full">
-
-                    {/* Cabeçalho com preço */}
-                    <div className="p-6 pb-5 border-b border-black/5 shrink-0">
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Plano Premium</p>
-                          <h2 className="text-3xl font-light tracking-tight text-foreground leading-none">
-                            R$ 25<span className="text-base font-light text-muted-foreground">/mês</span>
-                          </h2>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                          {PLANO_LABEL[selectedPlan] || 'Pro'} · R$ {billing === 'anual' ? PLANO_PRECOS[selectedPlan]?.anual : getPlanAmount()}{billing === 'anual' ? '/ano' : '/mês'}
+                        </span>
                         <Badge className={cn(
-                          "rounded-full px-3 text-[9px] font-black tracking-widest uppercase border",
-                          planStatus.is_premium
+                          "rounded-full px-2 py-0.5 text-[9px] font-black uppercase border",
+                          paymentMethod === 'pix'
                             ? "bg-green-50 text-green-600 border-green-200"
                             : "bg-[#375DFB]/8 text-[#375DFB] border-[#375DFB]/20"
                         )}>
-                          {planStatus.is_premium ? '✓ Ativo' : 'Disponível'}
+                          {paymentMethod === 'pix' ? '⚡ Pix' : '💳 Cartão'}
                         </Badge>
                       </div>
                     </div>
+                    {/* Brick centralizado em max-w-sm para evitar formulário horizontal */}
+                    <div className="overflow-y-auto custom-scrollbar">
+                      <div className="max-w-sm mx-auto w-full pb-4">
+                        {paymentMethod === 'pix' ? (
+                          <Payment
+                            initialization={{ amount: getPlanAmount() }}
+                            customization={{
+                              paymentMethods: { pix: 'all' },
+                              visual: { style: { theme: 'default', customVariables: { baseColor: '#10B981' } } }
+                            }}
+                            onSubmit={async (param) => { await handlePaymentSubmit(param); }}
+                            onReady={() => {}}
+                            onError={(err) => handlePaymentError(err)}
+                          />
+                        ) : (
+                          <CardPayment
+                            initialization={{ amount: getPlanAmount() }}
+                            customization={{
+                              paymentMethods: { maxInstallments: 1 },
+                              visual: { style: { theme: 'default', customVariables: { baseColor: '#375DFB' } } }
+                            }}
+                            onSubmit={async (param) => { await handlePaymentSubmit(param); }}
+                            onReady={() => {}}
+                            onError={(err) => handlePaymentError(err)}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* Grade de features */}
-                    <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-4">O que está incluído</p>
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { icon: Bot, label: 'Robôs buscadores', desc: 'Coleta automática 24/7' },
-                          { icon: Mail, label: 'Smart Emails', desc: 'IA escreve para recrutadores' },
-                          { icon: Plug, label: 'Extension Chrome', desc: 'Autopreenchimento de formulários' },
-                          { icon: FileText, label: 'Análise de CV', desc: 'Feedback de currículo com IA' },
-                          { icon: Target, label: 'Pitch com IA', desc: 'Apresentação única por vaga' },
-                          { icon: BarChart3, label: 'Analytics completo', desc: 'Dashboard de candidaturas' },
-                        ].map(f => (
-                          <div key={f.label} className="flex items-start gap-3 p-3.5 bg-muted/20 rounded-xl border border-black/5 hover:border-[#375DFB]/20 hover:bg-[#375DFB]/3 transition-all">
-                            <f.icon className="w-5 h-5 shrink-0 text-[#375DFB] mt-0.5" strokeWidth={1.5} />
-                            <div>
-                              <p className="text-[12px] font-bold text-foreground leading-tight">{f.label}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">{f.desc}</p>
-                            </div>
-                          </div>
-                        ))}
+                ) : (
+                  /* ── PLAN SELECTOR STATE ── */
+                  <div className="flex flex-col h-full p-5">
+
+                    {/* Toggle Mensal/Anual */}
+                    <div className="flex items-center justify-between mb-4 shrink-0">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Escolha seu Plano</p>
+                      <div className="flex items-center gap-0.5 p-1 bg-muted/30 rounded-full border border-black/5">
+                        <button
+                          onClick={() => setBilling('mensal')}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-[10px] font-bold transition-all",
+                            billing === 'mensal' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                          )}
+                        >Mensal</button>
+                        <button
+                          onClick={() => setBilling('anual')}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-[10px] font-bold transition-all flex items-center gap-1.5",
+                            billing === 'anual' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          Anual
+                          <span className="text-[8px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">-20%</span>
+                        </button>
                       </div>
                     </div>
 
-                    {/* Footer: botões de pagamento ou badge ativo */}
-                    <div className="p-6 pt-4 border-t border-black/5 shrink-0">
-                      {planStatus.is_premium ? (
+                    {/* Plan Cards — apenas upgrades disponíveis */}
+                    {(() => {
+                      const currentIdx = PLAN_HIERARCHY.indexOf(planStatus.plano_tipo || 'free');
+                      const upgradableCards = PLAN_CARDS.filter(p => PLAN_HIERARCHY.indexOf(p.slug) > currentIdx);
+                      if (upgradableCards.length === 0) {
+                        return (
+                          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-[#1E1E20] to-[#2a2a30] rounded-2xl shrink-0">
+                            <span className="text-xl">🏆</span>
+                            <div>
+                              <p className="text-[13px] font-bold text-white">Você tem o melhor plano!</p>
+                              <p className="text-[11px] text-white/50 mt-0.5">Todos os recursos estão liberados.</p>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className={cn("grid gap-2 shrink-0", upgradableCards.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
+                          {upgradableCards.map(p => {
+                            const isSelected = selectedPlan === p.slug;
+                            const price      = PLANO_PRECOS[p.slug]?.[billing];
+                            return (
+                              <button
+                                key={p.slug}
+                                onClick={() => setSelectedPlan(isSelected ? null : p.slug)}
+                                className={cn(
+                                  "flex flex-col items-start p-3 rounded-2xl border transition-all text-left relative",
+                                  isSelected
+                                    ? "bg-[#375DFB]/5 border-[#375DFB]/40 ring-2 ring-[#375DFB]/15"
+                                    : p.dark
+                                      ? "bg-[#1E1E20] border-transparent hover:opacity-90 cursor-pointer"
+                                      : "bg-white border-black/8 hover:border-[#375DFB]/30 cursor-pointer"
+                                )}
+                              >
+                                <div className="w-full flex items-start justify-between gap-1 mb-2">
+                                  <p className={cn("text-[12px] font-black leading-tight", p.dark ? 'text-white' : 'text-foreground')}>{p.label}</p>
+                                  {p.badge && (
+                                    <span className="text-[8px] font-black uppercase text-[#375DFB] shrink-0">{p.badge}</span>
+                                  )}
+                                </div>
+                                <p className={cn("text-[15px] font-bold leading-none", p.dark ? 'text-white' : 'text-[#375DFB]')}>
+                                  R$&nbsp;{price}
+                                  <span className={cn("text-[10px] font-medium ml-0.5", p.dark ? 'text-white/40' : 'text-muted-foreground')}>/mês</span>
+                                </p>
+                                {billing === 'anual' && (
+                                  <p className={cn("text-[9px] mt-1 font-semibold", p.dark ? 'text-white/40' : 'text-green-600')}>
+                                    R$ {p.slug === 'pro' ? '276' : '564'}/ano
+                                  </p>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Features / Status — área flexível */}
+                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar my-4">
+                      {selectedPlan ? (
+                        <>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-3">
+                            Incluído no {PLANO_LABEL[selectedPlan]}
+                          </p>
+                          <div className="space-y-1.5">
+                            {PLANO_FEATURES[selectedPlan].map(f => (
+                              <div key={f} className="flex items-center gap-2 py-0.5">
+                                <div className="w-4 h-4 rounded-full bg-[#375DFB]/8 flex items-center justify-center shrink-0">
+                                  <Check className="w-2.5 h-2.5 text-[#375DFB]" strokeWidth={2} />
+                                </div>
+                                <p className="text-[12px] text-foreground">{f}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : planStatus.is_premium ? (
                         <div className="flex items-center gap-4 bg-green-50 rounded-2xl p-4 border border-green-100">
                           <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shrink-0">
                             <Check className="w-5 h-5 text-white" strokeWidth={1.5} />
                           </div>
                           <div>
-                            <p className="text-[13px] font-bold text-green-700">Assinatura ativa!</p>
-                            <p className="text-[11px] text-green-600 mt-0.5">Você tem acesso completo a todos os recursos.</p>
+                            <p className="text-[13px] font-bold text-green-700">
+                              Plano {PLANO_LABEL[planStatus.plano_tipo] || 'Premium'} ativo!
+                            </p>
+                            <p className="text-[11px] text-green-600 mt-0.5">
+                              {planStatus.plano_expira_em
+                                ? `Válido até ${new Date(planStatus.plano_expira_em).toLocaleDateString('pt-BR')}`
+                                : 'Você tem acesso completo aos recursos.'}
+                            </p>
                           </div>
                         </div>
                       ) : (
-                        <>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-3 text-center">Escolha a forma de pagamento</p>
-                          <div className="grid grid-cols-2 gap-3">
-                            <Button
-                              onClick={() => handleCheckout('mercadopago')}
-                              disabled={recharging}
-                              className="w-full bg-[#1E1E20] text-white hover:bg-black rounded-xl font-bold text-[11px] uppercase tracking-widest h-12 shadow-md border-none transition-transform active:scale-95"
-                            >
-                              Pagar com Cartão
-                            </Button>
-                            <Button
-                              onClick={() => handleCheckout('mercadopago')}
-                              disabled={recharging}
-                              className="w-full bg-[#10B981] text-white hover:bg-[#10B981]/90 rounded-xl font-bold text-[11px] uppercase tracking-widest h-12 shadow-md shadow-[#10B981]/20 border-none transition-transform active:scale-95"
-                            >
-                              <Zap className="w-4 h-4 mr-2" fill="currentColor" />
-                              Pagar com Pix
-                            </Button>
+                        <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-4">
+                          <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center">
+                            <Target className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
                           </div>
-                        </>
+                          <p className="text-[13px] font-bold text-foreground">Escolha um plano</p>
+                          <p className="text-[11px] text-muted-foreground max-w-[200px] leading-relaxed">
+                            Selecione Pro ou Ultimate acima para ver os recursos
+                          </p>
+                        </div>
                       )}
                     </div>
+
+                    {/* CTA footer — só aparece quando tem plano selecionado */}
+                    {selectedPlan && (
+                      <div className="border-t border-black/5 pt-4 shrink-0">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-3 text-center">
+                          Forma de pagamento
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button
+                            onClick={() => setPaymentMethod('card')}
+                            className="w-full bg-[#1E1E20] text-white hover:bg-black rounded-xl font-bold text-[11px] uppercase tracking-widest h-12 border-none transition-transform active:scale-95"
+                          >
+                            💳 Cartão
+                          </Button>
+                          <Button
+                            onClick={() => setPaymentMethod('pix')}
+                            className="w-full bg-[#10B981] text-white hover:bg-[#10B981]/90 rounded-xl font-bold text-[11px] uppercase tracking-widest h-12 border-none shadow-md shadow-[#10B981]/20 transition-transform active:scale-95"
+                          >
+                            <Zap className="w-4 h-4 mr-1.5" fill="currentColor" strokeWidth={1.5} />
+                            Pix
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 )}
               </div>
@@ -926,7 +1150,7 @@ export default function Configuracoes() {
 
                 <div className="flex gap-3 justify-end pt-4 border-t">
                   <Button onClick={handleRecalcularScores} variant="outline" className="h-10 rounded-full px-6 font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground">Recalibir Vagas</Button>
-                  <Button onClick={handleSaveWeights} className="h-10 rounded-full px-8 bg-[#375DFB] text-white hover:bg-[#375DFB]/90 font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-[#375DFB]/20">Aplicar Motor de Busca</Button>
+                  <Button onClick={handleSaveWeights} className="h-10 rounded-full px-8 bg-[#375DFB] text-white hover:bg-[#375DFB]/90 font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-[#375DFB]/20 dark:shadow-none">Aplicar Motor de Busca</Button>
                 </div>
               </div>
             </div>
@@ -939,7 +1163,7 @@ export default function Configuracoes() {
               <div className="bg-white rounded-2xl p-6 border shadow-sm transition-all">
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
                   <div className="lg:w-1/3">
-                    <div className="w-14 h-14 rounded-2xl bg-[#0A66C2] flex items-center justify-center mb-5 shadow-lg shadow-[#0A66C2]/20">
+                    <div className="w-14 h-14 rounded-2xl bg-[#0A66C2] flex items-center justify-center mb-5 shadow-lg shadow-[#0A66C2]/20 dark:shadow-none">
                       <Linkedin className="w-7 h-7 text-white" strokeWidth={1.5} />
                     </div>
                     <h2 className="text-xl font-semibold text-foreground mb-2 tracking-tight">LinkedIn Extractor</h2>
@@ -1116,6 +1340,168 @@ export default function Configuracoes() {
                 </div>
               </div>
 
+
+
+              {/* WHATSAPP ALERTS */}
+              <div className="bg-white rounded-2xl border shadow-sm transition-all relative overflow-hidden">
+                {/* Banner top gradient */}
+                <div className={cn(
+                  "h-1.5 w-full",
+                  waStepping === 'verified' ? 'bg-gradient-to-r from-[#10B981] to-[#059669]' : 'bg-gradient-to-r from-muted/40 to-muted/20'
+                )} />
+                <div className="p-6">
+                <div className="flex flex-col lg:flex-row gap-8 items-start">
+                  <div className="lg:w-1/3">
+                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[#10B981] to-[#059669] flex items-center justify-center mb-5 shrink-0 shadow-lg shadow-[#10B981]/25">
+                      <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                    </div>
+                    <h2 className="text-xl font-semibold text-foreground mb-2 tracking-tight flex items-center gap-2">
+                      WhatsApp Alerts
+                      {!planStatus.is_premium && (
+                        <Badge className="bg-[#375DFB]/10 text-[#375DFB] border-none rounded-full px-2 text-[8px] font-black uppercase">PRO</Badge>
+                      )}
+                    </h2>
+                    <p className="text-muted-foreground text-[12px] leading-relaxed font-medium">
+                      Receba matches 85%+ e confirmações de entrevistas direto no WhatsApp.
+                    </p>
+                    {waStepping === 'verified' && (
+                      <div className="mt-3 inline-flex items-center gap-1.5 bg-[#10B981]/10 text-[#10B981] text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                        Ativo
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 w-full bg-muted/10 p-5 rounded-2xl border flex flex-col items-center">
+                    {!planStatus.is_premium ? (
+                      <div className="w-full text-center py-6 flex flex-col items-center gap-4">
+                        <ShieldCheck className="w-12 h-12 text-muted-foreground/30" strokeWidth={1.5} />
+                        <p className="text-[13px] font-bold text-muted-foreground">O WhatsApp é exclusivo do Plano Pro.</p>
+                        <Button
+                          onClick={() => { const el = document.querySelector('[value="assinatura"]'); if (el) el.click(); }}
+                          className="h-9 px-6 rounded-xl bg-[#375DFB] text-white font-bold text-[10px] uppercase tracking-widest shadow-md"
+                        >
+                          Fazer Upgrade
+                        </Button>
+                      </div>
+                    ) : waLoading && !waPrefs ? (
+                      <div className="w-full text-center py-6">
+                        <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#10B981]/50" />
+                      </div>
+                    ) : (
+                      <>
+                        {waStepping === 'idle' && (
+                          <div className="w-full space-y-2">
+                            <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Número de WhatsApp</label>
+                            <div className="flex items-center bg-white border border-black/10 rounded-xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-[#10B981]/20 focus-within:border-[#10B981]/40 transition-all h-14">
+                              {/* DDI Select */}
+                              <select
+                                value={waCountryCode}
+                                onChange={(e) => setWaCountryCode(e.target.value)}
+                                className="h-full pl-3 pr-1 text-[12px] font-bold text-foreground bg-muted/30 border-r border-black/8 outline-none cursor-pointer shrink-0 appearance-none"
+                                style={{ width: '72px' }}
+                              >
+                                <option value="+55">🇧🇷 +55</option>
+                                <option value="+1">🇺🇸 +1</option>
+                                <option value="+351">🇵🇹 +351</option>
+                                <option value="+54">🇦🇷 +54</option>
+                                <option value="+34">🇪🇸 +34</option>
+                                <option value="+52">🇲🇽 +52</option>
+                              </select>
+                              {/* Input numero local com mascara */}
+                              <Input
+                                type="text"
+                                placeholder="(11) 99999-9999"
+                                value={waPhoneInput}
+                                onChange={(e) => setWaPhoneInput(formatLocalPhone(e.target.value))}
+                                className="flex-1 h-full text-[14px] font-semibold border-none bg-transparent shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/40 px-3"
+                              />
+                              <Button
+                                onClick={handleWaVerifySend}
+                                disabled={waLoading || rawWaPhone().replace(/\D/g,'').length < 12}
+                                className="m-1.5 h-10 rounded-xl bg-[#10B981] hover:bg-[#10B981]/90 text-white font-bold text-[10px] uppercase tracking-widest px-5 shadow-sm shrink-0 transition-all"
+                              >
+                                {waLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar Código'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {waStepping === 'otp_sent' && (
+                          <div className="w-full flex flex-col gap-3">
+                            <p className="text-[11px] text-muted-foreground font-medium text-center">
+                              Código enviado para <strong>{waPhoneInput}</strong>. Insira abaixo:
+                            </p>
+                            <div className="flex justify-between items-center bg-white border border-[#10B981]/30 rounded-xl p-3 shadow-md h-14">
+                              <Input
+                                type="text"
+                                maxLength={6}
+                                placeholder="000000"
+                                value={waOtpInput}
+                                onChange={(e) => setWaOtpInput(e.target.value.replace(/\D/g, ''))}
+                                className="flex-1 h-9 text-[15px] font-bold tracking-[0.3em] border-none bg-transparent shadow-none focus-visible:ring-0 text-[#10B981]"
+                              />
+                              <Button
+                                onClick={handleWaVerifyConfirm}
+                                disabled={waLoading || waOtpInput.length < 5}
+                                className="h-full rounded-lg bg-[#375DFB] hover:bg-[#375DFB]/90 text-white font-bold text-[10px] uppercase tracking-widest px-6 shadow-sm ml-2 shrink-0"
+                              >
+                                {waLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
+                              </Button>
+                            </div>
+                            <button onClick={() => setWaStepping('idle')} className="text-[10px] text-muted-foreground hover:text-foreground underline text-center">
+                              ← Voltar e trocar número
+                            </button>
+                          </div>
+                        )}
+
+                        {waStepping === 'verified' && waPrefs && (
+                          <>
+                            <div className="w-full flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-[#10B981]/20 flex items-center justify-center">
+                                  <Check className="w-5 h-5 text-[#10B981]" strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                  <h4 className="text-[14px] font-extrabold text-[#10B981] leading-none mb-1">WhatsApp Conectado!</h4>
+                                  <p className="text-[11px] font-semibold text-muted-foreground">{waPrefs.phone_number}</p>
+                                </div>
+                              </div>
+                              <Button variant="ghost" onClick={handleWaDisconnect} className="h-9 px-4 rounded-xl text-red-500 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest">
+                                Desconectar
+                              </Button>
+                            </div>
+                            <div className="w-full mt-6 space-y-3 pt-6 border-t border-black/5">
+                              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4">Central de Notificações</p>
+                              {[
+                                { key: 'alert_high_score', title: 'Matches Urgentes (85%+)', desc: 'Vagas com alta chance, em tempo real.' },
+                                { key: 'alert_daily_summary', title: 'Resumo Diário (08:00)', desc: 'Top vagas novas toda manhã.' },
+                                { key: 'alert_interview', title: 'Lembretes de Entrevista', desc: 'Sync com entrevistas detectadas no Gmail.' },
+                              ].map((opt) => (
+                                <div key={opt.key} className="flex items-center justify-between p-3 bg-white rounded-xl border border-black/5 hover:border-[#10B981]/20 transition-all">
+                                  <div>
+                                    <h4 className="text-[13px] font-bold text-foreground">{opt.title}</h4>
+                                    <p className="text-[10px] text-muted-foreground font-medium mt-0.5">{opt.desc}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleWaToggle(opt.key, !waPrefs[opt.key])}
+                                    className={cn("w-10 h-5 rounded-full relative transition-colors duration-300 ml-4 shrink-0 focus:outline-none", waPrefs[opt.key] ? 'bg-[#10B981]' : 'bg-muted-foreground/30')}
+                                  >
+                                    <div className={cn("w-3.5 h-3.5 bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-300", waPrefs[opt.key] ? 'left-[22px]' : 'left-1')} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+                </div>
+              </div>
 
             </div>
           </TabsContent>

@@ -250,7 +250,7 @@ export default function CandidaturasPage() {
             </p>
             <Link
               to="/match"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#375DFB] text-white text-[11px] font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#375DFB] text-white text-[11px] font-bold shadow-lg shadow-primary/20 dark:shadow-none hover:scale-105 active:scale-95 transition-all"
             >
               Ir para Match
               <ArrowRight className="w-3.5 h-3.5" />
