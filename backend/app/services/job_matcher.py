@@ -2,10 +2,15 @@
 Servico de matching entre perfil do usuario e vagas.
 Calcula score de compatibilidade (0.0 a 1.0) baseado em varios criterios.
 """
-from typing import Dict, List
-from dataclasses import dataclass
+import json
 import logging
-
+from typing import Dict, Any, List
+from dataclasses import dataclass
+from sqlalchemy.orm import Session
+from app.models import UserProfile, MatchWeights, Vaga
+# Injecting WhatsAPP service PRD v17
+import asyncio
+from app.services.whatsapp_service import whatsapp_service
 from ..config import settings
 
 logger = logging.getLogger(__name__)
