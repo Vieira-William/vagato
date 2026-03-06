@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import AuthLayout from '../../components/auth/AuthLayout';
 import { AuthAlert, StatusIcon } from '../../components/auth/AuthComponents';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { supabase } from '../../lib/supabase';
 
 export default function VerificarEmail() {
     const location = useLocation();
-    const [email] = useState(location.state?.email || '');
+    const [searchParams] = useSearchParams();
+    const [email] = useState(location.state?.email || searchParams.get('email') || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -71,7 +72,7 @@ export default function VerificarEmail() {
                     variant="outline"
                     onClick={handleResend}
                     disabled={loading || countdown > 0 || !email}
-                    className="w-full h-12 rounded-full mb-6 bg-white border-border/80 text-[13px] font-bold text-foreground shadow-sm hover:bg-muted/40 transition-all pointer-events-auto"
+                    className="w-full h-12 rounded-full mb-6 bg-white dark:bg-zinc-800 border-border/80 text-[13px] font-bold text-foreground shadow-sm hover:bg-muted/40 dark:hover:bg-zinc-700 transition-all pointer-events-auto"
                 >
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> :
                         countdown > 0 ? `REENVIAR EM ${countdown}s` : 'REENVIAR EMAIL'}

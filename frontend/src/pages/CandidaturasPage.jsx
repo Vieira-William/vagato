@@ -194,7 +194,7 @@ export default function CandidaturasPage() {
       <div className="flex items-end justify-between pt-3 pb-2 shrink-0">
         <div className="flex flex-col min-w-0">
           <h1 className="text-3xl font-light tracking-tight text-foreground">Candidaturas</h1>
-          <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">Acompanhe o status das suas vagas em um so lugar.</p>
+          <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">Acompanhe o status das suas vagas em um só lugar.</p>
         </div>
 
         <div className="flex items-center gap-4 shrink-0">
@@ -246,7 +246,7 @@ export default function CandidaturasPage() {
             </div>
             <h3 className="text-lg font-medium text-foreground mb-1.5">Nenhuma candidatura ainda</h3>
             <p className="text-sm text-muted-foreground font-medium max-w-sm mb-5">
-              Comece coletando vagas na pagina de Match e acompanhe seu progresso aqui.
+              Comece coletando vagas na página de Match e acompanhe seu progresso aqui.
             </p>
             <Link
               to="/match"

@@ -1,10 +1,11 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, LayoutGroup } from 'framer-motion';
-import { Settings, Bell, BellOff, User, Sun, SunMoon, Moon, LayoutDashboard, Target, Briefcase, Calendar, LogOut } from 'lucide-react';
+import { Settings, Bell, BellOff, User, Sun, SunMoon, Moon, LayoutDashboard, Target, Briefcase, Calendar, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLayoutMode } from '../../contexts/LayoutModeContext';
 import { useState, useEffect } from 'react';
+import { Sheet, SheetContent, SheetTitle } from '../ui/sheet';
 import LogoPill from './LogoPill';
 
 const NAV_ITEMS = [
@@ -45,8 +46,13 @@ export default function NavigationShell() {
   const { width: vw, height: vh } = useViewportSize();
 
   const isTop = mode === 'topnav';
+  const isMobileNav = vw <= 640;
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Fechar menu ao navegar
+  useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
   // Dropdown position helper (TopNav: below, Sidebar: above)
   const dropdownBase = `absolute left-1/2 -translate-x-1/2 z-50 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-300 ease-out`;
@@ -57,13 +63,134 @@ export default function NavigationShell() {
   // TopNav: full-width transparent container (pills float independently)
   // Sidebar: glass card at top-left
   const shellTarget = isTop
-    ? { top: 0, left: 0, width: vw, height: 80, borderRadius: 0, px: 32 }
+    ? { top: 0, left: 0, width: vw, height: 80, borderRadius: 0, px: isMobileNav ? 16 : 32 }
     : { top: 16, left: 16, width: 240, height: vh - 32, borderRadius: 24, px: 0 };
 
   const baseIconBtn = "flex items-center justify-center backdrop-blur-lg rounded-full shadow-sm transition-all";
   const inactiveIcon = "bg-white/40 dark:bg-white/10 border border-white/40 dark:border-white/20 text-gray-700 dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/20 hover:text-[#2C2C2E] dark:hover:text-white";
   const activeIcon = "bg-[#375DFB] border border-transparent text-white shadow-md";
 
+  // ── Mobile: topnav simplificada + Sheet ──
+  if (isTop && isMobileNav) {
+    return (
+      <>
+        <nav
+          className="fixed z-50 top-0 left-0 flex items-center justify-between px-4"
+          style={{ width: vw, height: 64 }}
+        >
+          <div className="pointer-events-auto">
+            <LogoPill />
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className={`${baseIconBtn} w-10 h-10 ${inactiveIcon} pointer-events-auto`}
+            aria-label="Abrir menu"
+          >
+            <Menu className="w-5 h-5" strokeWidth={1.5} />
+          </button>
+        </nav>
+
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="w-[280px] p-0 bg-background">
+            <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+            <div className="flex flex-col h-full">
+              {/* Logo */}
+              <div className="flex items-center px-5 pt-5 pb-4 border-b border-border">
+                <img src="/logos/logo_horizontal.png" alt="Vagato" className="h-8 max-w-[130px] object-contain" />
+              </div>
+
+              {/* Nav Items */}
+              <div className="flex-1 flex flex-col gap-1 px-3 py-4">
+                {NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.to === '/dashboard'
+                    ? location.pathname === '/dashboard'
+                    : location.pathname.startsWith(item.to);
+
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.to === '/dashboard'}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] transition-all ${
+                        isActive
+                          ? 'bg-[#375DFB] text-white font-medium shadow-sm'
+                          : 'text-foreground/80 font-light hover:bg-muted'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" strokeWidth={1.5} />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+
+                <NavLink
+                  to="/configuracoes"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] transition-all ${
+                      isActive
+                        ? 'bg-[#375DFB] text-white font-medium shadow-sm'
+                        : 'text-foreground/80 font-light hover:bg-muted'
+                    }`
+                  }
+                >
+                  <Settings className="w-5 h-5" strokeWidth={1.5} />
+                  <span>Configurações</span>
+                </NavLink>
+
+                <NavLink
+                  to="/perfil"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] transition-all ${
+                      isActive
+                        ? 'bg-[#375DFB] text-white font-medium shadow-sm'
+                        : 'text-foreground/80 font-light hover:bg-muted'
+                    }`
+                  }
+                >
+                  <User className="w-5 h-5" strokeWidth={1.5} />
+                  <span>Perfil</span>
+                </NavLink>
+              </div>
+
+              {/* Footer: theme + logout */}
+              <div className="border-t border-border px-4 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setTheme('crystal')}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${theme === 'crystal' ? 'bg-[#375DFB] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <Sun className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setTheme('solid')}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${theme === 'solid' ? 'bg-[#375DFB] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <SunMoon className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${theme === 'dark' ? 'bg-[#375DFB] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <Moon className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                  title="Sair"
+                >
+                  <LogOut className="w-4.5 h-4.5" strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  // ── Desktop: layout original (TopNav ou Sidebar) ──
   return (
     <LayoutGroup>
       <motion.nav

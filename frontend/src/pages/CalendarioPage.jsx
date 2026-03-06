@@ -46,7 +46,7 @@ function formatEventTime(dateString) {
 
 function EventCard({ event }) {
   return (
-    <div className="group p-3 rounded-xl bg-white/70 backdrop-blur-sm hover:bg-white/90 transition-all hover:shadow-sm">
+    <div className="group p-3 rounded-xl bg-white/70 dark:bg-white/10 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-white/15 transition-all hover:shadow-sm">
       <div className="flex items-start gap-3">
         <div className="w-8 h-8 rounded-lg bg-[#375DFB]/10 flex items-center justify-center shrink-0">
           <Calendar className="w-4 h-4 text-[#375DFB]" strokeWidth={1.5} />
@@ -152,7 +152,7 @@ export default function CalendarioPage() {
       {/* Title + Actions row */}
       <div className="flex items-end justify-between pt-3 pb-2 shrink-0">
         <div className="flex flex-col min-w-0">
-          <h1 className="text-3xl font-light tracking-tight text-foreground">Calendario</h1>
+          <h1 className="text-3xl font-light tracking-tight text-foreground">Calendário</h1>
           <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">Acompanhe suas entrevistas e compromissos sincronizados com o Google Agenda.</p>
         </div>
 
@@ -269,7 +269,7 @@ export default function CalendarioPage() {
             {/* Events List */}
             <div className="flex-1 flex flex-col p-3 min-h-0">
               <div className="flex items-center justify-between px-2 mb-3 shrink-0">
-                <h3 className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Proximos Eventos</h3>
+                <h3 className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Próximos Eventos</h3>
                 <span className="text-[9px] font-bold text-muted-foreground">
                   {events.length} evento{events.length !== 1 ? 's' : ''}
                 </span>

@@ -81,6 +81,16 @@ function formatarNivel(nivel) {
   return niveis[nivel] || nivel;
 }
 
+function formatarModalidade(modalidade) {
+  const mods = {
+    remoto: 'Remoto',
+    hibrido: 'Híbrido',
+    presencial: 'Presencial',
+    nao_especificado: 'Não especificado',
+  };
+  return mods[modalidade] || modalidade.charAt(0).toUpperCase() + modalidade.slice(1);
+}
+
 function formatarContrato(tipo) {
   const tipos = {
     clt: 'CLT',
@@ -369,7 +379,7 @@ function VagaCardBase({
     if (vaga.modalidade && vaga.modalidade !== 'nao_especificado') {
       const isRemoto = vaga.modalidade === 'remoto';
       tags.push({
-        label: vaga.modalidade.charAt(0).toUpperCase() + vaga.modalidade.slice(1),
+        label: formatarModalidade(vaga.modalidade),
         type: 'modalidade',
         highlight: isRemoto,
       });

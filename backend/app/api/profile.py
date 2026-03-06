@@ -18,6 +18,7 @@ from ..services.default_profile import WILLIAM_PROFILE
 from ..services.ai_extractor import AIExtractor
 from ..services.linkedin_parser import parse_linkedin_zip
 from ..services.linkedin_pdf_parser import parse_linkedin_profile_pdf
+from ..middleware.supabase_auth import get_current_user
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 logger = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ def get_or_create_profile(db: Session) -> models.UserProfile:
 
 
 @router.get("/", response_model=schemas.UserProfileResponse)
-def obter_perfil(db: Session = Depends(get_db)):
+def obter_perfil(db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """
     Retorna o perfil ativo do usuário.
     Se não existir, cria um perfil padrão.
@@ -114,7 +115,8 @@ def obter_perfil(db: Session = Depends(get_db)):
 @router.patch("/", response_model=schemas.UserProfileResponse)
 def atualizar_perfil(
     perfil_update: schemas.UserProfileUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """
     Atualiza campos específicos do perfil ativo.
@@ -151,7 +153,8 @@ def atualizar_perfil(
 @router.post("/", response_model=schemas.UserProfileResponse)
 def criar_ou_substituir_perfil(
     perfil: schemas.UserProfileCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """
     Cria um novo perfil ou substitui o existente.
@@ -174,7 +177,7 @@ def criar_ou_substituir_perfil(
 
 
 @router.delete("/")
-def deletar_perfil(db: Session = Depends(get_db)):
+def deletar_perfil(db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """
     Deleta o perfil ativo.
     Um novo perfil padrão será criado na próxima requisição GET.
@@ -196,7 +199,8 @@ def deletar_perfil(db: Session = Depends(get_db)):
 @router.post("/upload-curriculo")
 async def upload_curriculo(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """
     Upload de currículo PDF para extração de dados com IA usando PDFPlumber.
@@ -301,7 +305,8 @@ async def upload_curriculo(
 @router.post("/import-linkedin-zip")
 async def import_linkedin_zip(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """
     Recebe .zip do LinkedIn Data Export, parseia CSVs e mergeia dados no perfil.
@@ -412,7 +417,8 @@ async def import_linkedin_zip(
 @router.post("/import-linkedin-pdf")
 async def import_linkedin_pdf(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """
     Recebe o PDF do perfil LinkedIn (Perfil → Mais → Salvar em PDF),
@@ -526,7 +532,8 @@ async def import_linkedin_pdf(
 @router.delete("/curriculo/{arquivo_id}")
 async def delete_curriculo(
     arquivo_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """Remove um currículo da lista do perfil."""
     profile = get_or_create_profile(db)
@@ -546,7 +553,7 @@ async def delete_curriculo(
 
 
 @router.post("/recalcular-scores")
-def recalcular_scores_perfil(db: Session = Depends(get_db)):
+def recalcular_scores_perfil(db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """
     Recalcula os scores de todas as vagas baseado no perfil atual.
     """

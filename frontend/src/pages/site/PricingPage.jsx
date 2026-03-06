@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ChevronDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -7,66 +7,70 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ScrollReveal from '../../components/site/ScrollReveal';
 import CTAFinal from '../../components/site/CTAFinal';
+import { supabase } from '../../lib/supabase';
 
 const PLANS = [
   {
-    name: 'Grátis',
+    slug: 'free',
+    name: 'Free',
     monthlyPrice: 0,
     yearlyPrice: 0,
-    desc: 'Para quem está começando a busca.',
+    desc: 'Para quem está começando a busca de emprego.',
     features: [
-      { text: 'Até 10 vagas/semana', included: true },
+      { text: '10 vagas/semana', included: true },
       { text: 'Score de match básico', included: true },
       { text: '1 perfil de busca', included: true },
       { text: 'Coleta manual', included: true },
-      { text: 'E-mails inteligentes', included: false },
+      { text: 'Dashboard simples', included: true },
       { text: 'Coleta automática 24/7', included: false },
-      { text: 'Suporte prioritário', included: false },
-      { text: 'API de integração', included: false },
+      { text: 'Smart Emails com IA', included: false },
+      { text: 'Extension Chrome', included: false },
     ],
     cta: 'Começar Grátis',
-    ctaLink: '/registro',
+    ctaType: 'register',
     variant: 'outline',
   },
   {
+    slug: 'pro',
     name: 'Pro',
     monthlyPrice: 29,
     yearlyPrice: 23,
     desc: 'Para quem leva a busca a sério.',
     highlight: true,
-    badge: 'Recomendado',
+    badge: '★ Popular',
     features: [
       { text: 'Vagas ilimitadas', included: true },
-      { text: 'Score de match avançado (IA)', included: true },
-      { text: 'Perfis ilimitados', included: true },
       { text: 'Coleta automática 24/7', included: true },
-      { text: 'E-mails inteligentes', included: true },
-      { text: 'Suporte prioritário', included: true },
-      { text: 'API de integração', included: false },
-      { text: 'Dashboard de equipe', included: false },
+      { text: 'Smart Emails com IA (10/mês)', included: true },
+      { text: 'Extension Chrome', included: true },
+      { text: 'Score de match avançado', included: true },
+      { text: 'Analytics completo', included: true },
+      { text: 'Análise de CV com IA', included: false },
+      { text: 'Pitch personalizado por vaga', included: false },
     ],
-    cta: 'Começar Agora',
-    ctaLink: '/registro',
+    cta: 'Assinar Pro',
+    ctaType: 'smart',
     variant: 'default',
   },
   {
-    name: 'Enterprise',
-    monthlyPrice: 99,
-    yearlyPrice: 79,
-    desc: 'Para equipes e consultorias de RH.',
+    slug: 'ultimate',
+    name: 'Ultimate',
+    monthlyPrice: 59,
+    yearlyPrice: 47,
+    desc: 'O arsenal completo para dominar o mercado.',
     dark: true,
     features: [
       { text: 'Tudo do Pro', included: true },
-      { text: 'API de integração', included: true },
-      { text: 'Dashboard de equipe', included: true },
-      { text: 'Onboarding dedicado', included: true },
-      { text: 'SLA garantido', included: true },
-      { text: 'Suporte 24/7', included: true },
-      { text: 'White-label', included: true },
-      { text: 'Integrações customizadas', included: true },
+      { text: 'Análise de CV com IA', included: true },
+      { text: 'Pitch personalizado por vaga', included: true },
+      { text: 'Smart Emails ilimitados', included: true },
+      { text: 'Robôs buscadores ilimitados', included: true },
+      { text: 'Relatórios exportáveis', included: true },
+      { text: 'Suporte prioritário 24/7', included: true },
+      { text: '14 dias grátis no primeiro mês', included: true },
     ],
-    cta: 'Falar com Vendas',
-    ctaLink: '#',
+    cta: 'Assinar Ultimate',
+    ctaType: 'smart',
     variant: 'secondary',
   },
 ];
@@ -126,7 +130,27 @@ function FAQItem({ item }) {
 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
+  const navigate = useNavigate();
   useEffect(() => { document.title = 'Preços — Vagato'; }, []);
+
+  const handleCTA = async (plan) => {
+    if (plan.ctaType === 'register') {
+      navigate('/registro');
+      return;
+    }
+    const billing = annual ? 'anual' : 'mensal';
+    const query = `plano=${plan.slug}&billing=${billing}`;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate(`/configuracoes?tab=assinatura&${query}`);
+      } else {
+        navigate(`/registro?${query}`);
+      }
+    } catch {
+      navigate(`/registro?${query}`);
+    }
+  };
 
   return (
     <>
@@ -198,11 +222,18 @@ export default function PricingPage() {
                 <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
                 <p className={cn('text-sm mb-5', plan.dark ? 'text-white/60' : 'text-muted-foreground')}>{plan.desc}</p>
 
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className={cn('text-sm', plan.dark ? 'text-white/60' : 'text-muted-foreground')}>R$</span>
+                <div className="flex items-baseline gap-1 mb-1">
+                  {plan.monthlyPrice > 0 && <span className={cn('text-sm', plan.dark ? 'text-white/60' : 'text-muted-foreground')}>R$</span>}
                   <span className="text-4xl font-bold">{annual ? plan.yearlyPrice : plan.monthlyPrice}</span>
-                  <span className={cn('text-sm', plan.dark ? 'text-white/60' : 'text-muted-foreground')}>/mês</span>
+                  {plan.monthlyPrice > 0 && <span className={cn('text-sm', plan.dark ? 'text-white/60' : 'text-muted-foreground')}>/mês</span>}
+                  {plan.monthlyPrice === 0 && <span className="text-2xl font-bold text-muted-foreground">Grátis</span>}
                 </div>
+                {annual && plan.monthlyPrice > 0 && (
+                  <p className={cn('text-[12px] mb-5', plan.dark ? 'text-white/40' : 'text-green-600 font-semibold')}>
+                    R$ {plan.slug === 'pro' ? '276' : '564'}/ano · 20% de desconto
+                  </p>
+                )}
+                {(!annual || plan.monthlyPrice === 0) && <div className="mb-5" />}
 
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((f) => (
@@ -220,15 +251,15 @@ export default function PricingPage() {
                 </ul>
 
                 <Button
-                  asChild
                   variant={plan.variant}
+                  onClick={() => handleCTA(plan)}
                   className={cn(
                     'w-full h-11 rounded-full font-semibold',
                     plan.highlight && 'bg-[#375DFB] hover:bg-[#375DFB]/90 text-white',
                     plan.dark && 'bg-white text-[#1b1b20] hover:bg-white/90'
                   )}
                 >
-                  <Link to={plan.ctaLink}>{plan.cta}</Link>
+                  {plan.cta}
                 </Button>
               </Card>
             ))}

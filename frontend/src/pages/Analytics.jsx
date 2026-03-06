@@ -224,7 +224,7 @@ export default function Analytics() {
       {/* 1. HERO SECTION */}
       <header className="shrink-0 mb-5 flex justify-between items-end">
         <div className="flex flex-col">
-          <h1 className="text-4xl font-light tracking-tight text-foreground mb-2">Welcome in, William</h1>
+          <h1 className="text-4xl font-light tracking-tight text-foreground mb-2">Olá, William</h1>
           <VagasProgressPills />
         </div>
 

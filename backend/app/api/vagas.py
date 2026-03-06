@@ -6,6 +6,7 @@ from datetime import date
 from ..database import get_db
 from .. import crud, schemas
 from ..scrapers.analisar_brutos import _limpar_empresa
+from ..middleware.supabase_auth import get_current_user
 
 router = APIRouter(prefix="/vagas", tags=["vagas"])
 
@@ -23,6 +24,7 @@ def listar_vagas(
     data_fim: Optional[date] = None,
     busca: Optional[str] = None,
     db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """Lista todas as vagas com filtros opcionais."""
     vagas, total = crud.get_vagas(
@@ -42,7 +44,7 @@ def listar_vagas(
 
 
 @router.get("/{vaga_id}", response_model=schemas.VagaResponse)
-def obter_vaga(vaga_id: int, db: Session = Depends(get_db)):
+def obter_vaga(vaga_id: int, db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Obtém uma vaga específica por ID."""
     vaga = crud.get_vaga(db, vaga_id)
     if not vaga:
@@ -51,7 +53,7 @@ def obter_vaga(vaga_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.VagaResponse, status_code=201)
-def criar_vaga(vaga: schemas.VagaCreate, db: Session = Depends(get_db)):
+def criar_vaga(vaga: schemas.VagaCreate, db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Cria uma nova vaga. Aplica limpeza de empresa antes de inserir."""
     # Limpa empresa para normalizar dados (remove newlines, timestamps, sufixos corporativos)
     if vaga.empresa:
@@ -62,7 +64,7 @@ def criar_vaga(vaga: schemas.VagaCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/batch", response_model=list[schemas.VagaResponse], status_code=201)
-def criar_vagas_batch(vagas: list[schemas.VagaCreate], db: Session = Depends(get_db)):
+def criar_vagas_batch(vagas: list[schemas.VagaCreate], db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Cria múltiplas vagas de uma vez (para importação). Aplica limpeza de empresa."""
     vagas_novas = []
     for vaga in vagas:
@@ -79,7 +81,7 @@ def criar_vagas_batch(vagas: list[schemas.VagaCreate], db: Session = Depends(get
 
 
 @router.patch("/{vaga_id}", response_model=schemas.VagaResponse)
-def atualizar_vaga(vaga_id: int, vaga_update: schemas.VagaUpdate, db: Session = Depends(get_db)):
+def atualizar_vaga(vaga_id: int, vaga_update: schemas.VagaUpdate, db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Atualiza uma vaga existente."""
     vaga = crud.update_vaga(db, vaga_id, vaga_update)
     if not vaga:
@@ -88,7 +90,7 @@ def atualizar_vaga(vaga_id: int, vaga_update: schemas.VagaUpdate, db: Session = 
 
 
 @router.delete("/{vaga_id}", status_code=204)
-def deletar_vaga(vaga_id: int, db: Session = Depends(get_db)):
+def deletar_vaga(vaga_id: int, db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Deleta uma vaga."""
     if not crud.delete_vaga(db, vaga_id):
         raise HTTPException(status_code=404, detail="Vaga não encontrada")
@@ -99,6 +101,7 @@ def atualizar_status(
     vaga_id: int,
     status: schemas.StatusEnum,
     db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """Atualiza apenas o status de uma vaga."""
     vaga = crud.update_vaga(db, vaga_id, schemas.VagaUpdate(status=status))
@@ -111,6 +114,7 @@ def atualizar_status(
 def toggle_favorito(
     vaga_id: int,
     db: Session = Depends(get_db),
+    _user: dict = Depends(get_current_user),
 ):
     """Toggle o estado de favorito de uma vaga."""
     vaga = crud.get_vaga(db, vaga_id)
@@ -125,7 +129,7 @@ def toggle_favorito(
 
 
 @router.post("/recalcular-scores")
-def recalcular_scores(db: Session = Depends(get_db)):
+def recalcular_scores(db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Recalcula scores de compatibilidade para todas as vagas."""
     from ..services.job_matcher import JobMatcher
     from ..services.default_profile import WILLIAM_PROFILE
@@ -159,7 +163,7 @@ def recalcular_scores(db: Session = Depends(get_db)):
 
 
 @router.post("/deduplicar")
-def deduplicar_vagas(db: Session = Depends(get_db)):
+def deduplicar_vagas(db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Remove vagas duplicadas, mantendo a mais recente de cada titulo."""
     from sqlalchemy import func
     from ..models import Vaga
@@ -204,7 +208,7 @@ def deduplicar_vagas(db: Session = Depends(get_db)):
     }
 
 @router.post("/{vaga_id}/gerar-pitch")
-def gerar_pitch(vaga_id: int, db: Session = Depends(get_db)):
+def gerar_pitch(vaga_id: int, db: Session = Depends(get_db), _user: dict = Depends(get_current_user)):
     """Gera uma cold message contextualizada com a IA para a vaga."""
     from ..services.ai_extractor import AIExtractor
     from ..services.default_profile import WILLIAM_PROFILE

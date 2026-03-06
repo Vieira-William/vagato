@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AuthLayout from '../../components/auth/AuthLayout';
 import OAuthButtons from '../../components/auth/OAuthButtons';
 import { AuthDivider, AuthAlert } from '../../components/auth/AuthComponents';
@@ -22,6 +22,7 @@ export default function Registro() {
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Validadores Reactivos
     const isPasswordStrongEnough = useMemo(() => zxcvbn(password).score >= 2, [password]);
@@ -65,6 +66,17 @@ export default function Registro() {
                 return;
             }
 
+            // Preservar intent de plano (vindo do site/pricing) para após confirmação de email
+            const params = new URLSearchParams(location.search);
+            const urlPlano = params.get('plano');
+            const urlBilling = params.get('billing');
+            if (urlPlano && ['pro', 'ultimate'].includes(urlPlano)) {
+                sessionStorage.setItem('vagato_intent', JSON.stringify({
+                    plano: urlPlano,
+                    billing: ['mensal', 'anual'].includes(urlBilling) ? urlBilling : 'mensal',
+                }));
+            }
+
             // Sucesso na criação. O Supabase enviará Email na Free-Tier com requireEmailConfirm True.
             navigate('/verificar-email', { state: { email: cleanEmail } });
 
@@ -79,7 +91,7 @@ export default function Registro() {
     return (
         <AuthLayout
             title="Crie sua conta"
-            subtitle="Comece a encontrar as melhores vagas gerais"
+            subtitle="Comece a encontrar as melhores vagas para o seu perfil"
         >
             <OAuthButtons />
 

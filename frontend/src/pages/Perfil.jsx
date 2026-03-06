@@ -136,7 +136,7 @@ export default function Perfil() {
       setUploading(true);
       const response = await profileService.deletarCurriculo(id);
       setPerfil(prev => ({ ...prev, arquivos_curriculo: response.data.arquivos }));
-      setSuccess('Curriculo removido com sucesso.');
+      setSuccess('Currículo removido com sucesso.');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError('Erro ao remover curriculo');
@@ -176,13 +176,13 @@ export default function Perfil() {
           ...(nivel_ingles ? { nivel_ingles } : {})
         }));
 
-        setSuccess(`Curriculo salvo! ${skills?.length || 0} skills extraidas com IA.`);
+        setSuccess(`Currículo salvo! ${skills?.length || 0} skills extraidas com IA.`);
       } else {
         setPerfil(prev => ({
           ...prev,
           arquivos_curriculo: novosArquivos
         }));
-        setSuccess(response.data.message || 'Curriculo salvo com sucesso!');
+        setSuccess(response.data.message || 'Currículo salvo com sucesso!');
       }
     } catch (err) {
       console.error(err);
@@ -259,17 +259,17 @@ export default function Perfil() {
       )}
 
       {/* Card-in-card panel */}
-      <div className="flex-1 flex flex-col min-h-0 bg-white/50 backdrop-blur-sm rounded-t-2xl border border-white/60 border-b-0 overflow-hidden mt-1">
+      <div className="flex-1 flex flex-col min-h-0 bg-white/50 dark:bg-card backdrop-blur-sm dark:backdrop-blur-none rounded-t-2xl border border-white/60 dark:border-border border-b-0 overflow-hidden mt-1">
         <div className="flex-1 overflow-y-auto custom-scrollbar -mr-1 pr-1 p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl">
 
             {/* Dados Pessoais */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 transition-all">
+            <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 transition-all">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-[#375DFB]/10 flex items-center justify-center">
                   <User className="w-4 h-4 text-[#375DFB]" strokeWidth={1.5} />
                 </div>
-                <h2 className="text-[15px] font-semibold text-foreground">Quem e voce</h2>
+                <h2 className="text-[15px] font-semibold text-foreground">Quem é você</h2>
               </div>
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-2">
@@ -315,16 +315,16 @@ export default function Perfil() {
             </div>
 
             {/* Trajetoria */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 transition-all">
+            <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 transition-all">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-[#375DFB]/10 flex items-center justify-center">
                   <Briefcase className="w-4 h-4 text-[#375DFB]" strokeWidth={1.5} />
                 </div>
-                <h2 className="text-[15px] font-semibold text-foreground">Sua trajetoria</h2>
+                <h2 className="text-[15px] font-semibold text-foreground">Sua trajetória</h2>
               </div>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Anos de Experiencia</label>
+                  <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Anos de Experiência</label>
                   <Input
                     type="number"
                     value={perfil?.experiencia_anos || ''}
@@ -333,7 +333,7 @@ export default function Perfil() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Menor nivel que aceita</label>
+                  <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Menor nível que aceita</label>
                   <select
                     value={perfil?.nivel_minimo || 'senior'}
                     onChange={(e) => handleChange('nivel_minimo', e.target.value)}
@@ -348,7 +348,7 @@ export default function Perfil() {
             </div>
 
             {/* Skills */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 md:col-span-2 transition-all">
+            <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 md:col-span-2 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-[#375DFB]/10 flex items-center justify-center">
@@ -395,7 +395,7 @@ export default function Perfil() {
 
               {/* Suggestions */}
               <div className="pt-3 border-t border-black/[0.04]">
-                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1 mb-2">Sugestoes de IA:</p>
+                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1 mb-2">Sugestões de IA:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {SKILLS_SUGERIDAS.filter(s => !perfil?.skills?.includes(s)).slice(0, 12).map(skill => (
                     <button
@@ -411,7 +411,7 @@ export default function Perfil() {
             </div>
 
             {/* Preferencias */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 transition-all">
+            <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 transition-all">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-[#375DFB]/10 flex items-center justify-center">
                   <MapPin className="w-4 h-4 text-[#375DFB]" strokeWidth={1.5} />
@@ -462,18 +462,18 @@ export default function Perfil() {
               </div>
             </div>
 
-            {/* Idioma & Salario */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 transition-all">
+            {/* Idioma & Salário */}
+            <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 transition-all">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-[#375DFB]/10 flex items-center justify-center">
                   <DollarSign className="w-4 h-4 text-[#375DFB]" strokeWidth={1.5} />
                 </div>
-                <h2 className="text-[15px] font-semibold text-foreground">Idioma & Salario</h2>
+                <h2 className="text-[15px] font-semibold text-foreground">Idioma & Salário</h2>
               </div>
 
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Ingles</label>
+                  <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Inglês</label>
                   <select
                     value={perfil?.nivel_ingles || 'intermediario'}
                     onChange={(e) => handleChange('nivel_ingles', e.target.value)}
@@ -509,8 +509,8 @@ export default function Perfil() {
               </div>
             </div>
 
-            {/* Curriculo / IA Sync */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 md:col-span-2 transition-all">
+            {/* Currículo / IA Sync */}
+            <div className="bg-white/70 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-5 md:col-span-2 transition-all">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-[#375DFB]/10 flex items-center justify-center">
                   <Upload className="w-4 h-4 text-[#375DFB]" strokeWidth={1.5} />
@@ -558,7 +558,7 @@ export default function Perfil() {
                       uploading ? "bg-muted-foreground cursor-not-allowed" : "bg-[#375DFB] shadow-primary/30 hover:scale-105 active:scale-95"
                     )}>
                       {uploading ? <RefreshCw className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : <Upload className="w-4 h-4" strokeWidth={1.5} />}
-                      {uploading ? 'Analisando...' : 'Subir Curriculo'}
+                      {uploading ? 'Analisando...' : 'Subir Currículo'}
                       <input type="file" accept=".pdf" className="hidden" disabled={uploading} onChange={handleFileUpload} />
                     </label>
                     <p className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest">PDF / MAX 5MB</p>

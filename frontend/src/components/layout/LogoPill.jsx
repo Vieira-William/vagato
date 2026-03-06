@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PanelLeft, PanelTop } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useLayoutMode } from '../../contexts/LayoutModeContext';
 
 export default function LogoPill({ showToggle = false }) {
   const { mode, toggleMode, isMobile } = useLayoutMode();
+  const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
 
   // Reset hover when mode changes (button moves, mouseLeave won't fire)
@@ -20,10 +22,9 @@ export default function LogoPill({ showToggle = false }) {
     <motion.button
       layoutId="logo-pill"
       layout="position"
-      onClick={toggleMode}
+      onClick={isMobile ? () => navigate('/dashboard') : toggleMode}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      disabled={isMobile}
       className={`relative flex items-center gap-2 cursor-pointer transition-all ${
         isTop
           ? 'px-4 h-10 bg-white/40 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-full shadow-sm hover:bg-white/60 dark:hover:bg-white/15'

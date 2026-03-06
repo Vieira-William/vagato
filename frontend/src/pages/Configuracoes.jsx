@@ -614,8 +614,27 @@ export default function Configuracoes() {
   };
 
   const handleWeightChange = (key, value) => {
-    const numValue = parseFloat(value);
-    setWeights((prev) => ({ ...prev, [key]: numValue }));
+    const newValue = Math.max(0, Math.min(1, parseFloat(value)));
+    setWeights((prev) => {
+      const otherKeys = Object.keys(prev).filter((k) => k !== key);
+      const otherSum = otherKeys.reduce((s, k) => s + prev[k], 0);
+      const remaining = Math.max(0, 1.0 - newValue);
+
+      const updated = { ...prev, [key]: newValue };
+
+      if (otherSum > 0) {
+        // Redistribuir proporcionalmente entre os outros
+        otherKeys.forEach((k) => {
+          updated[k] = parseFloat(((prev[k] / otherSum) * remaining).toFixed(4));
+        });
+      } else {
+        // Todos os outros são 0 — dividir igualmente
+        const share = parseFloat((remaining / otherKeys.length).toFixed(4));
+        otherKeys.forEach((k) => { updated[k] = share; });
+      }
+
+      return updated;
+    });
   };
 
   const totalWeights = Object.values(weights).reduce((sum, v) => sum + v, 0);
@@ -704,7 +723,7 @@ export default function Configuracoes() {
       <div className="flex items-end justify-between pt-3 pb-2 shrink-0">
         <div className="flex flex-col min-w-0">
           <h1 className="text-3xl font-light tracking-tight text-foreground">Ajustes</h1>
-          <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">Configure a inteligencia por tras da plataforma.</p>
+          <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">Configure a inteligência por trás da plataforma.</p>
         </div>
       </div>
 
@@ -771,13 +790,13 @@ export default function Configuracoes() {
 
       <Tabs defaultValue="assinatura" className="flex-1 flex flex-col min-h-0 bg-white/50 dark:bg-card backdrop-blur-sm dark:backdrop-blur-none rounded-t-2xl border border-white/60 dark:border-border border-b-0 overflow-hidden mt-1 p-4">
         <TabsList className="w-full justify-start h-12 bg-muted/30 border border-black/5 rounded-xl p-1 mb-4 hidden md:flex shrink-0">
-          <TabsTrigger value="assinatura" className="rounded-lg text-[11px] font-bold uppercase tracking-widest px-6 h-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="assinatura" className="rounded-lg text-[11px] font-bold uppercase tracking-widest px-6 h-full data-[state=active]:bg-white dark:data-[state=active]:bg-card data-[state=active]:shadow-sm">
             Assinatura e Cobrança
           </TabsTrigger>
-          <TabsTrigger value="ia-match" className="rounded-lg text-[11px] font-bold uppercase tracking-widest px-6 h-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="ia-match" className="rounded-lg text-[11px] font-bold uppercase tracking-widest px-6 h-full data-[state=active]:bg-white dark:data-[state=active]:bg-card data-[state=active]:shadow-sm">
             Smart Match (IA)
           </TabsTrigger>
-          <TabsTrigger value="integracoes" className="rounded-lg text-[11px] font-bold uppercase tracking-widest px-6 h-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="integracoes" className="rounded-lg text-[11px] font-bold uppercase tracking-widest px-6 h-full data-[state=active]:bg-white dark:data-[state=active]:bg-card data-[state=active]:shadow-sm">
             Conexões (Apps)
           </TabsTrigger>
         </TabsList>
@@ -887,7 +906,7 @@ export default function Configuracoes() {
               </div>
 
               {/* ── COLUNA DIREITA: Seletor de Planos + Pagamento ── */}
-              <div className="bg-white rounded-2xl border border-black/5 flex flex-col min-h-[420px]">
+              <div className="bg-white dark:bg-card rounded-2xl border border-black/5 dark:border-border flex flex-col min-h-[420px]">
 
                 {paymentMethod ? (
                   /* ── BRICK STATE ── */
@@ -1109,7 +1128,7 @@ export default function Configuracoes() {
           <TabsContent value="ia-match" className="m-0">
             <div className="max-w-3xl mx-auto">
               {/* MATCH WEIGHTS */}
-              <div className="bg-white rounded-2xl p-8 border shadow-sm transition-all">
+              <div className="bg-white dark:bg-card rounded-2xl p-8 border dark:border-border shadow-sm transition-all">
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <h2 className="text-xl font-semibold text-foreground tracking-tight">O que priorizar?</h2>
@@ -1160,7 +1179,7 @@ export default function Configuracoes() {
             <div className="max-w-4xl mx-auto space-y-6">
 
               {/* LINKEDIN SYNC */}
-              <div className="bg-white rounded-2xl p-6 border shadow-sm transition-all">
+              <div className="bg-white dark:bg-card rounded-2xl p-6 border dark:border-border shadow-sm transition-all">
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
                   <div className="lg:w-1/3">
                     <div className="w-14 h-14 rounded-2xl bg-[#0A66C2] flex items-center justify-center mb-5 shadow-lg shadow-[#0A66C2]/20 dark:shadow-none">
@@ -1203,19 +1222,19 @@ export default function Configuracoes() {
               </div>
 
               {/* INTEGRATIONS */}
-              <div className="bg-white rounded-2xl p-6 border shadow-sm transition-all">
+              <div className="bg-white dark:bg-card rounded-2xl p-6 border dark:border-border shadow-sm transition-all">
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
                   <div className="lg:w-1/3">
                     <div className="w-14 h-14 rounded-2xl bg-muted border flex items-center justify-center mb-5">
                       <Link2 className="w-7 h-7 text-foreground" strokeWidth={1.5} />
                     </div>
-                    <h2 className="text-xl font-semibold text-foreground mb-2 tracking-tight">Auth Apps</h2>
+                    <h2 className="text-xl font-semibold text-foreground mb-2 tracking-tight">Apps de Autenticação</h2>
                     <p className="text-muted-foreground text-[12px] leading-relaxed font-medium">Você será redirecionado para a tela segura do Google para autorizar o ecossistema SaaS.</p>
                   </div>
 
                   <div className="flex-1 space-y-3">
                     {/* Google Calendar */}
-                    <div className="bg-white rounded-xl border p-4 flex items-center justify-between hover:border-[#375DFB]/30 transition-all">
+                    <div className="bg-white dark:bg-card rounded-xl border dark:border-border p-4 flex items-center justify-between hover:border-[#375DFB]/30 transition-all">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-[#375DFB]/10 flex items-center justify-center text-[#375DFB]">
                           <Calendar className="w-6 h-6" strokeWidth={1.5} />
@@ -1246,7 +1265,7 @@ export default function Configuracoes() {
                     </div>
 
                     {/* Gmail */}
-                    <div className="bg-white rounded-xl border p-4 flex items-center justify-between hover:border-[#EA4335]/30 transition-all">
+                    <div className="bg-white dark:bg-card rounded-xl border dark:border-border p-4 flex items-center justify-between hover:border-[#EA4335]/30 transition-all">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-[#EA4335]/10 flex items-center justify-center text-[#EA4335]">
                           <Mail className="w-6 h-6" strokeWidth={1.5} />
@@ -1277,7 +1296,7 @@ export default function Configuracoes() {
                     </div>
 
                     {/* Google Tasks */}
-                    <div className="bg-white rounded-xl border p-4">
+                    <div className="bg-white dark:bg-card rounded-xl border dark:border-border p-4">
                       <div className="flex items-center justify-between hover:border-[#1A73E8]/30 transition-all">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-xl bg-[#1A73E8]/10 flex items-center justify-center text-[#1A73E8]">
@@ -1343,7 +1362,7 @@ export default function Configuracoes() {
 
 
               {/* WHATSAPP ALERTS */}
-              <div className="bg-white rounded-2xl border shadow-sm transition-all relative overflow-hidden">
+              <div className="bg-white dark:bg-card rounded-2xl border dark:border-border shadow-sm transition-all relative overflow-hidden">
                 {/* Banner top gradient */}
                 <div className={cn(
                   "h-1.5 w-full",

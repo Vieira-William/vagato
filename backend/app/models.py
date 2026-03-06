@@ -165,6 +165,8 @@ class UserProfile(Base):
     # Assinatura SaaS / Plano Premium
     is_premium = Column(Boolean, default=False)
     plano_expira_em = Column(DateTime, nullable=True)
+    plano_tipo = Column(String(20), default='free')       # 'free' | 'pro' | 'ultimate'
+    billing_period = Column(String(10), default='mensal') # 'mensal' | 'anual'
 
     # Metadados
     is_active = Column(Boolean, default=True)
@@ -422,12 +424,80 @@ class ConfiguracaoIA(Base):
         """Verifica se está abaixo do limite de alerta."""
         return self.saldo_disponivel <= self.alerta_limite_usd
 
+
+# =============================================================================
+# WHATSAPP ALERTS (PRD v17)
+# =============================================================================
+
+class WhatsAppPreferences(Base):
+    """Preferências do usuário para recebimento de alertas via WhatsApp."""
+    __tablename__ = "whatsapp_preferences"
+
+    id = Column(String(36), primary_key=True)  # UUID4
+    user_id = Column(Integer, ForeignKey("user_profiles.id"), unique=True, nullable=False)
+    phone_number = Column(String(20), nullable=True)  # +5511999999999
+    phone_verified = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)  # Master switch
+    
+    # Alertas
+    alert_high_score = Column(Boolean, default=True)
+    alert_daily_summary = Column(Boolean, default=False)
+    alert_expiring = Column(Boolean, default=False)
+    alert_interview = Column(Boolean, default=True)
+    alert_approved = Column(Boolean, default=True)
+    alert_feedback = Column(Boolean, default=False)
+    alert_reminder_24h = Column(Boolean, default=True)
+    alert_profile = Column(Boolean, default=False)
+    alert_inactivity = Column(Boolean, default=False)
+    
+    # Config do Silêncio
+    quiet_start = Column(String(5), default="22:00")
+    quiet_end = Column(String(5), default="07:00")
+    timezone = Column(String(50), default="America/Sao_Paulo")
+    quiet_until = Column(DateTime(timezone=True), nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relacionamento back-populates opcional depois
+    def __repr__(self):
+        return f"<WhatsAppPreferences(user_id={self.user_id}, active={self.is_active})>"
+
+class WhatsAppLog(Base):
+    """Log de auditoria das mensagens disparadas no WhatsApp."""
+    __tablename__ = "whatsapp_log"
+
+    id = Column(String(36), primary_key=True)  # UUID4
+    user_id = Column(Integer, ForeignKey("user_profiles.id"), nullable=False)
+    alert_type = Column(String(50), nullable=False)  # high_score, interview, etc
+    template_id = Column(String(100), nullable=True)
+    phone_number = Column(String(20), nullable=True)
+    message_body = Column(Text, nullable=True)
+    status = Column(String(20), default="queued")  # queued, sent, delivered, read, failed
+    provider_id = Column(String(255), nullable=True)  # Twilio SID
+    error = Column(Text, nullable=True)
+    cost_usd = Column(Float, nullable=True)
+    
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    delivered_at = Column(DateTime(timezone=True), nullable=True)
+    read_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_wa_log_user", "user_id", "created_at"),
+        Index("idx_wa_log_status", "status", "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<WhatsAppLog(id={self.id}, type='{self.alert_type}', status='{self.status}')>"
+
+
 class TransacaoPagamento(Base):
     """Histórico de transações financeiras para compras de pacotes de IA."""
     __tablename__ = "transacoes_pagamento"
 
     id = Column(String(36), primary_key=True)  # UUID4
-    gateway = Column(String(50), nullable=False)  # 'mercadopago', 'stripe'
+    gateway = Column(String(50), nullable=False, index=True)  # 'mercadopago', 'stripe'
     gateway_id = Column(String(100), nullable=True)  # ID retornado pelo Gateway
     status = Column(String(20), default="pending")  # 'pending', 'approved', 'rejected'
     
@@ -438,7 +508,7 @@ class TransacaoPagamento(Base):
     atualizado_em = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
     # Vinculo com o usuario do SaaS em vez da configuração de IA
-    user_email = Column(String(100), nullable=True)
+    user_email = Column(String(100), nullable=True, index=True)
     
     def __repr__(self):
         return f"<TransacaoPagamento(id={self.id}, status='{self.status}', BRL={self.valor_brl})>"
@@ -464,5 +534,102 @@ class ExtensionLog(Base):
 
     def __repr__(self):
         return f"<ExtensionLog(id={self.id}, event='{self.event}', site='{self.site}')>"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BACKOFFICE ADMIN
+# ══════════════════════════════════════════════════════════════════════════════
+
+class AdminUser(Base):
+    """Tabela de admins — SEPARADA dos users comuns (Supabase Auth)."""
+    __tablename__ = "admin_users"
+
+    id            = Column(String, primary_key=True)
+    email         = Column(String(255), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    role          = Column(String(20), nullable=False, default='admin')  # 'owner' | 'admin' | 'viewer'
+    totp_secret   = Column(String(255), nullable=True)
+    totp_enabled  = Column(Boolean, default=False)
+    is_active     = Column(Boolean, default=True)
+    last_login    = Column(DateTime(timezone=True), nullable=True)
+    created_at    = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AdminAuditLog(Base):
+    """Audit log — TODA ação administrativa é registrada aqui."""
+    __tablename__ = "admin_audit_log"
+
+    id          = Column(String, primary_key=True)
+    admin_id    = Column(String, ForeignKey("admin_users.id"), nullable=True)
+    action      = Column(String(100), nullable=False)   # 'admin.login', 'user.delete', 'coupon.create'
+    target_type = Column(String(50), nullable=True)      # 'user', 'coupon', 'plan', 'config'
+    target_id   = Column(String(255), nullable=True)     # ID do recurso afetado
+    details     = Column(JSON, nullable=True)            # detalhes extras
+    ip_address  = Column(String(45), nullable=True)
+    user_agent  = Column(Text, nullable=True)
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_audit_log_admin", "admin_id", "created_at"),
+        Index("idx_audit_log_action", "action", "created_at"),
+    )
+
+
+class Coupon(Base):
+    """Cupons de desconto gerenciados pelo Backoffice Admin."""
+    __tablename__ = "coupons"
+
+    id               = Column(Integer, primary_key=True, autoincrement=True)
+    code             = Column(String(50), unique=True, nullable=False, index=True)
+    discount_pct     = Column(Float, nullable=True)            # 20.0 = 20%
+    discount_fixed   = Column(Float, nullable=True)            # R$10 off
+    discount_type    = Column(String(10), nullable=False, default='percent')  # 'percent' | 'fixed'
+    max_uses         = Column(Integer, nullable=True)          # null = ilimitado
+    current_uses     = Column(Integer, default=0)
+    applicable_plans = Column(JSON, default=list)              # ["pro", "ultimate"] ou [] = todos
+    expires_at       = Column(DateTime(timezone=True), nullable=True)
+    is_active        = Column(Boolean, default=True)
+    created_by       = Column(String, ForeignKey("admin_users.id"), nullable=True)
+    created_at       = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at       = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_coupon_active", "is_active"),
+    )
+
+
+class EmailTemplate(Base):
+    """Templates de e-mail transacional gerenciados pelo Backoffice."""
+    __tablename__ = "email_templates"
+
+    id            = Column(Integer, primary_key=True, autoincrement=True)
+    slug          = Column(String(100), unique=True, nullable=False, index=True)
+    nome          = Column(String(200), nullable=False)
+    assunto       = Column(String(500), nullable=False)
+    corpo         = Column(Text, nullable=False)
+    variaveis     = Column(JSON, default=list)
+    tipo          = Column(String(30), default='transacional')
+    is_active     = Column(Boolean, default=True)
+    created_by    = Column(String, ForeignKey("admin_users.id"), nullable=True)
+    created_at    = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at    = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class EmailLog(Base):
+    """Log de envio de e-mails transacionais."""
+    __tablename__ = "email_logs"
+
+    id            = Column(Integer, primary_key=True, autoincrement=True)
+    template_id   = Column(Integer, ForeignKey("email_templates.id"), nullable=True)
+    to_email      = Column(String(255), nullable=False)
+    subject       = Column(String(500), nullable=False)
+    status        = Column(String(20), default='sent')
+    error_message = Column(Text, nullable=True)
+    sent_at       = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_email_log_status", "status"),
+        Index("idx_email_log_sent", "sent_at"),
+    )
 
 
