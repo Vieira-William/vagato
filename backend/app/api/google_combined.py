@@ -15,7 +15,7 @@ import os
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
 
@@ -69,8 +69,17 @@ async def google_combined_login():
     Retorna a URL de autorização do Google com os 3 escopos combinados.
     O frontend abre essa URL em uma nova aba (window.open).
     """
+    client_config = _build_client_config()
+    PLACEHOLDERS = {"SEU_CLIENT_ID_AQUI", "SEU_CLIENT_SECRET_AQUI", "", None}
+    if (not client_config["web"]["client_id"] or
+            client_config["web"]["client_id"] in PLACEHOLDERS or
+            not client_config["web"]["client_secret"]):
+        raise HTTPException(
+            status_code=400,
+            detail="Google OAuth não configurado. Adicione GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET.",
+        )
+
     try:
-        client_config = _build_client_config()
         flow = Flow.from_client_config(
             client_config,
             scopes=COMBINED_SCOPES,
@@ -86,7 +95,7 @@ async def google_combined_login():
         return {"auth_url": auth_url, "state": state}
     except Exception as e:
         logger.error("Erro ao gerar URL de autorização Google Combined: %s", e)
-        return {"error": str(e)}, 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============================================================
