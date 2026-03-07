@@ -7,12 +7,19 @@ const api = axios.create({
 
 // Interceptor: injeta Bearer token do Supabase Auth em cada request
 api.interceptors.request.use(async (config) => {
+  let timeoutId;
   try {
     // Timeout defensivo de 3s no getSession para evitar loop infinito em deadlocks de Auth (localStorage locking)
     const sessionPromise = supabase.auth.getSession();
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), 3000));
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), 3000);
+    });
+    
+    // Evita Unhandled Promise Rejection silencioso caso a sessão seja resolvida antes do timeout
+    timeoutPromise.catch(() => {});
     
     const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+    clearTimeout(timeoutId);
     
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`;
@@ -22,6 +29,7 @@ api.interceptors.request.use(async (config) => {
       config.headers.Authorization = 'Bearer dev-token';
     }
   } catch (err) {
+    clearTimeout(timeoutId);
     if (err.message === 'SUPABASE_TIMEOUT') {
        console.warn('Timeout ao recuperar sessão do Supabase no Axios interceptor.');
     }
