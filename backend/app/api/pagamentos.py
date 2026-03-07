@@ -12,6 +12,22 @@ from ..models import TransacaoPagamento, UserProfile, ConfiguracaoIA
 
 router = APIRouter(prefix="/pagamento", tags=["pagamento"])
 
+# Emails com acesso god mode (ultimate permanente, sem expiração)
+_OWNER_EMAILS = {
+    e.strip().lower()
+    for e in os.getenv("OWNER_EMAILS", "william.marangon@gmail.com").split(",")
+    if e.strip()
+}
+
+_GOD_MODE_RESPONSE = {
+    "is_premium": True,
+    "plano_expira_em": None,
+    "plano": "premium",
+    "plano_tipo": "ultimate",
+    "billing_period": "anual",
+    "transacoes_recentes": [],
+}
+
 
 def _get_active_profile(db: Session):
     """Retorna o perfil ativo ou None."""
@@ -24,6 +40,9 @@ async def get_payment_status(db: Session = Depends(get_db)):
     profile = _get_active_profile(db)
     if not profile:
         return {"is_premium": False, "plano_expira_em": None, "plano": "free", "transacoes_recentes": []}
+
+    if (profile.email or "").lower() in _OWNER_EMAILS:
+        return _GOD_MODE_RESPONSE
 
     transacoes = (
         db.query(TransacaoPagamento)
