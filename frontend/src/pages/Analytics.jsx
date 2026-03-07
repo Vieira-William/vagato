@@ -193,27 +193,45 @@ export default function Analytics() {
   const isTop = mode === 'topnav';
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState(null);
 
   // Easter Egg sonoro — digitar V-A-G-A-T-O toca miado de gato
   useVagatoEasterEgg();
 
   useEffect(() => {
+    let isMounted = true;
+    
     (async () => {
       try {
-        const { data } = await statsService.historico(30);
-        setStats(data);
+        // Fallback de 6 segundos caso o Supabase getSession() trave no interceptor
+        const fetchPromise = statsService.historico(30);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('TIMEOUT_CARREGAMENTO')), 6000)
+        );
+        
+        const { data } = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        if (isMounted) setStats(data);
       } catch (err) {
-        console.error('Erro ao carregar stats:', err);
+        if (isMounted) {
+          console.error('Erro ao carregar stats no Analytics:', err);
+          setErrorStatus(err.message === 'TIMEOUT_CARREGAMENTO' ? 'Timeout' : 'Erro');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     })();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#F5F3EF]">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#375DFB] border-t-transparent" />
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F5F3EF] dark:bg-background">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#375DFB] border-t-transparent mb-4" />
+        <p className="text-sm text-muted-foreground animate-pulse">Carregando painel...</p>
       </div>
     );
   }
