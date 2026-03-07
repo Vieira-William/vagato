@@ -27,7 +27,7 @@ export default function LogoPill({ showToggle = false }) {
       onMouseLeave={() => setHovered(false)}
       className={`relative flex items-center gap-2 cursor-pointer transition-all ${
         isTop
-          ? 'px-4 h-10 bg-white/40 dark:bg-white/10 backdrop-blur-lg border border-white/40 dark:border-white/20 rounded-full shadow-sm hover:bg-white/60 dark:hover:bg-white/15'
+          ? 'px-4 h-10 bg-white/40 dark:bg-muted backdrop-blur-lg dark:backdrop-blur-none border border-white/40 dark:border-border rounded-full shadow-sm hover:bg-white/60 dark:hover:bg-accent'
           : 'w-full justify-between h-9'
       }`}
       whileHover={!isMobile ? { scale: 1.02 } : undefined}

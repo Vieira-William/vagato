@@ -66,8 +66,8 @@ export default function NavigationShell() {
     ? { top: 0, left: 0, width: vw, height: 80, borderRadius: 0, px: isMobileNav ? 16 : 32 }
     : { top: 16, left: 16, width: 240, height: vh - 32, borderRadius: 24, px: 0 };
 
-  const baseIconBtn = "flex items-center justify-center backdrop-blur-lg rounded-full shadow-sm transition-all";
-  const inactiveIcon = "bg-white/40 dark:bg-white/10 border border-white/40 dark:border-white/20 text-gray-700 dark:text-white/70 hover:bg-white/60 dark:hover:bg-white/20 hover:text-[#2C2C2E] dark:hover:text-white";
+  const baseIconBtn = "flex items-center justify-center backdrop-blur-lg dark:backdrop-blur-none rounded-full shadow-sm transition-all";
+  const inactiveIcon = "bg-white/40 dark:bg-muted border border-white/40 dark:border-border text-gray-700 dark:text-white/70 hover:bg-white/60 dark:hover:bg-accent hover:text-[#2C2C2E] dark:hover:text-white";
   const activeIcon = "bg-[#375DFB] border border-transparent text-white shadow-md";
 
   // ── Mobile: topnav simplificada + Sheet ──
@@ -198,7 +198,7 @@ export default function NavigationShell() {
         onMouseLeave={() => { if (!isTop) setSidebarHovered(false); }}
         className={`
           fixed z-50 flex overflow-visible
-          ${isTop ? 'flex-row items-center pointer-events-none gap-2' : 'flex-col pointer-events-auto'}
+          ${isTop ? 'flex-row items-center pointer-events-none gap-3' : 'flex-col pointer-events-auto'}
         `}
         style={{
           position: 'fixed',
@@ -209,13 +209,13 @@ export default function NavigationShell() {
           borderRadius: shellTarget.borderRadius,
           paddingLeft: shellTarget.px,
           paddingRight: shellTarget.px,
-          // Glass: transparent in TopNav, frosted glass in Sidebar
-          backgroundColor: isTop ? 'transparent' : 'rgba(255,255,255,0.4)',
-          border: isTop ? '1px solid transparent' : '1px solid rgba(255,255,255,0.4)',
-          boxShadow: isTop ? 'none' : '0 8px 32px rgba(0,0,0,0.08)',
-          backdropFilter: isTop ? 'none' : 'blur(12px)',
-          WebkitBackdropFilter: isTop ? 'none' : 'blur(12px)',
-          transition: `all 0.45s ${EASING}`,
+          // Glass: transparent in TopNav, frosted glass in Sidebar (sólido no dark mode)
+          backgroundColor: isTop ? 'transparent' : (isDark ? 'hsl(var(--card))' : 'rgba(255,255,255,0.4)'),
+          border: isTop ? '1px solid transparent' : (isDark ? '1px solid hsl(var(--border))' : '1px solid rgba(255,255,255,0.4)'),
+          boxShadow: isTop ? 'none' : (isDark ? 'none' : '0 8px 32px rgba(0,0,0,0.08)'),
+          backdropFilter: isTop ? 'none' : (isDark ? 'none' : 'blur(12px)'),
+          WebkitBackdropFilter: isTop ? 'none' : (isDark ? 'none' : 'blur(12px)'),
+          transition: isDark ? 'opacity 200ms ease, transform 200ms ease' : `all 0.45s ${EASING}`,
         }}
       >
         {/* === LOGO ZONE === */}
@@ -231,7 +231,7 @@ export default function NavigationShell() {
           className={`
             relative flex pointer-events-auto
             ${isTop
-              ? 'flex-row items-center gap-1 bg-white/40 backdrop-blur-lg border border-white/40 rounded-full shadow-sm px-1.5 h-11'
+              ? 'flex-row items-center gap-1 bg-white/40 dark:bg-muted backdrop-blur-lg dark:backdrop-blur-none border border-white/40 dark:border-border rounded-full shadow-sm dark:shadow-none px-1.5 h-10'
               : 'flex-col gap-1 flex-1 px-3 py-2'
             }
           `}
@@ -255,7 +255,7 @@ export default function NavigationShell() {
                   className={
                     `relative z-10 flex items-center whitespace-nowrap transition-colors duration-300 tracking-wide
                     ${isTop
-                      ? `px-5 h-9 rounded-full text-[13px] ${isActive ? 'text-white font-semibold' : 'text-gray-600 font-normal hover:text-[#374151]'}`
+                      ? `px-3.5 h-9 rounded-full text-[13px] ${isActive ? 'text-white font-semibold' : 'text-gray-600 font-normal hover:text-[#374151]'}`
                       : `gap-3 px-4 py-2.5 rounded-xl text-[13px] ${isActive ? 'text-white font-medium' : 'text-gray-700 dark:text-white/80 font-light hover:text-[#2C2C2E] dark:hover:text-white hover:bg-white/30 dark:hover:bg-white/10'}`
                     }`
                   }
@@ -264,7 +264,7 @@ export default function NavigationShell() {
                     <motion.div
                       layoutId="active-pill"
                       className={`absolute inset-0 bg-[#375DFB] ${isTop ? 'rounded-full' : 'rounded-xl'} shadow-sm pointer-events-none`}
-                      transition={SPRING.pill}
+                      transition={isDark ? { duration: 0.15, ease: 'easeOut' } : SPRING.pill}
                     />
                   )}
 
@@ -284,15 +284,15 @@ export default function NavigationShell() {
         {/* === ACTIONS ZONE === */}
         <div
           className={`shrink-0 pointer-events-auto ${isTop
-            ? 'flex flex-row items-center gap-1.5'
-            : 'flex flex-col gap-1 px-3 py-3 border-t border-white/20 dark:border-white/10'
+            ? 'flex flex-row items-center gap-3'
+            : 'flex flex-col gap-1 px-3 py-3 border-t border-white/20 dark:border-border'
             }`}
         >
           <NavLink
             to="/configuracoes"
             className={({ isActive }) =>
               isTop
-                ? `flex items-center gap-2 px-4 h-10 backdrop-blur-lg rounded-full shadow-sm transition-all text-[13px] font-normal ${isActive ? activeIcon : inactiveIcon}`
+                ? `flex items-center gap-2 px-4 h-10 backdrop-blur-lg dark:backdrop-blur-none rounded-full shadow-sm transition-all text-[13px] font-normal ${isActive ? activeIcon : inactiveIcon}`
                 : `flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-light transition-all ${isActive ? 'bg-[#375DFB] text-white shadow-md' : 'text-gray-700 dark:text-white/70 hover:bg-white/30 dark:hover:bg-white/5'
                 }`
             }
@@ -301,7 +301,7 @@ export default function NavigationShell() {
             <span>Configurações</span>
           </NavLink>
 
-          <div className={`flex items-center gap-1.5 ${!isTop ? 'px-1 pt-1' : ''}`}>
+          <div className={`flex items-center gap-2 ${!isTop ? 'px-1 pt-1' : ''}`}>
 
             {/* ── Theme Toggle + Slider dropdown ──────────────────── */}
             <div className="relative group">
@@ -317,7 +317,7 @@ export default function NavigationShell() {
                   : <Moon className={isTop ? "w-5 h-5" : "w-4 h-4"} strokeWidth={1.5} />}
               </button>
               <div className={dropdownPos}>
-                <div className="flex items-center gap-0.5 bg-white/90 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-full p-1 border border-white/50 dark:border-white/10 shadow-lg">
+                <div className="flex items-center gap-0.5 bg-white/90 dark:bg-card backdrop-blur-xl dark:backdrop-blur-none rounded-full p-1 border border-white/50 dark:border-border shadow-lg">
                   <button
                     onClick={() => setTheme('crystal')}
                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 ${theme === 'crystal' ? 'bg-[#375DFB] text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'}`}
@@ -355,7 +355,7 @@ export default function NavigationShell() {
                 <button
                   onClick={() => setMuted(!muted)}
                   title={muted ? "Ativar notificações" : "Silenciar notificações"}
-                  className={`${baseIconBtn} w-10 h-10 bg-white/90 dark:bg-[#2C2C2E]/95 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-lg text-gray-600 dark:text-white/70 hover:bg-white hover:text-[#2C2C2E] dark:hover:bg-[#3C3C3E] dark:hover:text-white transition-all duration-200`}
+                  className={`${baseIconBtn} w-10 h-10 bg-white/90 dark:bg-card backdrop-blur-xl dark:backdrop-blur-none border border-white/50 dark:border-border shadow-lg text-gray-600 dark:text-white/70 hover:bg-white hover:text-[#2C2C2E] dark:hover:bg-accent dark:hover:text-white transition-all duration-200`}
                 >
                   {muted
                     ? <Bell className="w-5 h-5" strokeWidth={1.5} />
@@ -377,7 +377,7 @@ export default function NavigationShell() {
                 <button
                   onClick={() => signOut()}
                   title="Sair da plataforma"
-                  className={`${baseIconBtn} w-10 h-10 bg-red-50/90 dark:bg-red-500/10 backdrop-blur-xl border border-red-200/50 dark:border-red-500/20 shadow-lg text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white transition-all duration-200`}
+                  className={`${baseIconBtn} w-10 h-10 bg-red-50/90 dark:bg-red-500/10 backdrop-blur-xl dark:backdrop-blur-none border border-red-200/50 dark:border-red-500/20 shadow-lg text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white transition-all duration-200`}
                 >
                   <LogOut className="w-5 h-5" strokeWidth={1.5} />
                 </button>
