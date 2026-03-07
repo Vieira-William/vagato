@@ -81,8 +81,8 @@ async def create_stripe_checkout(request: Request):
     except Exception:
         data = {}
 
-    FRONTEND_URL = os.getenv("VITE_API_URL", "http://localhost:5173")
-    
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
     try:
         # A API Key dummy vai gerar erro, o código intercepta
         session = stripe.checkout.Session.create(
@@ -143,8 +143,8 @@ async def create_mp_checkout(request: Request, db: Session = Depends(get_db)):
     profile = _get_active_profile(db)
     user_email = profile.email if profile else "usuario@teste.com"
 
-    FRONTEND_URL = os.getenv("VITE_API_URL", "http://localhost:5173")
-    
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
     # Criar O Registro Transação "Pendente" atrelado ao usuário (simplificado para teste)
     transacao_id = str(uuid.uuid4())
     transacao = TransacaoPagamento(
