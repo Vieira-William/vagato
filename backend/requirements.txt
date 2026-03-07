@@ -43,3 +43,7 @@ python-multipart
 pyarrow
 pdfplumber
 anthropic>=0.40.0
+stripe
+mercadopago
+
+twilio==9.10.2

@@ -497,3 +497,54 @@ class UserProfileUpdate(BaseModel):
     onboarding_completed: Optional[bool] = None
     onboarding_step: Optional[int] = None
     import_method: Optional[str] = None
+
+# =============================================================================
+# WHATSAPP ALERTS (PRD v17)
+# =============================================================================
+
+class WhatsAppPreferencesBase(BaseModel):
+    phone_number: Optional[str] = None
+    is_active: bool = True
+    alert_high_score: bool = True
+    alert_daily_summary: bool = False
+    alert_expiring: bool = False
+    alert_interview: bool = True
+    alert_approved: bool = True
+    alert_feedback: bool = False
+    alert_reminder_24h: bool = True
+    alert_profile: bool = False
+    alert_inactivity: bool = False
+    quiet_start: str = "22:00"
+    quiet_end: str = "07:00"
+
+class WhatsAppPreferencesUpdate(WhatsAppPreferencesBase):
+    pass
+
+class WhatsAppPreferencesResponse(WhatsAppPreferencesBase):
+    id: str
+    user_id: int
+    phone_verified: bool
+    timezone: str
+    quiet_until: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class WhatsAppVerifySendRequest(BaseModel):
+    phone_number: str = Field(..., description="Telefone com DDI e DDD ex: +5511999999999")
+
+class WhatsAppVerifyConfirmRequest(BaseModel):
+    phone_number: str
+    code: str
+
+class WhatsAppLogResponse(BaseModel):
+    id: str
+    alert_type: str
+    status: str
+    sent_at: Optional[datetime]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

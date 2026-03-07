@@ -37,6 +37,8 @@ async def get_payment_status(db: Session = Depends(get_db)):
         "is_premium": profile.is_premium or False,
         "plano_expira_em": profile.plano_expira_em.isoformat() if profile.plano_expira_em else None,
         "plano": "premium" if profile.is_premium else "free",
+        "plano_tipo": profile.plano_tipo or "free",
+        "billing_period": profile.billing_period or "mensal",
         "transacoes_recentes": [
             {
                 "gateway": t.gateway,
@@ -56,6 +58,16 @@ MP_ACCESS_TOKEN = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "APP_USR-placeholder")
 # Inicialização das bibliotecas com fail-safes
 stripe.api_key = STRIPE_API_KEY
 mp_sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
+
+# ── Mapa de preços dos planos ──────────────────────────────────────────────
+PLANOS = {
+    'pro':      { 'mensal': 29.0,  'anual': 276.0,  'dias_mensal': 30,  'dias_anual': 365 },
+    'ultimate': { 'mensal': 59.0,  'anual': 564.0,  'dias_mensal': 30,  'dias_anual': 365 },
+}
+PLANO_LABELS = {
+    'pro':      { 'mensal': 'Assinatura Vagato Pro (Mensal)',      'anual': 'Assinatura Vagato Pro (Anual)' },
+    'ultimate': { 'mensal': 'Assinatura Vagato Ultimate (Mensal)', 'anual': 'Assinatura Vagato Ultimate (Anual)' },
+}
 
 
 @router.post("/checkout/stripe")
@@ -185,29 +197,52 @@ async def process_mp_payment(request: Request, db: Session = Depends(get_db)):
     Processa o pagamento transparente advindos do Componente Brick (Cartão / Pix).
     """
     payload = await request.json()
-    
+
     try:
+        # O Payment Brick envia { selectedPaymentMethod, formData }
+        # Extrai formData se existir, senão usa payload direto (retrocompatível)
+        form_data = payload.get("formData", payload)
+
         profile = _get_active_profile(db)
-        user_email = profile.email if profile else payload.get("payer", {}).get("email", "usuario@teste.com")
-        
+        payer_email = form_data.get("payer", {}).get("email", "")
+        user_email = profile.email if profile else (payer_email or "usuario@teste.com")
+
+        # Plano e billing — lidos do payload (frontend envia junto com formData)
+        plano_tipo     = payload.get("plano_tipo") or form_data.get("plano_tipo", "pro")
+        billing_period = payload.get("billing_period") or form_data.get("billing_period", "mensal")
+
+        # Validação e cálculo de valores
+        if plano_tipo not in PLANOS:
+            plano_tipo = "pro"
+        if billing_period not in ("mensal", "anual"):
+            billing_period = "mensal"
+
+        transaction_amount = PLANOS[plano_tipo][billing_period]
+        dias = PLANOS[plano_tipo][f'dias_{billing_period}']
+        descricao = PLANO_LABELS[plano_tipo][billing_period]
+
+        print(f"🔵 Plano: {plano_tipo} | Billing: {billing_period} | Valor: R${transaction_amount}")
+        print(f"🔵 payment_method_id: {form_data.get('payment_method_id')} | token: {'sim' if form_data.get('token') else 'não'}")
+
         # Construindo payload oficial para a SDK
         payment_data = {
-            "transaction_amount": 25.0, # Valor fixo da Assinatura
-            "description": "Assinatura Vagato Premium (1 Mês)",
-            "installments": int(payload.get("installments", 1)),
-            "payment_method_id": payload.get("payment_method_id"),
+            "transaction_amount": transaction_amount,
+            "description": descricao,
+            "installments": 1,  # sem parcelamento
+            "payment_method_id": form_data.get("payment_method_id"),
             "payer": {
                 "email": user_email
             }
         }
-        
+
         # Se for cartão, incluir token e issuer
-        if payload.get("token"):
-            payment_data["token"] = payload.get("token")
-        if payload.get("issuer_id"):
-            payment_data["issuer_id"] = payload.get("issuer_id")
-            
+        if form_data.get("token"):
+            payment_data["token"] = form_data.get("token")
+        if form_data.get("issuer_id"):
+            payment_data["issuer_id"] = form_data.get("issuer_id")
+
         # Pagar na API
+        print(f"🔵 Enviando para MP: {payment_data}")
         payment_response = mp_sdk.payment().create(payment_data)
         response_info = payment_response.get("response", {})
         status = response_info.get("status")
@@ -219,8 +254,8 @@ async def process_mp_payment(request: Request, db: Session = Depends(get_db)):
                 gateway="mercadopago",
                 gateway_id=str(response_info.get("id")),
                 status=status,
-                valor_usd=5.0, 
-                valor_brl=25.0,
+                valor_usd=5.0,
+                valor_brl=transaction_amount,
                 user_email=user_email
             )
             db.add(transacao)
@@ -229,14 +264,16 @@ async def process_mp_payment(request: Request, db: Session = Depends(get_db)):
                 user = db.query(UserProfile).filter(UserProfile.email == user_email).first()
                 if user:
                     user.is_premium = True
-                    user.plano_expira_em = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=30)
+                    user.plano_tipo = plano_tipo
+                    user.billing_period = billing_period
+                    user.plano_expira_em = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=dias)
                 # Créditos de IA
                 config_ia = db.query(ConfiguracaoIA).first()
                 if config_ia:
                     config_ia.saldo_inicial_usd += 5.0
 
             db.commit()
-            return {"status": status, "payment_id": response_info.get("id")}
+            return {"status": status, "payment_id": response_info.get("id"), "plano_tipo": plano_tipo}
         else:
             return {"status": status, "error": response_info.get("status_detail")}
             
