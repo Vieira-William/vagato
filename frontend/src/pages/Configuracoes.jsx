@@ -45,6 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 import { initMercadoPago, Payment, CardPayment } from '@mercadopago/sdk-react';
 import { whatsappService } from '../services/whatsappApi';
+import { supabase } from '../lib/supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const MP_PUBLIC_KEY = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-placeholder';
@@ -185,11 +186,13 @@ export default function Configuracoes() {
   const [iaStatus, setIaStatus] = useState(null);
 
   const loadPlanStatus = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('[GOD MODE] Sessão:', session?.user?.email, '| Token presente:', !!session?.access_token);
     try {
       const { data } = await pagamentosService.status();
       setPlanStatus(data);
     } catch (err) {
-      console.error('[GOD MODE] Erro em /pagamento/status:', err.response?.status, err.response?.data);
+      console.error('[GOD MODE] HTTP status:', err.response?.status, '| Body:', JSON.stringify(err.response?.data));
     }
   };
 
@@ -544,7 +547,8 @@ export default function Configuracoes() {
         setMessage({ type: 'error', text: 'URL de autenticação Google não retornada pelo servidor.' });
       }
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Erro ao iniciar autenticação Google combinada.';
+      console.error('[GOOGLE COMBINED] HTTP status:', err.response?.status, '| Body:', JSON.stringify(err.response?.data), '| Network:', err.message);
+      const msg = err.response?.data?.detail || `Erro ao conectar Google (${err.response?.status || err.message})`;
       setMessage({ type: 'error', text: msg });
     }
   };
