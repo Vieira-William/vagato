@@ -8,12 +8,23 @@ const api = axios.create({
 // Interceptor: injeta Bearer token do Supabase Auth em cada request
 api.interceptors.request.use(async (config) => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    // Timeout defensivo de 3s no getSession para evitar loop infinito em deadlocks de Auth (localStorage locking)
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), 3000));
+    
+    const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
+    
     if (session?.access_token) {
       config.headers.Authorization = `Bearer ${session.access_token}`;
+    } else if (import.meta.env.VITE_DEV_MODE === 'true') {
+      // Dev fallback: sem sessão Supabase real em modo dev → usa dev-token
+      // Backend aceita dev-token quando ENVIRONMENT=development (supabase_auth.py)
+      config.headers.Authorization = 'Bearer dev-token';
     }
-  } catch {
-    // Silencioso — se falhar, request vai sem token (backend retorna 401)
+  } catch (err) {
+    if (err.message === 'SUPABASE_TIMEOUT') {
+       console.warn('Timeout ao recuperar sessão do Supabase no Axios interceptor.');
+    }
   }
   return config;
 });
@@ -129,9 +140,10 @@ export const configService = {
 };
 
 export const calendarService = {
-  getLoginUrl: () => api.get('/calendar/login'),
-  getEvents: (params = {}) => api.get('/calendar/events', { params }),
-  disconnect: () => api.delete('/calendar/disconnect'),
+  getLoginUrl:  () => api.get('/calendar/login'),
+  getEvents:    (params = {}) => api.get('/calendar/events', { params }),
+  createEvent:  (data) => api.post('/calendar/events', data),
+  disconnect:   () => api.delete('/calendar/disconnect'),
 };
 
 export const gmailService = {
@@ -178,6 +190,56 @@ export const googleCombinedService = {
 export const pagamentosService = {
   status: () => api.get('/pagamento/status'),
   processarBrick: (payload) => api.post('/pagamento/checkout/mercadopago/process', payload),
+};
+
+// PRD v21 — Kanban Candidaturas
+export const candidaturasService = {
+  board:     ()                       => api.get('/candidaturas/board'),
+  stats:     ()                       => api.get('/candidaturas/stats'),
+  obter:     (id)                     => api.get(`/candidaturas/${id}`),
+  criar:     (data)                   => api.post('/candidaturas/', data),
+  mover:     (id, estagio, posicao)   => api.patch(`/candidaturas/${id}/move`, { estagio, posicao }),
+  atualizar: (id, data)               => api.patch(`/candidaturas/${id}`, data),
+  deletar:   (id)                     => api.delete(`/candidaturas/${id}`),
+  timeline:  (id)                     => api.get(`/candidaturas/${id}/timeline`),
+  addNota:   (id, descricao)          => api.post(`/candidaturas/${id}/notas`, { descricao }),
+};
+
+export const mensagensService = {
+  // ── v22.0: Read-only ──
+  sync:       ()            => api.post('/mensagens/sync'),
+  conversas:  (params = {}) => api.get('/mensagens/conversas', { params }),
+  detalhe:    (id)          => api.get(`/mensagens/conversas/${id}`),
+  marcarLido: (id)          => api.patch(`/mensagens/conversas/${id}/read`),
+  arquivar:   (id)          => api.patch(`/mensagens/conversas/${id}/archive`),
+  vincular:   (id, cand_id) => api.patch(`/mensagens/conversas/${id}/link`, { candidatura_id: cand_id }),
+  stats:      ()            => api.get('/mensagens/stats'),
+
+  // ── v22.1: Compose & Reply ──
+  compose:    (data)        => api.post('/mensagens/compose', data),
+  reply:      (id, data)    => api.post(`/mensagens/conversas/${id}/reply`, data),
+  suggest:    (data)        => api.post('/mensagens/compose/suggest', data),
+
+  // ── v22.1: Assinaturas ──
+  signatures:      ()       => api.get('/mensagens/signatures'),
+  createSignature: (data)   => api.post('/mensagens/signatures', data),
+  updateSignature: (id, d)  => api.patch(`/mensagens/signatures/${id}`, d),
+  deleteSignature: (id)     => api.delete(`/mensagens/signatures/${id}`),
+  setDefaultSig:   (id)     => api.patch(`/mensagens/signatures/${id}/set-default`),
+
+  // ── v22.1: Templates ──
+  templates:       ()       => api.get('/mensagens/templates'),
+  createTemplate:  (data)   => api.post('/mensagens/templates', data),
+  updateTemplate:  (id, d)  => api.patch(`/mensagens/templates/${id}`, d),
+  deleteTemplate:  (id)     => api.delete(`/mensagens/templates/${id}`),
+  fillTemplate:    (id, d)  => api.post(`/mensagens/templates/${id}/fill`, d),
+
+  // ── v22.1: Rascunhos ──
+  drafts:          ()       => api.get('/mensagens/drafts'),
+  saveDraft:       (data)   => api.post('/mensagens/drafts', data),
+  updateDraft:     (id, d)  => api.patch(`/mensagens/drafts/${id}`, d),
+  deleteDraft:     (id)     => api.delete(`/mensagens/drafts/${id}`),
+  sendDraft:       (id)     => api.post(`/mensagens/drafts/${id}/send`),
 };
 
 export default api;
