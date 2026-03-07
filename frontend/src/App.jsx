@@ -4,7 +4,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { LayoutModeProvider } from './contexts/LayoutModeContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Layout from './components/layout/Layout';
-import LoadingScreen from './components/LoadingScreen';
 import Analytics from './pages/Analytics';
 import Vagas from './pages/MatchPage';
 import Configuracoes from './pages/Configuracoes';
@@ -105,18 +104,6 @@ function OnboardingGuard({ children }) {
 
 function AppContent() {
   const { session, loading } = useAuth();
-  const [systemReady, setSystemReady] = useState(DEV_MODE); // pula LoadingScreen em dev
-
-  // Se o usuário já está logado e o sistema da Vagas (Back-ends, Estatísticas)
-  // ainda não foi inicializado nesta sessão, mostramos a Tela de Status Inicial pós-login.
-  if (session && !loading && !systemReady) {
-    return (
-      <LoadingScreen
-        onComplete={() => setSystemReady(true)}
-        onError={() => setSystemReady(true)} // Mesmo com erro, deixa entrar no app, a UI lida.
-      />
-    );
-  }
 
   return (
     <ErrorBoundary>
