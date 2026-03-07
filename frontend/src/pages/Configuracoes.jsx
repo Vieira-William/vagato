@@ -186,13 +186,25 @@ export default function Configuracoes() {
   const [iaStatus, setIaStatus] = useState(null);
 
   const loadPlanStatus = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('[GOD MODE] Sessão:', session?.user?.email, '| Token presente:', !!session?.access_token);
+    // getUser() força refresh do token se expirado (mais confiável que getSession)
+    const { data: { user } } = await supabase.auth.getUser();
+    const email = user?.email?.toLowerCase() || '';
+
+    // God mode: owner sempre tem Ultimate, sem depender do backend
+    const OWNER_EMAILS = (import.meta.env.VITE_OWNER_EMAILS || 'william.marangon@gmail.com')
+      .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+    if (email && OWNER_EMAILS.includes(email)) {
+      setPlanStatus({ plano: 'ultimate', plano_tipo: 'ultimate', is_premium: true, billing_period: 'god_mode' });
+      return;
+    }
+
+    // Usuários regulares: consulta backend
+    if (!user) return; // sem sessão, mantém estado padrão (free)
     try {
       const { data } = await pagamentosService.status();
       setPlanStatus(data);
     } catch (err) {
-      console.error('[GOD MODE] HTTP status:', err.response?.status, '| Body:', JSON.stringify(err.response?.data));
+      // silencioso — mantém estado padrão
     }
   };
 
