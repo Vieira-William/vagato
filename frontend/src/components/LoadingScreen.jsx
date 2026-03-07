@@ -169,7 +169,7 @@ export default function LoadingScreen({ onComplete, onError }) {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-[28px] bg-gradient-to-br from-accent to-accent/70 mb-6 shadow-xl shadow-accent/20 transition-transform hover:scale-105 duration-300">
             <Briefcase className="w-10 h-10 text-white fill-white/10" strokeWidth={1.5} />
           </div>
-          <h1 className="text-4xl font-light tracking-tighter text-foreground">Vagas</h1>
+          <h1 className="text-4xl font-light tracking-tighter text-foreground">Vagato</h1>
           <p className="text-muted-foreground mt-2 font-medium text-sm">
             {isWaking ? wakeMsg : error ? 'Ops, uma pequena falha' : 'Iniciando o seu ambiente de trabalho...'}
           </p>
