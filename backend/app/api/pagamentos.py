@@ -9,6 +9,7 @@ import uuid
 import datetime
 from ..database import get_db
 from ..models import TransacaoPagamento, UserProfile, ConfiguracaoIA
+from ..middleware.supabase_auth import get_current_user
 
 router = APIRouter(prefix="/pagamento", tags=["pagamento"])
 
@@ -35,14 +36,19 @@ def _get_active_profile(db: Session):
 
 
 @router.get("/status")
-async def get_payment_status(db: Session = Depends(get_db)):
-    """Retorna plano atual e histórico de transações do usuário ativo."""
-    profile = _get_active_profile(db)
+async def get_payment_status(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna plano atual e histórico de transações do usuário logado."""
+    email = (current_user.get("email") or "").lower()
+
+    if email in _OWNER_EMAILS:
+        return _GOD_MODE_RESPONSE
+
+    profile = db.query(UserProfile).filter(UserProfile.email == email).first()
     if not profile:
         return {"is_premium": False, "plano_expira_em": None, "plano": "free", "transacoes_recentes": []}
-
-    if (profile.email or "").lower() in _OWNER_EMAILS:
-        return _GOD_MODE_RESPONSE
 
     transacoes = (
         db.query(TransacaoPagamento)

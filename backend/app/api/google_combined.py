@@ -133,10 +133,10 @@ async def google_combined_callback(code: str, state: str):
 
     except Exception as e:
         logger.error("Erro no callback Google Combined: %s", e)
-        redirect_url = f"{FRONTEND_URL}/onboarding?google_error=true"
+        redirect_url = f"{FRONTEND_URL}/configuracoes?google_error=true"
         return RedirectResponse(url=redirect_url)
 
-    redirect_url = f"{FRONTEND_URL}/onboarding?google_connected=true"
+    redirect_url = f"{FRONTEND_URL}/configuracoes?google_connected=true"
     return RedirectResponse(url=redirect_url)
 
 
