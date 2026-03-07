@@ -67,7 +67,7 @@ export default function NavigationShell() {
     : { top: 16, left: 16, width: 240, height: vh - 32, borderRadius: 24, px: 0 };
 
   const baseIconBtn = "flex items-center justify-center backdrop-blur-lg dark:backdrop-blur-none rounded-full shadow-sm transition-all";
-  const inactiveIcon = "bg-white/40 dark:bg-muted border border-white/40 dark:border-border text-gray-700 dark:text-white/70 hover:bg-white/60 dark:hover:bg-accent hover:text-[#2C2C2E] dark:hover:text-white";
+  const inactiveIcon = "bg-white/40 dark:bg-muted border border-white/40 dark:border-border text-gray-700 dark:text-white/80 hover:bg-white/60 dark:hover:bg-accent hover:text-[#2C2C2E] dark:hover:text-white";
   const activeIcon = "bg-[#375DFB] border border-transparent text-white shadow-md";
 
   // ── Mobile: topnav simplificada + Sheet ──
@@ -255,7 +255,7 @@ export default function NavigationShell() {
                   className={
                     `relative z-10 flex items-center whitespace-nowrap transition-colors duration-300 tracking-wide
                     ${isTop
-                      ? `px-3.5 h-9 rounded-full text-[13px] ${isActive ? 'text-white font-semibold' : 'text-gray-600 font-normal hover:text-[#374151]'}`
+                      ? `px-3.5 h-9 rounded-full text-[13px] ${isActive ? 'text-white font-semibold' : 'text-gray-600 dark:text-white/70 font-normal hover:text-[#374151] dark:hover:text-white'}`
                       : `gap-3 px-4 py-2.5 rounded-xl text-[13px] ${isActive ? 'text-white font-medium' : 'text-gray-700 dark:text-white/80 font-light hover:text-[#2C2C2E] dark:hover:text-white hover:bg-white/30 dark:hover:bg-white/10'}`
                     }`
                   }
@@ -293,7 +293,7 @@ export default function NavigationShell() {
             className={({ isActive }) =>
               isTop
                 ? `flex items-center gap-2 px-4 h-10 backdrop-blur-lg dark:backdrop-blur-none rounded-full shadow-sm transition-all text-[13px] font-normal ${isActive ? activeIcon : inactiveIcon}`
-                : `flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-light transition-all ${isActive ? 'bg-[#375DFB] text-white shadow-md' : 'text-gray-700 dark:text-white/70 hover:bg-white/30 dark:hover:bg-white/5'
+                : `flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-light transition-all ${isActive ? 'bg-[#375DFB] text-white shadow-md' : 'text-gray-700 dark:text-white/80 hover:bg-white/30 dark:hover:bg-white/5'
                 }`
             }
           >
